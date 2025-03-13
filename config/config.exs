@@ -7,9 +7,9 @@
 # General application configuration
 import Config
 
-config :ankaa,
-  # ecto_repos: [Ankaa.Repo],
-  generators: [timestamp_type: :utc_datetime]
+config :ankaa, Ankaa.Redis,
+  host: "localhost",
+  port: 6379
 
 # Configures the endpoint
 config :ankaa, AnkaaWeb.Endpoint,
@@ -64,7 +64,3 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
-
-config :ankaa, Ankaa.Redis,
-  host: "ankaa-redis",
-  port: 6379

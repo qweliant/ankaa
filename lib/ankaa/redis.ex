@@ -46,35 +46,45 @@ defmodule Ankaa.Redis do
     GenServer.call(__MODULE__, {:publish, channel, message})
   end
 
-  # GenServer Callbacks
-
   @doc """
-  Handles Redis commands.
+  Unsubscribes from a Redis channel
   """
+  def unsubscribe(channel) do
+    GenServer.call(__MODULE__, {:unsubscribe, channel})
+  end
+
+  # GenServer Callbacks
   def handle_call({:command, command}, _from, %{conn: conn} = state) do
     {:reply, Redix.command(conn, command), state}
   end
 
-  """
-  Handles Redis channel subscriptions.
-  """
   def handle_call({:subscribe, channel}, _from, %{pubsub: pubsub} = state) do
     Redix.PubSub.subscribe(pubsub, channel, self())
     {:reply, :ok, state}
   end
 
-  @doc """
-  Handles publishing messages to Redis channels.
-  """
   def handle_call({:publish, channel, message}, _from, %{conn: conn} = state) do
     {:reply, Redix.command(conn, ["PUBLISH", channel, message]), state}
   end
 
-  @doc """
-  Handles incoming Pub/Sub messages.
-  """
+  def handle_call({:unsubscribe, channel}, _from, %{pubsub: pubsub} = state) do
+    Redix.PubSub.unsubscribe(pubsub, channel, self())
+    {:reply, :ok, state}
+  end
+
+  # Handle Pub/Sub messages
+  def handle_info({:redix_pubsub, _pubsub, _ref, :subscribed, %{channel: channel}}, state) do
+    IO.puts("Subscribed to channel: #{channel}")
+    {:noreply, state}
+  end
+
   def handle_info({:redix_pubsub, _pubsub, _ref, :message, %{channel: channel, payload: payload}}, state) do
     IO.puts("Received message on channel #{channel}: #{payload}")
+    {:noreply, state}
+  end
+
+  def handle_info({:redix_pubsub, _pubsub, _ref, :unsubscribed, %{channel: channel}}, state) do
+    IO.puts("Unsubscribed from channel: #{channel}")
     {:noreply, state}
   end
 end
