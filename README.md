@@ -19,9 +19,9 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 ## Todo
 - [ ] make this a monrepo
+- [ ] push incoming IoT data to timescale or influxDB
 - [ ] build out notification service
 - [ ] integrate react. LiveReact and LiveVue don't seem to be the best option for managing a complex frontend so i want to create a react app that consumes events from redis
-- [ ] push incoming IoT data to timescale or influxDB
 - [ ] build out react client to handle
   - [ ] triggering alerts
   - [ ] adding people to care network
