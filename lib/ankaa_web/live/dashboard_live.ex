@@ -33,7 +33,7 @@ defmodule AnkaaWeb.DashboardLive do
   end
 
   def render(assigns) do
-  ~H"""
+    ~H"""
     <div class="p-8 bg-gray-100 min-h-screen">
       <h1 class="text-3xl font-bold mb-8">Real-Time Dialysis & BP Monitoring</h1>
 
@@ -44,6 +44,7 @@ defmodule AnkaaWeb.DashboardLive do
           <p class="text-lg"><strong>Systolic:</strong> <%= @bp_data["systolic"] || "Waiting for data..." %></p>
           <p class="text-lg"><strong>Diastolic:</strong> <%= @bp_data["diastolic"] || "Waiting for data..." %></p>
           <p class="text-lg"><strong>Heart Rate:</strong> <%= @bp_data["heart_rate"] || "Waiting for data..." %></p>
+          <p class="text-md text-gray-500">Last updated: <%= @bp_data["timestamp"] || "N/A" %></p>
         </div>
 
         <!-- Dialysis Metrics Section -->
@@ -52,6 +53,7 @@ defmodule AnkaaWeb.DashboardLive do
           <p class="text-lg"><strong>Fluid Level:</strong> <%= @dialysis_data["fluid_level"] || "Waiting for data..." %></p>
           <p class="text-lg"><strong>Flow Rate:</strong> <%= @dialysis_data["flow_rate"] || "Waiting for data..." %></p>
           <p class="text-lg"><strong>Clot Detected:</strong> <%= @dialysis_data["clot_detected"] || "Waiting for data..." %></p>
+          <p class="text-md text-gray-500">Last updated: <%= @dialysis_data["timestamp"] || "N/A" %></p>
         </div>
       </div>
     </div>
