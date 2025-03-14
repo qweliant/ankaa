@@ -18,7 +18,8 @@ defmodule Ankaa.Application do
       # {Ankaa.Worker, arg},
       # Start to serve requests, typically the last entry
       AnkaaWeb.Endpoint,
-      {Ankaa.Redis, Application.get_env(:ankaa, Ankaa.Redis)} # Start Redis with config
+      {Ankaa.Redis, Application.get_env(:ankaa, Ankaa.Redis)}, # Start Redis with config
+      Ankaa.MockData  # Start the mock data generator
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

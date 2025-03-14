@@ -17,6 +17,8 @@ defmodule AnkaaWeb.Router do
   scope "/", AnkaaWeb do
     pipe_through :browser
 
+    live "/dashboard", DashboardLive
+
     get "/", PageController, :home
   end
 
