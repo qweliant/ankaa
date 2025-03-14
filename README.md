@@ -16,3 +16,14 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
   * Docs: https://hexdocs.pm/phoenix
   * Forum: https://elixirforum.com/c/phoenix-forum
   * Source: https://github.com/phoenixframework/phoenix
+
+## Todo
+- [ ] make this a monrepo
+- [ ] build out notification service
+- [ ] integrate react. LiveReact and LiveVue don't seem to be the best option for managing a complex frontend so i want to create a react app that consumes events from redis
+- [ ] push incoming IoT data to timescale or influxDB
+- [ ] build out react client to handle
+  - [ ] realtime dashboard
+  - [ ] triggering alerts
+  - [ ] adding care network
+
