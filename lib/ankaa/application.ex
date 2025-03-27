@@ -9,7 +9,6 @@ defmodule Ankaa.Application do
   def start(_type, _args) do
     children = [
       AnkaaWeb.Telemetry,
-      # Ankaa.Repo,
       {DNSCluster, query: Application.get_env(:ankaa, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ankaa.PubSub},
       # Start the Finch HTTP client for sending emails
