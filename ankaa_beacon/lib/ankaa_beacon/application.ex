@@ -21,7 +21,7 @@ defmodule AnkaaBeacon.Application do
       # Start Redis with config
       {AnkaaBeacon.Redis, Application.get_env(:ankaa, AnkaaBeacon.Redis, [])},
       # Start the mock data generator
-      AnkaaBeacon.MockData
+      {AnkaaBeacon.MockData, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
