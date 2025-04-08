@@ -20,10 +20,14 @@ services:
     #   -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
     #   -c ssl_key_file=/var/lib/postgresql/certs/server.key
   redis:
-    image: redis:7
-    container_name: ankaa_redis
+    image: redis:7-alpine
+    container_name: ankaa_redis_dev
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ankaa_network
 
   timescale:
     image: timescale/timescaledb-ha:pg17
