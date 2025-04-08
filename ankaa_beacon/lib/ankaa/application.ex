@@ -21,8 +21,6 @@ defmodule Ankaa.Application do
       AnkaaWeb.Endpoint,
       # Start Redis with config
       {Ankaa.Redis, Application.get_env(:ankaa, Ankaa.Redis)},
-      # Start the mock data generator
-      Ankaa.MockData
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
