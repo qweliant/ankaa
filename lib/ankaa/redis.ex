@@ -1,4 +1,4 @@
-defmodule Ankaa.Redis do
+defmodule AnkaaBeacon.Redis do
   use GenServer
 
   @moduledoc """
@@ -21,6 +21,7 @@ defmodule Ankaa.Redis do
 
     # Start Redis Pub/Sub connection
     {:ok, pubsub} = Redix.PubSub.start_link(host: host, port: port)
+
     # Subscribe process to handle Redis Pub/Sub messages
     Redix.PubSub.subscribe(pubsub, "bp_readings", self())
     Redix.PubSub.subscribe(pubsub, "dialysis_readings", self())
@@ -78,14 +79,17 @@ defmodule Ankaa.Redis do
   # Handle Pub/Sub messages
   def handle_info({:redix_pubsub, _pubsub, _ref, :subscribed, %{channel: channel}}, state) do
     IO.puts("Subscribed to channel: #{channel}")
-    
+
     {:noreply, state}
   end
 
-  def handle_info({:redix_pubsub, _pubsub, _ref, :message, %{channel: channel, payload: payload}}, state) do
+  def handle_info(
+        {:redix_pubsub, _pubsub, _ref, :message, %{channel: channel, payload: payload}},
+        state
+      ) do
     IO.puts("Received message on channel #{channel}: #{payload}")
-     # Broadcast the message to all subscribers (e.g., LiveView processes)
-    Phoenix.PubSub.broadcast(Ankaa.PubSub, channel, {:redix_pubsub, :message, payload})
+    # Broadcast the message to all subscribers (e.g., LiveView processes)
+    Phoenix.PubSub.broadcast(AnkaaBeacon.PubSub, channel, {:redix_pubsub, :message, payload})
     {:noreply, state}
   end
 

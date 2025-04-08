@@ -8,6 +8,7 @@ defmodule Ankaa.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      AnkaaBeacon.Repo,
       AnkaaWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:ankaa, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ankaa.PubSub},

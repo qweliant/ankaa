@@ -11,6 +11,10 @@ config :ankaa, Ankaa.Redis,
   host: "localhost",
   port: 6379
 
+config :ankaa_beacon,
+  ecto_repos: [AnkaaBeacon.Repo],
+  generators: [timestamp_type: :utc_datetime]
+
 # Configures the endpoint
 config :ankaa, AnkaaWeb.Endpoint,
   url: [host: "localhost"],
