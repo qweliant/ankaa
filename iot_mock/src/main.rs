@@ -1,5 +1,5 @@
 use rumqttc::{MqttOptions, AsyncClient, QoS};
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use std::time::Duration;
 use tokio::time;
 use rand::Rng;
