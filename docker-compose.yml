@@ -43,15 +43,12 @@ services:
     container_name: mqtt_broker
     ports:
       - "1883:1883"
+      - "9001:9001"
     volumes:
-      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - mosquitto_data:/mosquitto/data
-    environment:
-      - MOSQUITTO_USERNAME=user
-      - MOSQUITTO_PASSWORD=password
+      - mosquitto_config:/mosquitto/config
     healthcheck:
-      test:
-        ["CMD-SHELL", "mosquitto_pub -h localhost -t test -m 'ping' || exit 1"]
+      test: ["CMD-SHELL", "nc -z localhost 1883 || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -67,7 +64,7 @@ services:
       mqtt:
         condition: service_healthy
     environment:
-      - MQTT_HOST=mqtt
+      - MQTT_HOST=mqtt_broker
       - RUST_LOG=info
     networks:
       - ankaa_network
