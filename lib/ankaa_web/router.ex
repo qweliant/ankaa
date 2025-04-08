@@ -20,6 +20,7 @@ defmodule AnkaaWeb.Router do
     live "/dashboard", DashboardLive
 
     get "/", PageController, :home
+  
   end
 
   # Other scopes may use custom stacks.

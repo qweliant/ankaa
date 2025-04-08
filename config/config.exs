@@ -12,7 +12,7 @@ config :ankaa, Ankaa.Redis,
   port: 6379
 
 config :ankaa,
-  ecto_repos: [Ankaa.Repo],
+  ecto_repos: [Ankaa.Repo, Ankaa.TimescaleRepo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint

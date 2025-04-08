@@ -10,6 +10,15 @@ config :ankaa, Ankaa.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+# TimescaleDB config
+config :ankaa, Ankaa.TimescaleRepo,
+  username: "user",
+  password: "password",
+  hostname: "localhost",
+  database: "ankaa_timescale_dev",
+  port: 5433,
+  pool_size: 5
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

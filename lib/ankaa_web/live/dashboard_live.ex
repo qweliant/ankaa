@@ -41,19 +41,31 @@ defmodule AnkaaWeb.DashboardLive do
         <!-- Blood Pressure Section -->
         <div class="bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-2xl font-semibold mb-4">Blood Pressure</h2>
-          <p class="text-lg"><strong>Systolic:</strong> <%= @bp_data["systolic"] || "Waiting for data..." %></p>
-          <p class="text-lg"><strong>Diastolic:</strong> <%= @bp_data["diastolic"] || "Waiting for data..." %></p>
-          <p class="text-lg"><strong>Heart Rate:</strong> <%= @bp_data["heart_rate"] || "Waiting for data..." %></p>
-          <p class="text-md text-gray-500">Last updated: <%= @bp_data["timestamp"] || "N/A" %></p>
+          <p class="text-lg">
+            <strong>Systolic:</strong> {@bp_data["systolic"] || "Waiting for data..."}
+          </p>
+          <p class="text-lg">
+            <strong>Diastolic:</strong> {@bp_data["diastolic"] || "Waiting for data..."}
+          </p>
+          <p class="text-lg">
+            <strong>Heart Rate:</strong> {@bp_data["heart_rate"] || "Waiting for data..."}
+          </p>
+          <p class="text-md text-gray-500">Last updated: {@bp_data["timestamp"] || "N/A"}</p>
         </div>
-
-        <!-- Dialysis Metrics Section -->
+        
+    <!-- Dialysis Metrics Section -->
         <div class="bg-white p-6 rounded-lg shadow-md">
           <h2 class="text-2xl font-semibold mb-4">Dialysis Metrics</h2>
-          <p class="text-lg"><strong>Fluid Level:</strong> <%= @dialysis_data["fluid_level"] || "Waiting for data..." %></p>
-          <p class="text-lg"><strong>Flow Rate:</strong> <%= @dialysis_data["flow_rate"] || "Waiting for data..." %></p>
-          <p class="text-lg"><strong>Clot Detected:</strong> <%= @dialysis_data["clot_detected"] || "Waiting for data..." %></p>
-          <p class="text-md text-gray-500">Last updated: <%= @dialysis_data["timestamp"] || "N/A" %></p>
+          <p class="text-lg">
+            <strong>Fluid Level:</strong> {@dialysis_data["fluid_level"] || "Waiting for data..."}
+          </p>
+          <p class="text-lg">
+            <strong>Flow Rate:</strong> {@dialysis_data["flow_rate"] || "Waiting for data..."}
+          </p>
+          <p class="text-lg">
+            <strong>Clot Detected:</strong> {@dialysis_data["clot_detected"] || "Waiting for data..."}
+          </p>
+          <p class="text-md text-gray-500">Last updated: {@dialysis_data["timestamp"] || "N/A"}</p>
         </div>
       </div>
     </div>
