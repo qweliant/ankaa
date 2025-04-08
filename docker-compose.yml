@@ -14,7 +14,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - ankaa_network
-
   redis:
     image: redis:7-alpine
     container_name: ankaa_redis_dev
@@ -24,7 +23,6 @@ services:
       - redis_data:/data
     networks:
       - ankaa_network
-
   timescale:
     image: timescale/timescaledb-ha:pg17
     container_name: ankaa_timescale_dev
@@ -46,15 +44,18 @@ services:
       - "9001:9001"
     volumes:
       - mosquitto_data:/mosquitto/data
-      - mosquitto_config:/mosquitto/config
+      - ./mosquitto/config:/mosquitto/config
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 1883 || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "mosquitto_sub -h localhost -t 'test/topic' -C 1 -E 2>/dev/null || exit 1",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - ankaa_network
-
   rust_iot_mock:
     build:
       context: ./iot_mock
@@ -78,5 +79,4 @@ volumes:
   timescale_data:
   redis_data:
   mosquitto_data:
-  mosquitto_config:
   mosquitto_logs:
