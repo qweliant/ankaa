@@ -1,0 +1,39 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Cargo
+/cargo-lock.json
+/cargo-build-config.toml
+
+# The `cargo install` directory
+/cargo/
+
+# Output of running `cargo test`
+/test_coverage/
+
+# Temporary files
+/.rustup/
+/.rustc/
+/.lock/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Rustdoc
+/target/doc/
+
+# VS Code specific
+.vscode/
+
+# JetBrains specific
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

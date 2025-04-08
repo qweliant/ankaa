@@ -38,6 +38,29 @@ services:
       - timescale_data:/var/lib/postgresql/data
     networks:
       - ankaa_network
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: mqtt_broker
+    ports:
+      - "1883:1883" # MQTT Protocol
+      - "9001:9001" # WebSocket for MQTT (optional)
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_config:/mosquitto/config
+      - mosquitto_logs:/mosquitto/logs
+    networks:
+      - ankaa_network
+
+  rust_iot_mock:
+    build:
+      context: ./ankaa_iot_mock/iot_mock
+    container_name: rust_iot_mock
+    depends_on:
+      - mqtt # Wait for MQTT to be ready before starting the Rust service
+    ports:
+      - "8080:8080" # Exposing port for the mock service
+    networks:
+      - ankaa_network
 
 networks:
   ankaa_network:
@@ -47,3 +70,6 @@ volumes:
   postgres_data:
   timescale_data:
   redis_data:
+  mosquitto_data:
+  mosquitto_config:
+  mosquitto_logs:
