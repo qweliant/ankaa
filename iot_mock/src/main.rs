@@ -1,7 +1,7 @@
 use rumqttc::{MqttOptions, AsyncClient, QoS, Event, Incoming};
 use serde::Serialize;
 use std::time::Duration;
-use tokio::time;
+use tokio::time::{self, sleep};
 use rand::Rng;
 use chrono::Utc;
 use std::env;
@@ -86,8 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let topic = format!("devices/{}/telemetry", device_id);
             let payload = serde_json::to_string(&data)?;
 
-            if let Err(e) = client.publish(topic, QoS::AtLeastOnce, false, payload).await {
+             if let Err(e) = client.publish(topic, QoS::AtLeastOnce, false, payload).await {
                 error!("Failed to publish dialysis data: {}", e);
+                sleep(Duration::from_secs(5)).await;  // Wait before retrying
             } else {
                 info!("Published dialysis data from {}", device_id);
             }
@@ -106,11 +107,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let topic = format!("devices/{}/telemetry", device_id);
             let payload = serde_json::to_string(&data)?;
 
-            if let Err(e) = client.publish(topic, QoS::AtLeastOnce, false, payload).await {
+             if let Err(e) = client.publish(topic, QoS::AtLeastOnce, false, payload).await {
                 error!("Failed to publish BP data: {}", e);
+                sleep(Duration::from_secs(5)).await;  // Wait before retrying
             } else {
                 info!("Published BP data from {}", device_id);
-            }
+            }   
         }
     }
 }

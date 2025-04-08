@@ -43,12 +43,15 @@ services:
     container_name: mqtt_broker
     ports:
       - "1883:1883"
-      - "9001:9001"
     volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - mosquitto_data:/mosquitto/data
-      - mosquitto_config:/mosquitto/config
+    environment:
+      - MOSQUITTO_USERNAME=user
+      - MOSQUITTO_PASSWORD=password
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 1883 || exit 1"]
+      test:
+        ["CMD-SHELL", "mosquitto_pub -h localhost -t test -m 'ping' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
