@@ -12,12 +12,15 @@ config :ankaa, Ankaa.Repo,
 
 # TimescaleDB config
 config :ankaa, Ankaa.TimescaleRepo,
+  migration_primary_key: [name: :id, type: :binary_id],
+  migration_source: "timescale_schema_migrations",
+  database: "ankaa_timescale_dev",
   username: "user",
   password: "password",
   hostname: "localhost",
-  database: "ankaa_timescale_dev",
   port: 5433,
-  pool_size: 5
+  pool_size: 10,
+  migrations_path: "priv/timescale_repo/migrations"
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

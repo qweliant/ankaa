@@ -3,6 +3,8 @@
                         'Elixir.Ankaa.Longterm','Elixir.Ankaa.Mailer',
                         'Elixir.Ankaa.MockData','Elixir.Ankaa.Notifications',
                         'Elixir.Ankaa.Redis','Elixir.Ankaa.Repo',
+                        'Elixir.Ankaa.Telemetry.BPDeviceData',
+                        'Elixir.Ankaa.Telemetry.DialysisDeviceData',
                         'Elixir.Ankaa.TimescaleRepo','Elixir.AnkaaWeb',
                         'Elixir.AnkaaWeb.CoreComponents',
                         'Elixir.AnkaaWeb.DashboardLive',

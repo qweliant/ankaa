@@ -1,6 +1,5 @@
 defmodule AnkaaWeb.DashboardLive do
   use AnkaaWeb, :live_view
-  alias Ankaa.Redis
 
   @moduledoc """
   LiveView dashboard to display real-time BP and dialysis data.

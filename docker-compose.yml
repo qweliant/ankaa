@@ -2,23 +2,19 @@ version: "3.8"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:17
     container_name: ankaa_postgres_dev
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: ankaa_dev
     ports:
-      - "5432:5432"
+      - "5432:5432" # PostgreSQL exposed on port 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # - ./postgres-certs:/var/lib/postgresql/certs
     networks:
       - ankaa_network
-    # command: >
-    #   -c ssl=on
-    #   -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
-    #   -c ssl_key_file=/var/lib/postgresql/certs/server.key
+
   redis:
     image: redis:7-alpine
     container_name: ankaa_redis_dev
@@ -37,16 +33,11 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: ankaa_timescale_dev
     ports:
-      - "5433:5432"
+      - "5433:5432" # Map host 5433 to container's 5432
     volumes:
       - timescale_data:/var/lib/postgresql/data
-      # - ./timescale-certs:/var/lib/postgresql/certs
     networks:
       - ankaa_network
-    # command: >
-    #   -c ssl=on
-    #   -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
-    #   -c ssl_key_file=/var/lib/postgresql/certs/server.key
 
 networks:
   ankaa_network:
