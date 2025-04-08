@@ -55,3 +55,4 @@ networks:
 volumes:
   postgres_data:
   timescale_data:
+  redis_data:
