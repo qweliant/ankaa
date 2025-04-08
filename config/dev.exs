@@ -2,8 +2,8 @@ import Config
 
 # Configure your database
 config :ankaa, Ankaa.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "user",
+  password: "password",
   hostname: "localhost",
   database: "ankaa_dev",
   stacktrace: true,

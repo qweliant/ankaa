@@ -1,4 +1,4 @@
-defmodule AnkaaBeacon.Redis do
+defmodule Ankaa.Redis do
   use GenServer
 
   @moduledoc """
@@ -89,7 +89,7 @@ defmodule AnkaaBeacon.Redis do
       ) do
     IO.puts("Received message on channel #{channel}: #{payload}")
     # Broadcast the message to all subscribers (e.g., LiveView processes)
-    Phoenix.PubSub.broadcast(AnkaaBeacon.PubSub, channel, {:redix_pubsub, :message, payload})
+    Phoenix.PubSub.broadcast(Ankaa.PubSub, channel, {:redix_pubsub, :message, payload})
     {:noreply, state}
   end
 

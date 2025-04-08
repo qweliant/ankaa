@@ -1,6 +1,6 @@
-defmodule AnkaaBeacon.RedisTest do
+defmodule Ankaa.RedisTest do
   use ExUnit.Case
-  alias AnkaaBeacon.Redis
+  alias Ankaa.Redis
 
   test "Redis connection" do
     # Test Redis Conneting
@@ -9,14 +9,14 @@ defmodule AnkaaBeacon.RedisTest do
 
   test "Redis Topics" do
     # Test Redis command
-    AnkaaBeacon.Redis.command(["SET", "test_key", "Hello, AnkaaBeacon!"])
-    assert {:ok, "Hello, AnkaaBeacon!"} = AnkaaBeacon.Redis.command(["GET", "test_key"])
+    Ankaa.Redis.command(["SET", "test_key", "Hello, Ankaa!"])
+    assert {:ok, "Hello, Ankaa!"} = Ankaa.Redis.command(["GET", "test_key"])
   end
 
   test "Redis Pub Sub" do
     # Test Pub/Sub
-    AnkaaBeacon.Redis.subscribe("alerts")
-    AnkaaBeacon.Redis.publish("alerts", "Low BP detected for patient 12345!")
+    Ankaa.Redis.subscribe("alerts")
+    Ankaa.Redis.publish("alerts", "Low BP detected for patient 12345!")
 
     # Wait for the message to be received
     Process.sleep(100)

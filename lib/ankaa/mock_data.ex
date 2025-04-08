@@ -1,6 +1,6 @@
-defmodule AnkaaBeacon.MockData do
+defmodule Ankaa.MockData do
   use GenServer
-  alias AnkaaBeacon.Redis
+  alias Ankaa.Redis
 
   @moduledoc """
   A GenServer that simulates real-time BP and dialysis machine data with enhanced realism.
@@ -80,8 +80,8 @@ defmodule AnkaaBeacon.MockData do
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       fluid_level: Enum.random(400..600),
       flow_rate: Enum.random(200..350),
-      clot_risk: calculate_clot_risk(patient),
-      clot_detected: Enum.random([true, false])
+      # clot_detected: Enum.random([true, false])
+      clot_detected: false
     }
 
     Redis.publish("dialysis_readings", Jason.encode!(dialysis_data))
@@ -96,18 +96,6 @@ defmodule AnkaaBeacon.MockData do
         :hypertension in conditions -> "moderate"
         :diabetes in conditions -> "moderate"
         true -> "low"
-      end
-
-    base_risk
-  end
-
-  defp calculate_clot_risk(patient) do
-    # Simplified clot risk calculation
-    base_risk =
-      case patient.age do
-        age when age > 60 -> "high"
-        age when age > 45 -> "moderate"
-        _ -> "low"
       end
 
     base_risk

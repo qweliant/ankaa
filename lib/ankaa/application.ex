@@ -8,7 +8,7 @@ defmodule Ankaa.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      AnkaaBeacon.Repo,
+      Ankaa.Repo,
       AnkaaWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:ankaa, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ankaa.PubSub},
@@ -18,8 +18,10 @@ defmodule Ankaa.Application do
       # {Ankaa.Worker, arg},
       # Start to serve requests, typically the last entry
       AnkaaWeb.Endpoint,
-      {Ankaa.Redis, Application.get_env(:ankaa, Ankaa.Redis)}, # Start Redis with config
-      Ankaa.MockData  # Start the mock data generator
+      # Start Redis with config
+      {Ankaa.Redis, Application.get_env(:ankaa, Ankaa.Redis)},
+      # Start the mock data generator
+      Ankaa.MockData
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
