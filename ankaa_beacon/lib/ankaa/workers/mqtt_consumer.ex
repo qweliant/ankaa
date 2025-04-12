@@ -30,13 +30,15 @@ defmodule Ankaa.Workers.MQTTConsumer do
         # Use MQTT 5.0
         {:proto_ver, :v5},
         # MQTT 5.0 properties
-        {:properties, %{}}
+        {:properties, %{}},
+        # Add debug logging
+        {:debug, true}
       ])
 
     # Connect to the broker
     case :emqtt.connect(client) do
       {:ok, _} ->
-        Logger.info("Connected to MQTT broker at localhost:1883")
+        Logger.info("🔌 Connected to MQTT broker at localhost:1883")
         # Subscribe to topics
         :emqtt.subscribe(client, [
           # Match all device telemetry
@@ -46,28 +48,31 @@ defmodule Ankaa.Workers.MQTTConsumer do
         {:ok, %{client: client}}
 
       {:error, reason} ->
-        Logger.error("Failed to connect to MQTT broker: #{inspect(reason)}")
+        Logger.error("❌ Failed to connect to MQTT broker: #{inspect(reason)}")
         {:stop, reason}
     end
   end
 
   @impl true
-  def handle_info({:publish, topic, payload}, state) do
-    Logger.info("Received message on topic: #{topic}")
-    Logger.info("Message payload: #{inspect(payload)}")
+  def handle_info({:publish, %{topic: topic, payload: payload} = message}, state) do
+    Logger.info("📥 Received MQTT message:")
+    Logger.info("   Topic: #{topic}")
+    Logger.info("   Payload: #{payload}")
+    Logger.debug("   Full message: #{inspect(message, pretty: true)}")
+
     process_message(topic, payload)
     {:noreply, state}
   end
 
   @impl true
   def handle_info({:disconnected, reason}, state) do
-    Logger.warning("Disconnected from MQTT broker: #{inspect(reason)}")
+    Logger.warning("⚠️ Disconnected from MQTT broker: #{inspect(reason)}")
     {:noreply, state}
   end
 
   @impl true
   def handle_info({:connected, _}, state) do
-    Logger.info("Reconnected to MQTT broker")
+    Logger.info("🔌 Reconnected to MQTT broker")
     {:noreply, state}
   end
 
@@ -81,34 +86,35 @@ defmodule Ankaa.Workers.MQTTConsumer do
         data = Jason.decode!(payload)
 
         Logger.info("""
-        Processing message:
-        Topic: #{topic}
-        Device ID: #{device_id}
-        Data: #{inspect(data, pretty: true)}
+        📊 Processing telemetry:
+        ├─ Device: #{device_id}
+        ├─ Topic: #{topic}
+        └─ Data:
+           #{inspect(data, pretty: true)}
         """)
 
         cond do
           String.starts_with?(device_id, "dialysis_") ->
-            Logger.info("Processing dialysis reading")
+            Logger.info("💉 Processing dialysis reading")
 
           # reading = DialysisReading.from_mqtt(data)
           # save_reading(reading)
           # process_reading(reading)
 
           String.starts_with?(device_id, "bp_") ->
-            Logger.info("Processing blood pressure reading")
+            Logger.info("🫀 Processing blood pressure reading")
 
           # reading = BPReading.from_mqtt(data)
           # save_reading(reading)
           # process_reading(reading)
 
           true ->
-            Logger.warning("Unknown device type: #{device_id}")
+            Logger.warning("❓ Unknown device type: #{device_id}")
             {:error, :unknown_device_type}
         end
 
       _ ->
-        Logger.warning("Unknown topic: #{topic}")
+        Logger.warning("❓ Unknown topic: #{topic}")
         {:error, :unknown_topic}
     end
   end
