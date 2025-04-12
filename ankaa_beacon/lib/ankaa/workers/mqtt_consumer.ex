@@ -6,6 +6,8 @@ defmodule Ankaa.Workers.MQTTConsumer do
   alias Ankaa.Monitoring.{DialysisReading, BPReading}
   alias Ankaa.Notifications
   alias Ankaa.Repo
+  alias Ankaa.TimescaleRepo
+  alias Ankaa.Accounts
   require Logger
 
   # Client API
@@ -105,17 +107,17 @@ defmodule Ankaa.Workers.MQTTConsumer do
         cond do
           String.starts_with?(device_id, "dialysis_") ->
             Logger.info("💉 Processing dialysis reading")
-            # reading = DialysisReading.from_mqtt(data)
-            # save_reading(reading)
-            # process_reading(reading)
-            # {:ok, reading}
+            reading = DialysisReading.from_mqtt(data)
+            save_reading(reading)
+            process_reading(reading)
+            {:ok, reading}
 
           String.starts_with?(device_id, "bp_") ->
             Logger.info("🫀 Processing blood pressure reading")
-            # reading = BPReading.from_mqtt(data)
-            # save_reading(reading)
-            # process_reading(reading)
-            # {:ok, reading}
+            reading = BPReading.from_mqtt(data)
+            save_reading(reading)
+            process_reading(reading)
+            {:ok, reading}
 
           true ->
             Logger.warning("❓ Unknown device type: #{device_id}")
@@ -131,7 +133,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
   defp save_reading(reading) do
     Logger.info("💾 Saving reading for device: #{reading.device_id}")
 
-    case Repo.insert(reading) do
+    case TimescaleRepo.insert(reading) do
       {:ok, saved_reading} ->
         Logger.info("✅ Successfully saved reading")
         saved_reading
@@ -150,22 +152,26 @@ defmodule Ankaa.Workers.MQTTConsumer do
       Logger.warning("⚠️ Threshold violations detected: #{length(violations)}")
 
       Enum.each(violations, fn violation ->
-        patient = get_patient_from_device(reading.device_id)
+        case get_patient_from_device(reading.device_id) do
+          {:ok, patient} ->
+            alert_params = %{
+              patient_id: patient.id,
+              title: violation.message,
+              message: format_violation_message(violation, reading),
+              severity: violation.severity,
+              source: reading.__struct__.__name__
+            }
 
-        alert_params = %{
-          patient_id: patient.id,
-          title: violation.message,
-          message: format_violation_message(violation, reading),
-          severity: violation.severity,
-          source: reading.__struct__.__name__
-        }
+            case Notifications.create_alert(alert_params) do
+              {:ok, alert} ->
+                Logger.info("📢 Created alert: #{alert.title}")
 
-        case Notifications.create_alert(alert_params) do
-          {:ok, alert} ->
-            Logger.info("📢 Created alert: #{alert.title}")
+              {:error, reason} ->
+                Logger.error("❌ Failed to create alert: #{inspect(reason)}")
+            end
 
           {:error, reason} ->
-            Logger.error("❌ Failed to create alert: #{inspect(reason)}")
+            Logger.error("❌ Failed to find patient for device: #{reason}")
         end
       end)
     else
@@ -184,8 +190,9 @@ defmodule Ankaa.Workers.MQTTConsumer do
   end
 
   defp get_patient_from_device(device_id) do
-    # TODO: Implement proper patient lookup
-    # For now, return a mock patient
-    %Ankaa.Accounts.User{id: 1}
+    case Accounts.get_user_by_device_id(device_id) do
+      nil -> {:error, :patient_not_found}
+      user -> {:ok, user}
+    end
   end
 end

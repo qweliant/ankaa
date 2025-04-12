@@ -4,30 +4,41 @@ defmodule Ankaa.Monitoring.DialysisReading do
   """
   use Ecto.Schema
   import Ecto.Changeset
+  alias Ankaa.TimescaleRepo
   @behaviour Ankaa.Monitoring.DeviceReading
 
+  @foreign_key_type :binary_id
   schema "dialysis_readings" do
     field(:device_id, :string)
-    field(:timestamp, :utc_datetime)
+    field(:timestamp, :utc_datetime_usec)
     field(:fluid_level, :integer)
     field(:flow_rate, :integer)
     field(:clot_detected, :boolean)
-
-    belongs_to(:patient, Ankaa.Accounts.User)
+    field(:patient_id, :binary_id)
 
     timestamps()
   end
 
+  def changeset(reading, attrs) do
+    reading
+    |> cast(attrs, [:device_id, :timestamp, :fluid_level, :flow_rate, :clot_detected, :patient_id])
+    |> validate_required([:device_id, :timestamp, :fluid_level, :flow_rate])
+  end
+
   @impl true
   def from_mqtt(data) do
-    # Convert MQTT JSON payload to struct
     %__MODULE__{
       device_id: data["device_id"],
-      timestamp: DateTime.from_iso8601(data["timestamp"]) |> elem(1),
+      timestamp: parse_timestamp(data["timestamp"]),
       fluid_level: data["fluid_level"],
       flow_rate: data["flow_rate"],
       clot_detected: data["clot_detected"]
     }
+  end
+
+  defp parse_timestamp(timestamp) when is_binary(timestamp) do
+    {:ok, dt, _} = DateTime.from_iso8601(timestamp)
+    dt
   end
 
   @impl true
