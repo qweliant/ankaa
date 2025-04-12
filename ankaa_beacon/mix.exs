@@ -58,7 +58,11 @@ defmodule Ankaa.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:redix, "~> 1.2"} # Redis Client
+      # Redis Client
+      {:redix, "~> 1.2"},
+      # MQTT Client
+      # {:emqtt, "~> 1.11"}
+      {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]}
     ]
   end
 
