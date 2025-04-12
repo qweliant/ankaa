@@ -1,20 +1,43 @@
 defmodule Ankaa.Notifications do
   @moduledoc """
-  Handles notification logic for users including alerts, emergency assistance,
-  and support actions based on dialysis and BP monitoring data.
+  Handles notification processing and alert creation for medical device readings.
+  Focuses on core alert creation and threshold violation detection.
   """
 
   alias Ankaa.Notifications.{Alert, Channel, Delivery, EscalationPolicy, Recipient}
   alias Ankaa.Accounts.User
-  alias Ankaa.Monitoring.{DeviceReading, Threshold}
+  alias Ankaa.Monitoring.{DeviceReading, ThresholdViolation}
 
   @doc """
-  Processes a device reading against defined thresholds and triggers appropriate
-  notifications if thresholds are exceeded.
+  Processes a device reading and creates an alert if thresholds are violated.
   """
   @spec process_reading(DeviceReading.t()) :: {:ok, Alert.t()} | {:error, term()}
   def process_reading(reading) do
-    # Logic to check if reading exceeds thresholds and create alert
+    violations = reading.__struct__.check_thresholds(reading)
+
+    case violations do
+      [] -> {:ok, nil}
+      [violation | _] -> create_alert_from_violation(violation, reading)
+    end
+  end
+
+  @doc """
+  Creates an alert from a threshold violation.
+  """
+  @spec create_alert_from_violation(ThresholdViolation.t(), DeviceReading.t()) ::
+          {:ok, Alert.t()} | {:error, term()}
+  def create_alert_from_violation(violation, reading) do
+    Alert.create(%{
+      title: "Threshold Violation",
+      message: violation.message,
+      severity: violation.severity,
+      source: reading.__struct__.__name__,
+      metadata: %{
+        parameter: violation.parameter,
+        value: violation.value,
+        threshold: violation.threshold
+      }
+    })
   end
 
   @doc """
@@ -80,28 +103,6 @@ defmodule Ankaa.Notifications do
   @spec get_alert_history(User.t(), Date.t(), Date.t()) :: [Alert.t()]
   def get_alert_history(user, start_date, end_date) do
     # Logic to fetch historical alerts
-  end
-
-  @doc """
-  Creates an alert from a threshold violation and delivers it accordingly.
-  """
-  @spec create_alert_from_violation(ThresholdViolation.t(), DeviceReading.t(), User.t()) ::
-          {:ok, Alert.t()} | {:error, term()}
-  def create_alert_from_violation(violation, reading, patient) do
-    # Create alert based on the violation severity and type
-    create_alert(%{
-      patient_id: patient.id,
-      title: violation.message,
-      message: detailed_message_for_violation(violation, reading),
-      severity: violation.severity,
-      source: reading.__struct__.__name__,
-      metadata: %{
-        parameter: violation.parameter,
-        value: violation.value,
-        threshold: violation.threshold,
-        reading_id: reading.id
-      }
-    })
   end
 
   @doc """
