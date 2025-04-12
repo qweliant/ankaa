@@ -139,8 +139,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-
-    // We won't reach this, but for completeness:
-    event_task.await?;
-    Ok(())
 }

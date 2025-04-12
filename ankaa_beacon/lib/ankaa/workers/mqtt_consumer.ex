@@ -105,17 +105,17 @@ defmodule Ankaa.Workers.MQTTConsumer do
         cond do
           String.starts_with?(device_id, "dialysis_") ->
             Logger.info("💉 Processing dialysis reading")
-            reading = DialysisReading.from_mqtt(data)
-            save_reading(reading)
-            process_reading(reading)
-            {:ok, reading}
+            # reading = DialysisReading.from_mqtt(data)
+            # save_reading(reading)
+            # process_reading(reading)
+            # {:ok, reading}
 
           String.starts_with?(device_id, "bp_") ->
             Logger.info("🫀 Processing blood pressure reading")
-            reading = BPReading.from_mqtt(data)
-            save_reading(reading)
-            process_reading(reading)
-            {:ok, reading}
+            # reading = BPReading.from_mqtt(data)
+            # save_reading(reading)
+            # process_reading(reading)
+            # {:ok, reading}
 
           true ->
             Logger.warning("❓ Unknown device type: #{device_id}")
