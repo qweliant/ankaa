@@ -5,6 +5,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
   use GenServer
   alias Ankaa.Monitoring.{DialysisReading, BPReading}
   alias Ankaa.Notifications
+  alias Ankaa.Repo
   require Logger
 
   # Client API
@@ -15,41 +16,49 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
   # Server Callbacks
   @impl true
-  def init(_opts) do
-    # MQTT connection configuration
-    client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
+  def init(opts) do
+    if Keyword.get(opts, :test_mode, false) do
+      if Keyword.get(opts, :force_connection_error, false) do
+        {:stop, :connection_failed}
+      else
+        {:ok, %{client: self()}}
+      end
+    else
+      # MQTT connection configuration
+      client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
 
-    # Start the MQTT client with options seen here: https://github.com/emqx/emqtt?tab=readme-ov-file#option
-    {:ok, client} =
-      :emqtt.start_link([
-        {:host, "localhost"},
-        {:port, 1883},
-        {:clientid, String.to_charlist(client_id)},
-        {:clean_start, true},
-        {:keepalive, 30},
-        # Use MQTT 5.0
-        {:proto_ver, :v5},
-        # MQTT 5.0 properties
-        {:properties, %{}},
-        # Add debug logging
-        {:debug, true}
-      ])
-
-    # Connect to the broker
-    case :emqtt.connect(client) do
-      {:ok, _} ->
-        Logger.info("🔌 Connected to MQTT broker at localhost:1883")
-        # Subscribe to topics
-        :emqtt.subscribe(client, [
-          # Match all device telemetry
-          {"devices/+/telemetry", 0}
+      # Start the MQTT client with options seen here: https://github.com/emqx/emqtt?tab=readme-ov-file#option
+      {:ok, client} =
+        :emqtt.start_link([
+          {:host, "localhost"},
+          {:port, 1883},
+          {:clientid, String.to_charlist(client_id)},
+          {:clean_start, true},
+          {:keepalive, 30},
+          # Use MQTT 5.0
+          {:proto_ver, :v5},
+          # MQTT 5.0 properties
+          {:properties, %{}},
+          # Add debug logging
+          {:debug, true}
         ])
 
-        {:ok, %{client: client}}
+      # Connect to the broker
+      case :emqtt.connect(client) do
+        {:ok, _} ->
+          Logger.info("🔌 Connected to MQTT broker at localhost:1883")
+          # Subscribe to topics
+          :emqtt.subscribe(client, [
+            # Match all device telemetry
+            {"devices/+/telemetry", 0}
+          ])
 
-      {:error, reason} ->
-        Logger.error("❌ Failed to connect to MQTT broker: #{inspect(reason)}")
-        {:stop, reason}
+          {:ok, %{client: client}}
+
+        {:error, reason} ->
+          Logger.error("❌ Failed to connect to MQTT broker: #{inspect(reason)}")
+          {:stop, reason}
+      end
     end
   end
 
@@ -96,17 +105,17 @@ defmodule Ankaa.Workers.MQTTConsumer do
         cond do
           String.starts_with?(device_id, "dialysis_") ->
             Logger.info("💉 Processing dialysis reading")
-
-          # reading = DialysisReading.from_mqtt(data)
-          # save_reading(reading)
-          # process_reading(reading)
+            reading = DialysisReading.from_mqtt(data)
+            save_reading(reading)
+            process_reading(reading)
+            {:ok, reading}
 
           String.starts_with?(device_id, "bp_") ->
             Logger.info("🫀 Processing blood pressure reading")
-
-          # reading = BPReading.from_mqtt(data)
-          # save_reading(reading)
-          # process_reading(reading)
+            reading = BPReading.from_mqtt(data)
+            save_reading(reading)
+            process_reading(reading)
+            {:ok, reading}
 
           true ->
             Logger.warning("❓ Unknown device type: #{device_id}")
@@ -119,41 +128,64 @@ defmodule Ankaa.Workers.MQTTConsumer do
     end
   end
 
-  # Commented out for now - we'll implement these later
-  # defp save_reading(reading) do
-  #   IO.inspect(reading, label: "Saving reading")
-  #   case reading do
-  #     %DialysisReading{} ->
-  #       Ankaa.Repo.insert(reading)
-  #
-  #     %BPReading{} ->
-  #       Ankaa.Repo.insert(reading)
-  #   end
-  # end
-  #
-  # defp process_reading(reading) do
-  #   violations = reading.__struct__.check_thresholds(reading)
-  #
-  #   Enum.each(violations, fn violation ->
-  #     patient = get_patient_from_device(reading.device_id)
-  #
-  #     alert_params = %{
-  #       patient_id: patient.id,
-  #       title: violation.message,
-  #       message: format_violation_message(violation, reading),
-  #       severity: violation.severity,
-  #       source: reading.__struct__.__name__
-  #     }
-  #
-  #     Notifications.create_alert(alert_params)
-  #   end)
-  # end
-  #
-  # defp format_violation_message(violation, reading) do
-  #   # Format a detailed message based on the violation and reading
-  # end
-  #
-  # defp get_patient_from_device(device_id) do
-  #   # Lookup patient from device_id
-  # end
+  defp save_reading(reading) do
+    Logger.info("💾 Saving reading for device: #{reading.device_id}")
+
+    case Repo.insert(reading) do
+      {:ok, saved_reading} ->
+        Logger.info("✅ Successfully saved reading")
+        saved_reading
+
+      {:error, changeset} ->
+        Logger.error("❌ Failed to save reading: #{inspect(changeset.errors)}")
+        {:error, changeset}
+    end
+  end
+
+  defp process_reading(reading) do
+    Logger.info("🔍 Checking thresholds for reading")
+    violations = reading.__struct__.check_thresholds(reading)
+
+    if Enum.any?(violations) do
+      Logger.warning("⚠️ Threshold violations detected: #{length(violations)}")
+
+      Enum.each(violations, fn violation ->
+        patient = get_patient_from_device(reading.device_id)
+
+        alert_params = %{
+          patient_id: patient.id,
+          title: violation.message,
+          message: format_violation_message(violation, reading),
+          severity: violation.severity,
+          source: reading.__struct__.__name__
+        }
+
+        case Notifications.create_alert(alert_params) do
+          {:ok, alert} ->
+            Logger.info("📢 Created alert: #{alert.title}")
+
+          {:error, reason} ->
+            Logger.error("❌ Failed to create alert: #{inspect(reason)}")
+        end
+      end)
+    else
+      Logger.info("✅ No threshold violations detected")
+    end
+  end
+
+  defp format_violation_message(violation, reading) do
+    """
+    Device: #{reading.device_id}
+    Parameter: #{violation.parameter}
+    Value: #{violation.value}
+    Threshold: #{violation.threshold}
+    Time: #{reading.timestamp}
+    """
+  end
+
+  defp get_patient_from_device(device_id) do
+    # TODO: Implement proper patient lookup
+    # For now, return a mock patient
+    %Ankaa.Accounts.User{id: 1}
+  end
 end
