@@ -1,5 +1,5 @@
 defmodule Ankaa.AccountsTest do
-  use Ankaa.DataCase
+  use Ankaa.DataCase, async: true
 
   alias Ankaa.Accounts
 

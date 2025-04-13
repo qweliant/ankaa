@@ -79,7 +79,7 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
         lv
         |> element(~s|main a:fl-contains("Log in")|)
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/users/login")
 
       assert login_html =~ "Log in"
     end

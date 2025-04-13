@@ -29,7 +29,7 @@ defmodule Ankaa.Application do
       else
         children ++
           [
-            {Ankaa.Workers.MQTTConsumer, []}
+            {Ankaa.Workers.MqttConsumer, []}
           ]
       end
 

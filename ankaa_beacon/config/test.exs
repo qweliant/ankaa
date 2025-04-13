@@ -19,7 +19,7 @@ config :ankaa, Ankaa.Repo,
   username: "user",
   password: "password",
   hostname: "localhost",
-  database: "ankaa_dev",
+  database: "ankaa_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
@@ -28,7 +28,7 @@ config :ankaa, Ankaa.TimescaleRepo,
   username: "user",
   password: "password",
   hostname: "localhost",
-  database: "ankaa_timescale_dev",
+  database: "ankaa_timescale_test",
   port: 5433,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
@@ -40,7 +40,7 @@ config :ankaa, Ankaa.Redis,
   database: 1,
   pool_size: 5,
   pool_max_overflow: 2,
-  enable_notifications: false
+  enable_notifications: true
 
 # Configure MQTT for testing
 config :ankaa, :mqtt,
@@ -51,7 +51,8 @@ config :ankaa, :mqtt,
   password: nil,
   clean_session: true,
   keep_alive: 60,
-  reconnect_timeout: 5_000
+  reconnect_timeout: 5_000,
+  test_mode: true
 
 # Configure your application
 config :ankaa, :ecto_repos, [Ankaa.Repo, Ankaa.TimescaleRepo]

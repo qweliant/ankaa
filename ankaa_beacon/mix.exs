@@ -63,7 +63,9 @@ defmodule Ankaa.MixProject do
       {:redix, "~> 1.2"},
       # MQTT Client
       # {:emqtt, "~> 1.11"}
-      {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]}
+      {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]},
+      # Test dependencies
+      {:ex_machina, "~> 2.7", only: :test}
     ]
   end
 
@@ -76,9 +78,9 @@ defmodule Ankaa.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
-      # "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      # "ecto.reset": ["ecto.drop", "ecto.setup"],
-      # test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind ankaa", "esbuild ankaa"],
       "assets.deploy": [

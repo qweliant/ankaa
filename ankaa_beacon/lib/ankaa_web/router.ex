@@ -23,7 +23,7 @@ defmodule AnkaaWeb.Router do
     live "/dashboard", DashboardLive
 
     get "/", PageController, :home
-  
+
   end
 
   # Other scopes may use custom stacks.
@@ -56,12 +56,12 @@ defmodule AnkaaWeb.Router do
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{AnkaaWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
+      live "/users/login", UserLoginLive, :new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
     end
 
-    post "/users/log_in", UserSessionController, :create
+    post "/users/login", UserSessionController, :create
   end
 
   scope "/", AnkaaWeb do
@@ -77,7 +77,7 @@ defmodule AnkaaWeb.Router do
   scope "/", AnkaaWeb do
     pipe_through [:browser]
 
-    delete "/users/log_out", UserSessionController, :delete
+    delete "/users/logout", UserSessionController, :delete
 
     live_session :current_user,
       on_mount: [{AnkaaWeb.UserAuth, :mount_current_user}] do
