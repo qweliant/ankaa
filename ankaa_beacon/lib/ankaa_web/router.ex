@@ -4,26 +4,24 @@ defmodule AnkaaWeb.Router do
   import AnkaaWeb.UserAuth
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, html: {AnkaaWeb.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-    plug :fetch_current_user
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, html: {AnkaaWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(:fetch_current_user)
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug(:accepts, ["json"])
   end
 
   scope "/", AnkaaWeb do
-    pipe_through :browser
+    pipe_through(:browser)
 
-    live "/dashboard", DashboardLive
-
-    get "/", PageController, :home
-
+    # Root route that redirects based on auth status
+    get("/", PageController, :home)
   end
 
   # Other scopes may use custom stacks.
@@ -41,48 +39,49 @@ defmodule AnkaaWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      live_dashboard "/dashboard", metrics: AnkaaWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      live_dashboard("/dashboard", metrics: AnkaaWeb.Telemetry)
+      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 
   ## Authentication routes
-
   scope "/", AnkaaWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
+    pipe_through([:browser, :redirect_if_user_is_authenticated])
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{AnkaaWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/login", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live("/users/register", UserRegistrationLive, :new)
+      live("/users/login", UserLoginLive, :new)
+      live("/users/reset_password", UserForgotPasswordLive, :new)
+      live("/users/reset_password/:token", UserResetPasswordLive, :edit)
     end
 
-    post "/users/login", UserSessionController, :create
+    post("/users/login", UserSessionController, :create)
   end
 
   scope "/", AnkaaWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through([:browser, :require_authenticated_user])
 
     live_session :require_authenticated_user,
       on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live("/", DashboardLive, :index)
+      live("/dashboard", DashboardLive, :index)
+      live("/users/settings", UserSettingsLive, :edit)
+      live("/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email)
     end
   end
 
   scope "/", AnkaaWeb do
-    pipe_through [:browser]
+    pipe_through([:browser])
 
-    delete "/users/logout", UserSessionController, :delete
+    delete("/users/logout", UserSessionController, :delete)
 
     live_session :current_user,
       on_mount: [{AnkaaWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      live("/users/confirm/:token", UserConfirmationLive, :edit)
+      live("/users/confirm", UserConfirmationInstructionsLive, :new)
     end
   end
 end

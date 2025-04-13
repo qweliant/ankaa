@@ -11,19 +11,33 @@ use log::{info, error};
 struct DialysisDeviceData {
     device_id: String,
     timestamp: String,
-    fluid_level: i32,
-    flow_rate: i32,
-    clot_detected: bool,
+    mode: String,
+    status: String,
+    time_in_alarm: Option<i32>,
+    time_in_treatment: i32,
+    time_remaining: i32,
+    dfv: f32,
+    dfr: f32,
+    ufv: f32,
+    ufr: f32,
+    bfr: i32,
+    ap: i32,
+    vp: i32,
+    ep: i32,
 }
 
 #[derive(Debug, Serialize)]
 struct BPDeviceData {
     device_id: String,
     timestamp: String,
-    systolic: f32,
-    diastolic: f32,
+    mode: String,
+    status: String,
+    systolic: i32,
+    diastolic: i32,
     heart_rate: i32,
-    risk_level: String,
+    mean_arterial_pressure: i32,
+    pulse_pressure: i32,
+    irregular_heartbeat: bool,
 }
 
 #[tokio::main]
@@ -55,19 +69,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Device configurations
     let dialysis_devices = ["dialysis_001", "dialysis_002", "dialysis_003"];
     let bp_devices = ["bp_001", "bp_002", "bp_003"];
-    let risk_levels = ["low", "medium", "high"];
+    let modes = ["HD", "HDF", "HF"];
+    let statuses = ["normal", "warning", "critical"];
 
     // Process eventloop in the main task to ensure we handle events properly
     // before attempting to publish
-    let mut connected = false;
-    let event_task = tokio::spawn(async move {
+    tokio::spawn(async move {
         loop {
             match eventloop.poll().await {
                 Ok(event) => {
                     info!("Event: {:?}", event);
-                    // Mark as connected when we receive the ConnAck
                     if let rumqttc::Event::Incoming(rumqttc::Incoming::ConnAck(_)) = event {
-                        connected = true;
                         info!("Successfully connected to MQTT broker!");
                     }
                 },
@@ -92,13 +104,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if rand::random::<bool>() {
             // Generate dialysis device data
             let device_idx = rng.random_range(0..dialysis_devices.len());
+            let mode_idx = rng.random_range(0..modes.len());
+            let status_idx = rng.random_range(0..statuses.len());
             let device_id = dialysis_devices[device_idx];
+            
             let data = DialysisDeviceData {
                 device_id: device_id.to_string(),
                 timestamp: Utc::now().to_rfc3339(),
-                fluid_level: rng.random_range(0..100),
-                flow_rate: rng.random_range(50..300),
-                clot_detected: rand::random::<f32>() < 0.1,
+                mode: modes[mode_idx].to_string(),
+                status: statuses[status_idx].to_string(),
+                time_in_alarm: if statuses[status_idx] == "normal" { None } else { Some(rng.random_range(1..60)) },
+                time_in_treatment: rng.random_range(0..240),
+                time_remaining: rng.random_range(0..240),
+                dfv: rng.random_range(0.0..100.0),
+                dfr: rng.random_range(0.0..500.0),
+                ufv: rng.random_range(0.0..10.0),
+                ufr: rng.random_range(0.0..1000.0),
+                bfr: rng.random_range(50..500),
+                ap: rng.random_range(-200..200),
+                vp: rng.random_range(-200..200),
+                ep: rng.random_range(-200..200),
             };
 
             let topic = format!("devices/{}/telemetry", device_id);
@@ -115,15 +140,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             // Generate BP device data
             let device_idx = rng.random_range(0..bp_devices.len());
-            let risk_idx = rng.random_range(0..risk_levels.len()); 
+            let mode_idx = rng.random_range(0..modes.len());
+            let status_idx = rng.random_range(0..statuses.len());
             let device_id = bp_devices[device_idx];
+            
+            let systolic = rng.random_range(90..180);
+            let diastolic = rng.random_range(60..120);
+            let heart_rate = rng.random_range(40..120);
+            let mean_arterial_pressure = ((2 * diastolic) + systolic) / 3;
+            let pulse_pressure = systolic - diastolic;
+            
             let data = BPDeviceData {
                 device_id: device_id.to_string(),
                 timestamp: Utc::now().to_rfc3339(),
-                systolic: rng.random_range(90.0..180.0),
-                diastolic: rng.random_range(60.0..120.0),
-                heart_rate: rng.random_range(40..120),
-                risk_level: risk_levels[risk_idx].to_string(),
+                mode: modes[mode_idx].to_string(),
+                status: statuses[status_idx].to_string(),
+                systolic,
+                diastolic,
+                heart_rate,
+                mean_arterial_pressure,
+                pulse_pressure,
+                irregular_heartbeat: rand::random::<f32>() < 0.1,
             };
 
             let topic = format!("devices/{}/telemetry", device_id);

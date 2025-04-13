@@ -1,0 +1,19 @@
+{
+  "name": "ankaa_beacon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/phoenix": "^1.6.6",
+    "@types/phoenix_live_view": "^1.0.0",
+    "chart.js": "^4.4.1"
+  }
+}

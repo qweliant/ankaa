@@ -65,7 +65,8 @@ defmodule Ankaa.MixProject do
       # {:emqtt, "~> 1.11"}
       {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]},
       # Test dependencies
-      {:ex_machina, "~> 2.7", only: :test}
+      {:ex_machina, "~> 2.7", only: :test},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -87,7 +88,8 @@ defmodule Ankaa.MixProject do
         "tailwind ankaa --minify",
         "esbuild ankaa --minify",
         "phx.digest"
-      ]
+      ],
+      "sobelow.check": ["sobelow --exit"]
     ]
   end
 end

@@ -4,55 +4,60 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="Ankaa" suffix=" · Phoenix Framework">
+    <.live_title suffix=" · Ankaa">
       {assigns[:page_title]}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
   </head>
-  <body class="bg-white">
-    <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
-      <%= if @current_user do %>
-        <li class="text-[0.8125rem] leading-6 text-zinc-900">
-          {@current_user.email}
-        </li>
-        <li>
-          <.link
-            href={~p"/users/settings"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Settings
-          </.link>
-        </li>
-        <li>
-          <.link
-            href={~p"/users/logout"}
-            method="delete"
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Log out
-          </.link>
-        </li>
-      <% else %>
-        <li>
-          <.link
-            href={~p"/users/register"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Register
-          </.link>
-        </li>
-        <li>
-          <.link
-            href={~p"/users/login"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Log in
-          </.link>
-        </li>
-      <% end %>
-    </ul>
+  <body class="bg-gray-50">
+    <header class="bg-white shadow">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 justify-between">
+          <div class="flex">
+            <div class="flex flex-shrink-0 items-center">
+              <a href="/" class="text-xl font-bold text-gray-900">Ankaa</a>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <%= if @current_user do %>
+              <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-700">{@current_user.email}</span>
+                <.link
+                  href={~p"/users/settings"}
+                  class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  Settings
+                </.link>
+                <.link
+                  href={~p"/users/logout"}
+                  method="delete"
+                  class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  Log out
+                </.link>
+              </div>
+            <% else %>
+              <div class="flex items-center space-x-4">
+                <.link
+                  href={~p"/users/register"}
+                  class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  Register
+                </.link>
+                <.link
+                  href={~p"/users/login"}
+                  class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  Log in
+                </.link>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </header>
     {@inner_content}
   </body>
 </html>
