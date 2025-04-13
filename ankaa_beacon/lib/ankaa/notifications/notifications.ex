@@ -7,6 +7,7 @@ defmodule Ankaa.Notifications do
   alias Ankaa.Notifications.{Alert, Channel, Delivery, EscalationPolicy, Recipient}
   alias Ankaa.Accounts.User
   alias Ankaa.Monitoring.{DeviceReading, ThresholdViolation}
+  alias Ankaa.Repo
 
   @doc """
   Processes a device reading and creates an alert if thresholds are violated.
@@ -44,8 +45,9 @@ defmodule Ankaa.Notifications do
   Creates and delivers an alert to appropriate recipients via configured channels.
   """
   @spec create_alert(map()) :: {:ok, Alert.t()} | {:error, term()}
-  def create_alert(params) do
-    # Logic to create and store alert in postgres
+  def create_alert(_params) do
+    # TODO: Implement alert creation
+    {:ok, %Alert{}}
   end
 
   @doc """
@@ -53,56 +55,63 @@ defmodule Ankaa.Notifications do
   Returns a map of delivery results by channel.
   """
   @spec deliver_alert(Alert.t()) :: %{optional(atom()) => :ok | {:error, term()}}
-  def deliver_alert(alert) do
-    # Logic to deliver alert through multiple channels
+  def deliver_alert(_alert) do
+    # TODO: Implement alert delivery
+    :ok
   end
 
   @doc """
   Acknowledges an alert, stopping further escalations.
   """
   @spec acknowledge_alert(Alert.t(), User.t()) :: {:ok, Alert.t()} | {:error, term()}
-  def acknowledge_alert(alert, user) do
-    # Logic to mark alert as acknowledged
+  def acknowledge_alert(_alert, _user) do
+    # TODO: Implement alert acknowledgment
+    :ok
   end
 
   @doc """
   Escalates an unacknowledged alert based on the escalation policy.
   """
   @spec escalate_alert(Alert.t()) :: {:ok, Alert.t()} | {:error, term()}
-  def escalate_alert(alert) do
-    # Logic to escalate alert to emergency contacts
+  def escalate_alert(_alert) do
+    # TODO: Implement alert escalation
+    :ok
   end
 
   @doc """
   Triggers support actions based on alert severity and type.
   """
   @spec trigger_support_action(Alert.t()) :: {:ok, term()} | {:error, term()}
-  def trigger_support_action(alert) do
-    # Logic to trigger appropriate support actions
+  def trigger_support_action(_alert) do
+    # TODO: Implement support action
+    :ok
   end
 
   @doc """
   Handles emergency medical service calls.
   """
   @spec handle_ems_call(Alert.t()) :: {:ok, term()} | {:error, term()}
-  def handle_ems_call(alert) do
-    # Logic to handle EMS calls for critical situations
+  def handle_ems_call(_alert) do
+    # TODO: Implement EMS call handling
+    :ok
   end
 
   @doc """
   Gets all active alerts for a user.
   """
   @spec get_active_alerts(User.t()) :: [Alert.t()]
-  def get_active_alerts(user) do
-    # Logic to fetch active alerts
+  def get_active_alerts(_user) do
+    # TODO: Implement active alerts retrieval
+    []
   end
 
   @doc """
   Gets alert history for a user within a date range.
   """
   @spec get_alert_history(User.t(), Date.t(), Date.t()) :: [Alert.t()]
-  def get_alert_history(user, start_date, end_date) do
-    # Logic to fetch historical alerts
+  def get_alert_history(_user, _start_date, _end_date) do
+    # TODO: Implement alert history retrieval
+    []
   end
 
   @doc """

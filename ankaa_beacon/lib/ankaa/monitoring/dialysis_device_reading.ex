@@ -1,6 +1,6 @@
 defmodule Ankaa.Monitoring.DialysisReading do
   @moduledoc """
-  Schema and functions for dialysis machine readings
+  Schema for dialysis device readings with comprehensive monitoring fields.
   """
   use Ecto.Schema
   import Ecto.Changeset
@@ -11,18 +11,71 @@ defmodule Ankaa.Monitoring.DialysisReading do
   schema "dialysis_readings" do
     field(:device_id, :string)
     field(:timestamp, :utc_datetime_usec)
-    field(:fluid_level, :integer)
-    field(:flow_rate, :integer)
-    field(:clot_detected, :boolean)
-    field(:patient_id, :binary_id)
 
-    timestamps()
+    field(:mode, Ecto.Enum,
+      values: [:standby, :prime, :connect, :treatment, :disconnect, :rinseback]
+    )
+
+    field(:status, Ecto.Enum, values: [:green, :yellow, :red])
+    # seconds
+    field(:time_in_alarm, :integer)
+    # seconds
+    field(:time_in_treatment, :integer)
+    # seconds
+    field(:time_remaining, :integer)
+    # Dialysate Fluid Volume (L)
+    field(:dfv, :float)
+    # Dialysate Flow Rate (L/hr)
+    field(:dfr, :float)
+    # Ultrafiltration Volume (L)
+    field(:ufv, :float)
+    # Ultrafiltration Rate (L/hr)
+    field(:ufr, :float)
+    # Blood Flow Rate (ml/min)
+    field(:bfr, :integer)
+    # Arterial Pressure (mmHg)
+    field(:ap, :integer)
+    # Venous Pressure (mmHg)
+    field(:vp, :integer)
+    # Effluent Pressure (mmHg)
+    field(:ep, :integer)
+    field(:patient_id, Ecto.UUID)
+
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(reading, attrs) do
     reading
-    |> cast(attrs, [:device_id, :timestamp, :fluid_level, :flow_rate, :clot_detected, :patient_id])
-    |> validate_required([:device_id, :timestamp, :fluid_level, :flow_rate])
+    |> cast(attrs, [
+      :device_id,
+      :timestamp,
+      :mode,
+      :status,
+      :time_in_alarm,
+      :time_in_treatment,
+      :time_remaining,
+      :dfv,
+      :dfr,
+      :ufv,
+      :ufr,
+      :bfr,
+      :ap,
+      :vp,
+      :ep,
+      :patient_id
+    ])
+    |> validate_required([
+      :device_id,
+      :timestamp,
+      :mode,
+      :status,
+      :patient_id
+    ])
+    |> validate_number(:dfv, greater_than_or_equal_to: 0)
+    |> validate_number(:dfr, greater_than_or_equal_to: 0)
+    |> validate_number(:ufv, greater_than_or_equal_to: 0)
+    |> validate_number(:ufr, greater_than_or_equal_to: 0)
+    |> validate_number(:bfr, greater_than_or_equal_to: 0)
   end
 
   @impl true
@@ -30,9 +83,20 @@ defmodule Ankaa.Monitoring.DialysisReading do
     %__MODULE__{
       device_id: data["device_id"],
       timestamp: parse_timestamp(data["timestamp"]),
-      fluid_level: data["fluid_level"],
-      flow_rate: data["flow_rate"],
-      clot_detected: data["clot_detected"]
+      mode: data["mode"],
+      status: data["status"],
+      time_in_alarm: data["time_in_alarm"],
+      time_in_treatment: data["time_in_treatment"],
+      time_remaining: data["time_remaining"],
+      dfv: data["dfv"],
+      dfr: data["dfr"],
+      ufv: data["ufv"],
+      ufr: data["ufr"],
+      bfr: data["bfr"],
+      ap: data["ap"],
+      vp: data["vp"],
+      ep: data["ep"],
+      patient_id: data["patient_id"]
     }
   end
 
@@ -43,56 +107,55 @@ defmodule Ankaa.Monitoring.DialysisReading do
 
   @impl true
   def check_thresholds(reading) do
-    # Logic to check if reading exceeds thresholds
     violations = []
 
-    # Check for clot detection - critical alert
-    if reading.clot_detected do
-      violations = [
-        %Ankaa.Monitoring.ThresholdViolation{
-          parameter: :clot_detected,
-          value: true,
-          threshold: false,
-          severity: :critical,
-          message: "Blood clot detected"
-        }
-        | violations
-      ]
-    end
+    # Status-based alerts
+    violations =
+      case reading.status do
+        :red -> ["🔴 Critical system alarm"] ++ violations
+        :yellow -> ["⚠️ System caution"] ++ violations
+        _ -> violations
+      end
 
-    # Check fluid levels - use cond instead of if/elseif
-    cond do
-      reading.fluid_level < 100 ->
-        violations = [
-          %Ankaa.Monitoring.ThresholdViolation{
-            parameter: :fluid_level,
-            value: reading.fluid_level,
-            threshold: 100,
-            severity: :high,
-            message: "Fluid level critically low"
-          }
-          | violations
-        ]
-
-      reading.fluid_level < 300 ->
-        violations = [
-          %Ankaa.Monitoring.ThresholdViolation{
-            parameter: :fluid_level,
-            value: reading.fluid_level,
-            threshold: 300,
-            severity: :medium,
-            message: "Fluid level low"
-          }
-          | violations
-        ]
-
-      true ->
-        # Default case, no violation
+    # Time-based alerts
+    violations =
+      if reading.time_in_alarm > 30 do
+        ["⏱ Alarm active for more than 30 seconds"] ++ violations
+      else
         violations
-    end
+      end
 
-    # Check flow rate
-    # Add similar logic for flow_rate
+    # Blood flow alerts
+    violations =
+      if reading.bfr < 200 do
+        ["🚨 Low blood flow rate (#{reading.bfr} ml/min)"] ++ violations
+      else
+        violations
+      end
+
+    # Pressure alerts
+    violations =
+      if reading.vp > 300 do
+        ["🧠 High venous pressure (#{reading.vp} mmHg)"] ++ violations
+      else
+        violations
+      end
+
+    # Flow rate alerts
+    violations =
+      if reading.dfr < 300 do
+        ["📉 Low dialysate flow rate (#{reading.dfr} L/hr)"] ++ violations
+      else
+        violations
+      end
+
+    # Treatment status alerts
+    violations =
+      if reading.mode == :disconnect && reading.time_remaining > 0 do
+        ["⚠️ Treatment ended prematurely"] ++ violations
+      else
+        violations
+      end
 
     violations
   end

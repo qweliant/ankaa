@@ -8,22 +8,30 @@ defmodule Ankaa.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Ankaa.Repo,
-      Ankaa.TimescaleRepo,
+      # Start the Telemetry supervisor
       AnkaaWeb.Telemetry,
-      {DNSCluster, query: Application.get_env(:ankaa, :dns_cluster_query) || :ignore},
+      # Start the Ecto repository
+      Ankaa.Repo,
+      # Start the TimescaleDB repository
+      Ankaa.TimescaleRepo,
+      # Start the PubSub system
       {Phoenix.PubSub, name: Ankaa.PubSub},
-      # Start the Finch HTTP client for sending emails
+      # Start Finch
       {Finch, name: Ankaa.Finch},
-      # Start a worker by calling: Ankaa.Worker.start_link(arg)
-      # {Ankaa.Worker, arg},
-      # Start to serve requests, typically the last entry
-      AnkaaWeb.Endpoint,
-      # Start Redis with config
-      {Ankaa.Redis, Application.get_env(:ankaa, Ankaa.Redis)},
-      # Start MQTT Consumer
-      Ankaa.Workers.MQTTConsumer
+      # Start the Endpoint (http/https)
+      AnkaaWeb.Endpoint
     ]
+
+    # Only start MQTT consumer in non-test environment
+    children =
+      if Mix.env() == :test do
+        children
+      else
+        children ++
+          [
+            {Ankaa.Workers.MQTTConsumer, []}
+          ]
+      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
