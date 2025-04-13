@@ -2,7 +2,6 @@ defmodule Ankaa.TimescaleRepo.Migrations.CreateBPReadings do
   use Ecto.Migration
 
   def up do
-    execute("DROP TABLE IF EXISTS bp_readings;")
     create table(:bp_readings, primary_key: false) do
       # Not a primary key anymore
       add(:id, :uuid, null: false)

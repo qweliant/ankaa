@@ -2,8 +2,6 @@ defmodule Ankaa.TimescaleRepo.Migrations.CreateDialysisReadings do
   use Ecto.Migration
 
   def up do
-    execute("DROP TABLE IF EXISTS dialysis_readings;")
-
     create table(:dialysis_readings, primary_key: false) do
       add(:id, :uuid, null: false)
       add(:device_id, :string, null: false)
