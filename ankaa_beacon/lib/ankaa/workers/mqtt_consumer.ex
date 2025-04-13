@@ -3,17 +3,9 @@ defmodule Ankaa.Workers.MqttConsumer do
   Consumes messages from MQTT broker and processes them.
   """
   use GenServer
-  alias Ankaa.Monitoring.{DialysisReading, BPReading}
-  alias Ankaa.Notifications
-  alias Ankaa.Repo
-  alias Ankaa.TimescaleRepo
-  alias Ankaa.Accounts
   require Logger
 
-  @mqtt_config Application.compile_env(:ankaa, :mqtt)
-
   # Client API
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -95,74 +87,8 @@ defmodule Ankaa.Workers.MqttConsumer do
     end
   end
 
-  defp save_reading(reading) do
-    Logger.info("💾 Saving reading for device: #{reading.device_id}")
-
-    case TimescaleRepo.insert(reading) do
-      {:ok, saved_reading} ->
-        Logger.info("✅ Successfully saved reading")
-        saved_reading
-
-      {:error, changeset} ->
-        Logger.error("❌ Failed to save reading: #{inspect(changeset.errors)}")
-        {:error, changeset}
-    end
-  end
-
-  defp process_reading(reading) do
-    Logger.info("🔍 Checking thresholds for reading")
-    violations = reading.__struct__.check_thresholds(reading)
-
-    if Enum.any?(violations) do
-      Logger.warning("⚠️ Threshold violations detected: #{length(violations)}")
-
-      Enum.each(violations, fn violation ->
-        case get_patient_from_device(reading.device_id) do
-          {:ok, patient} ->
-            alert_params = %{
-              patient_id: patient.id,
-              title: violation.message,
-              message: format_violation_message(violation, reading),
-              severity: violation.severity,
-              source: reading.__struct__.__name__
-            }
-
-            case Notifications.create_alert(alert_params) do
-              {:ok, alert} ->
-                Logger.info("📢 Created alert: #{alert.title}")
-
-              {:error, reason} ->
-                Logger.error("❌ Failed to create alert: #{inspect(reason)}")
-            end
-
-          {:error, reason} ->
-            Logger.error("❌ Failed to find patient for device: #{reason}")
-        end
-      end)
-    else
-      Logger.info("✅ No threshold violations detected")
-    end
-  end
-
-  defp format_violation_message(violation, reading) do
-    """
-    Device: #{reading.device_id}
-    Parameter: #{violation.parameter}
-    Value: #{violation.value}
-    Threshold: #{violation.threshold}
-    Time: #{reading.timestamp}
-    """
-  end
-
-  defp get_patient_from_device(device_id) do
-    case Accounts.get_user_by_device_id(device_id) do
-      nil -> {:error, :patient_not_found}
-      user -> {:ok, user}
-    end
-  end
-
+  # TODO: Implement actual MQTT connection
   defp connect do
-    # Implementation pending
     :ok
   end
 end
