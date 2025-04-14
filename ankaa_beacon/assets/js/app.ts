@@ -26,23 +26,53 @@ import LineChart from "./hooks/line_chart";
 const csrfToken = (
   document.querySelector("meta[name='csrf-token']") as HTMLElement
 ).getAttribute("content");
-const liveSocket = new LiveSocket("/live", Socket, {
-  longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken },
-  hooks: {
-    LineChart,
-  },
+
+// Register our hooks
+const hooks = {
+  LineChart,
+};
+
+// Custom loading animation setup
+topbar.config({
+  barColors: { 0: "#4f46e5" }, // Indigo color from Tailwind
+  shadowColor: "rgba(0, 0, 0, .2)",
 });
 
-// Show progress bar on live navigation and form submits
-topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
+const liveSocket = new LiveSocket("/live", Socket, {
+  longPollFallbackMs: 2500,
+  hooks: hooks,
+  params: { _csrf_token: csrfToken },
+  // dom: {
+  //   // Optional: Add custom DOM handling if needed
+  //   onBeforeElUpdated(from, to) {
+  //     // Keep any custom data attributes when elements are updated
+  //     if (from._x_dataStack) {
+  //       window.Alpine.clone(from, to);
+  //     }
+  //     return true;
+  //   },
+  // },
+});
+
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
 window.addEventListener("phx:page-loading-stop", (_info) => topbar.hide());
 
-// connect if there are any LiveViews on the page
+// Connect if there are any LiveViews on the page
 liveSocket.connect();
 
-// expose liveSocket on window for web console debug logs and latency simulation:
+// Add modal close functionality for any modals in the app
+document.addEventListener("click", (e) => {
+  const target = e.target as HTMLElement;
+  if (target.getAttribute("data-close-modal")) {
+    const modalId = target.getAttribute("data-close-modal");
+    const modal = document.getElementById(modalId as string);
+    if (modal) {
+      modal.classList.add("hidden");
+    }
+  }
+});
+
+// Expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()

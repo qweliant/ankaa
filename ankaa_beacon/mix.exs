@@ -66,7 +66,8 @@ defmodule Ankaa.MixProject do
       {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]},
       # Test dependencies
       {:ex_machina, "~> 2.7", only: :test},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:timex, "~> 3.0"}
     ]
   end
 

@@ -97,21 +97,21 @@ defmodule Ankaa.Workers.MQTTConsumer do
             Logger.info("💉 Processing dialysis reading")
             # Convert Rust struct to our schema format
             reading_data = %{
-              device_id: data["device_id"],
-              timestamp: parse_timestamp(data["timestamp"]),
-              mode: data["mode"],
-              status: data["status"],
-              time_in_alarm: data["time_in_alarm"],
-              time_in_treatment: data["time_in_treatment"],
-              time_remaining: data["time_remaining"],
-              dfv: data["dfv"],
-              dfr: data["dfr"],
-              ufv: data["ufv"],
-              ufr: data["ufr"],
-              bfr: data["bfr"],
-              ap: data["ap"],
-              vp: data["vp"],
-              ep: data["ep"]
+              "device_id" => data["device_id"],
+              "timestamp" => parse_timestamp(data["timestamp"]),
+              "mode" => data["mode"],
+              "status" => data["status"],
+              "time_in_alarm" => data["time_in_alarm"],
+              "time_in_treatment" => data["time_in_treatment"],
+              "time_remaining" => data["time_remaining"],
+              "dfv" => data["dfv"],
+              "dfr" => data["dfr"],
+              "ufv" => data["ufv"],
+              "ufr" => data["ufr"],
+              "bfr" => data["bfr"],
+              "ap" => data["ap"],
+              "vp" => data["vp"],
+              "ep" => data["ep"]
             }
 
             reading = DialysisDeviceReading.from_mqtt(reading_data)
@@ -122,16 +122,16 @@ defmodule Ankaa.Workers.MQTTConsumer do
             Logger.info("🫀 Processing blood pressure reading")
             # Convert Rust struct to our schema format
             reading_data = %{
-              device_id: data["device_id"],
-              timestamp: parse_timestamp(data["timestamp"]),
-              mode: data["mode"],
-              status: data["status"],
-              systolic: data["systolic"],
-              diastolic: data["diastolic"],
-              heart_rate: data["heart_rate"],
-              mean_arterial_pressure: data["mean_arterial_pressure"],
-              pulse_pressure: data["pulse_pressure"],
-              irregular_heartbeat: data["irregular_heartbeat"]
+              "device_id" => data["device_id"],
+              "timestamp" => parse_timestamp(data["timestamp"]),
+              "mode" => data["mode"],
+              "status" => data["status"],
+              "systolic" => data["systolic"],
+              "diastolic" => data["diastolic"],
+              "heart_rate" => data["heart_rate"],
+              "mean_arterial_pressure" => data["mean_arterial_pressure"],
+              "pulse_pressure" => data["pulse_pressure"],
+              "irregular_heartbeat" => data["irregular_heartbeat"]
             }
 
             reading = BPDeviceReading.from_mqtt(reading_data)
