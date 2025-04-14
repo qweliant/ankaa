@@ -8,6 +8,11 @@ defmodule Ankaa.Accounts.User do
     field(:hashed_password, :string, redact: true)
     field(:current_password, :string, virtual: true, redact: true)
     field(:confirmed_at, :utc_datetime)
+    field(:role, :string)
+
+    has_one(:patient, Ankaa.Patients.Patient)
+    has_many(:patient_associations, Ankaa.Patients.PatientAssociation)
+    has_many(:associated_patients, through: [:patient_associations, :patient])
 
     timestamps(type: :utc_datetime)
   end
@@ -158,4 +163,23 @@ defmodule Ankaa.Accounts.User do
       add_error(changeset, :current_password, "is not valid")
     end
   end
+
+  # Add helper functions for role checking
+  def is_doctor?(%__MODULE__{role: "doctor"}), do: true
+  def is_doctor?(_), do: false
+
+  def is_nurse?(%__MODULE__{role: "nurse"}), do: true
+  def is_nurse?(_), do: false
+
+  def is_caregiver?(%__MODULE__{role: "caregiver"}), do: true
+  def is_caregiver?(_), do: false
+
+  def is_technical_support?(%__MODULE__{role: "technical_support"}), do: true
+  def is_technical_support?(_), do: false
+
+  def is_admin?(%__MODULE__{role: "admin"}), do: true
+  def is_admin?(_), do: false
+
+  def is_patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
+  def is_patient?(_), do: false
 end

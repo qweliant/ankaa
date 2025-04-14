@@ -2,6 +2,7 @@ defmodule AnkaaWeb.Router do
   use AnkaaWeb, :router
 
   import AnkaaWeb.UserAuth
+  import AnkaaWeb.RoleAuth
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -17,10 +18,10 @@ defmodule AnkaaWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  # Public routes
   scope "/", AnkaaWeb do
     pipe_through(:browser)
 
-    # Root route that redirects based on auth status
     get("/", PageController, :home)
   end
 
@@ -61,17 +62,78 @@ defmodule AnkaaWeb.Router do
     post("/users/login", UserSessionController, :create)
   end
 
+  # Patient routes
   scope "/", AnkaaWeb do
     pipe_through([:browser, :require_authenticated_user])
 
-    live_session :require_authenticated_user,
-      on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated}] do
-      live("/", DashboardLive, :index)
-      live("/dashboard", DashboardLive, :index)
-      live("/users/settings", UserSettingsLive, :edit)
-      live("/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email)
+    live_session :patient,
+      on_mount: [{AnkaaWeb.RoleAuth, :require_patient}] do
+      # live("/health", PatientHealthLive.Index, :index)
+      # live("/health/readings", PatientHealthLive.Readings, :index)
+      # live("/health/readings/:id", PatientHealthLive.Readings, :show)
+      # live("/health/alerts", PatientHealthLive.Alerts, :index)
+      # live("/health/alerts/:id", PatientHealthLive.Alerts, :show)
+      live("/dashboard", DashboardLive.Index, :index)
     end
   end
+
+  # # Doctor routes
+  # scope "/", AnkaaWeb do
+  #   pipe_through([:browser, :require_authenticated_user])
+
+  #   live_session :doctor, :nurse,
+  #     on_mount: [{AnkaaWeb.RoleAuth, :require_doctor, :require_nurse}] do
+  #     live("/patients", PatientLive.Index, :index)
+  #     live("/patients/new", PatientLive.Index, :new)
+  #     live("/patients/:id/edit", PatientLive.Index, :edit)
+  #     live("/patient/:id", PatientLive.Show, :show)
+  #     live("/patient/:id/show/edit", PatientLive.Show, :edit)
+  #   end
+  # end
+
+  # # Caregiver routes
+  # scope "/", AnkaaWeb do
+  #   pipe_through([:browser, :require_authenticated_user])
+
+  #   live_session :caregiver,
+  #     on_mount: [{AnkaaWeb.RoleAuth, :require_caregiver}] do
+  #     live("/careingfor", CaringForLive.Index, :index)
+  #     live("/careingfor/:id", CaringForLive.Show, :show)
+  #     live("/careingfor/:id/alerts", CaringForLive.Alerts, :index)
+  #   end
+  # end
+
+  # # Technical Support routes
+  # scope "/", AnkaaWeb do
+  #   pipe_through([:browser, :require_authenticated_user])
+
+  #   live_session :technical_support,
+  #     on_mount: [{AnkaaWeb.RoleAuth, :require_technical_support}] do
+  #     live("/support", SupportDashboardLive.Index, :index)
+  #     live("/support/devices", DeviceSupportLive.Index, :index)
+  #     live("/support/device/:id", DeviceSupportLive.Show, :show)
+  #     live("/support/device/tickets", DeviceSupportLive.Tickets, :index)
+  #     live("/support/device/ticket/:id", DeviceSupportLive.Show, :show)
+  #     live("/support/alerts", AlertSupportLive.Index, :index)
+  #     live("/support/alert/:id", AlertSupportLive.Show, :show)
+  #     live("/support/alert/tickets", AlertSupportLive.Tickets, :index)
+  #     live("/support/alert/ticket/:id", AlertSupportLive.Show, :show)
+  #   end
+  # end
+
+  # # Admin routes
+  # scope "/admin", AnkaaWeb do
+  #   pipe_through([:browser, :require_authenticated_user])
+
+  #   live_session :admin,
+  #     on_mount: [{AnkaaWeb.RoleAuth, :require_role, ["admin"]}] do
+  #     live("/users", Admin.UserLive.Index, :index)
+  #     live("/users/new", Admin.UserLive.Index, :new)
+  #     live("/users/:id/edit", Admin.UserLive.Index, :edit)
+  #     live("/users/:id", Admin.UserLive.Show, :show)
+  #     live("/users/:id/show/edit", Admin.UserLive.Show, :edit)
+  #   end
+  # end
 
   scope "/", AnkaaWeb do
     pipe_through([:browser])
