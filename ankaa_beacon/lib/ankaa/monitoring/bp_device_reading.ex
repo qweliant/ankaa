@@ -80,6 +80,8 @@ defmodule Ankaa.Monitoring.BPDeviceReading do
 
   defp parse_timestamp(nil), do: DateTime.utc_now()
 
+  defp parse_timestamp(%DateTime{} = dt), do: dt
+
   defp parse_timestamp(timestamp) when is_binary(timestamp) do
     case DateTime.from_iso8601(timestamp) do
       {:ok, dt, _} -> dt
