@@ -225,13 +225,33 @@ defmodule AnkaaWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(conn) do
+  def signed_in_path(conn) do
     user = conn.assigns[:current_user]
 
-    if user && (!user.role || !Ankaa.Accounts.User.is_patient?(user)) do
-      ~p"/register"
-    else
-      ~p"/dashboard"
+    cond do
+      # Not logged in
+      !user ->
+        ~p"/"
+
+      # No role yet
+      !user.role ->
+        ~p"/register"
+
+      # Has role but no patient association
+      user.role && !Ankaa.Accounts.User.is_patient?(user) ->
+        case user.role do
+          "doctor" -> ~p"/careprovider/dashboard"
+          "nurse" -> ~p"/careprovider/dashboard"
+          "caregiver" -> ~p"/caregiver/dashboard"
+          "technical_support" -> ~p"/support/dashboard"
+          "admin" -> ~p"/admin/dashboard"
+          # fallback for unknown roles
+          _ -> ~p"/register"
+        end
+
+      # Has role and is a patient
+      Ankaa.Accounts.User.is_patient?(user) ->
+        ~p"/patient/dashboard"
     end
   end
 end

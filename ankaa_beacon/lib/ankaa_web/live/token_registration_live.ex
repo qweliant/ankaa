@@ -1,7 +1,9 @@
 defmodule AnkaaWeb.TokenRegistrationLive do
   use AnkaaWeb, :live_view
+  import AnkaaWeb.UserAuth
 
   alias Ankaa.Accounts
+  alias Ankaa.UserAuth
 
   def mount(_params, _session, socket) do
     {:ok, assign(socket, form: to_form(%{"token" => ""}, as: :user))}
@@ -19,7 +21,11 @@ defmodule AnkaaWeb.TokenRegistrationLive do
       role when role in ["doctor", "nurse", "admin", "caregiver", "technical_support"] ->
         case Accounts.assign_role(socket.assigns.current_user, role) do
           {:ok, _user} ->
-            {:noreply, push_navigate(socket, to: ~p"/dashboard")}
+            {:noreply,
+             push_navigate(socket,
+               to:
+                 signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
+             )}
 
           {:error, _changeset} ->
             {:noreply,

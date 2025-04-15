@@ -105,8 +105,8 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # # Doctor routes
-  # scope "/", AnkaaWeb do
+  # # Doctor + Nurse routes
+  # scope "/careprovider", AnkaaWeb do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :doctor, :nurse,
@@ -120,7 +120,7 @@ defmodule AnkaaWeb.Router do
   # end
 
   # # Caregiver routes
-  # scope "/", AnkaaWeb do
+  # scope "/caregiver", AnkaaWeb do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :caregiver,
@@ -132,20 +132,20 @@ defmodule AnkaaWeb.Router do
   # end
 
   # # Technical Support routes
-  # scope "/", AnkaaWeb do
+  # scope "/support", AnkaaWeb do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :technical_support,
   #     on_mount: [{AnkaaWeb.RoleAuth, :require_technical_support}] do
-  #     live("/support", SupportDashboardLive.Index, :index)
-  #     live("/support/devices", DeviceSupportLive.Index, :index)
-  #     live("/support/device/:id", DeviceSupportLive.Show, :show)
-  #     live("/support/device/tickets", DeviceSupportLive.Tickets, :index)
-  #     live("/support/device/ticket/:id", DeviceSupportLive.Show, :show)
-  #     live("/support/alerts", AlertSupportLive.Index, :index)
-  #     live("/support/alert/:id", AlertSupportLive.Show, :show)
-  #     live("/support/alert/tickets", AlertSupportLive.Tickets, :index)
-  #     live("/support/alert/ticket/:id", AlertSupportLive.Show, :show)
+  #     live("/home", SupportDashboardLive.Index, :index)
+  #     live("/devices", DeviceSupportLive.Index, :index)
+  #     live("/device/:id", DeviceSupportLive.Show, :show)
+  #     live("/device/tickets", DeviceSupportLive.Tickets, :index)
+  #     live("/device/ticket/:id", DeviceSupportLive.Show, :show)
+  #     live("/alerts", AlertSupportLive.Index, :index)
+  #     live("/alert/:id", AlertSupportLive.Show, :show)
+  #     live("/alert/tickets", AlertSupportLive.Tickets, :index)
+  #     live("/alert/ticket/:id", AlertSupportLive.Show, :show)
   #   end
   # end
 

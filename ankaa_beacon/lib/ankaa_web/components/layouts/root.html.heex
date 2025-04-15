@@ -17,7 +17,29 @@
         <div class="flex h-16 justify-between">
           <div class="flex">
             <div class="flex flex-shrink-0 items-center">
-              <a href="/" class="text-xl font-bold text-gray-900">Ankaa</a>
+              <%= cond do %>
+                <% !@current_user -> %>
+                  <.link href={~p"/"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                <% !@current_user.role -> %>
+                  <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                <% @current_user.role && !Ankaa.Accounts.User.is_patient?(@current_user) -> %>
+                  <%= case @current_user.role do %>
+                    <% "doctor" -> %>
+                      <.link href={~p"/careprovider/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                    <% "nurse" -> %>
+                      <.link href={~p"/careprovider/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                    <% "caregiver" -> %>
+                      <.link href={~p"/caregiver/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                    <% "technical_support" -> %>
+                      <.link href={~p"/support/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                    <% "admin" -> %>
+                      <.link href={~p"/admin/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                    <% _ -> %>
+                      <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                  <% end %>
+                <% Ankaa.Accounts.User.is_patient?(@current_user) -> %>
+                  <.link href={~p"/patient/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+              <% end %>
             </div>
           </div>
           <div class="flex items-center">

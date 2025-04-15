@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.PatientEntryLive do
   use AnkaaWeb, :live_view
+  import AnkaaWeb.UserAuth
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Patient
@@ -28,9 +29,9 @@ defmodule AnkaaWeb.PatientEntryLive do
         {:ok, _user} = Accounts.assign_role(socket.assigns.current_user, "patient")
 
         {:noreply,
-         socket
-         |> put_flash(:info, "Patient registration successful!")
-         |> redirect(to: ~p"/dashboard")}
+         redirect(socket,
+           to: signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}

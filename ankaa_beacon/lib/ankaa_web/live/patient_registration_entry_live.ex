@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.PatientRegistrationEntryLive do
   use AnkaaWeb, :live_view
+  import AnkaaWeb.UserAuth
 
   def mount(_params, _session, socket) do
     {:ok,
