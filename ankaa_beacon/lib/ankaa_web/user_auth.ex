@@ -225,5 +225,13 @@ defmodule AnkaaWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/dashboard"
+  defp signed_in_path(conn) do
+    user = conn.assigns[:current_user]
+
+    if user && (!user.role || !Ankaa.Accounts.User.is_patient?(user)) do
+      ~p"/register"
+    else
+      ~p"/dashboard"
+    end
+  end
 end
