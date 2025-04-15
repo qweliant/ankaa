@@ -6,7 +6,7 @@ defmodule Ankaa.Accounts do
   import Ecto.Query, warn: false
   alias Ankaa.Repo
 
-  alias Ankaa.Accounts.{User, UserToken, UserNotifier}
+  alias Ankaa.Accounts.{User, UserToken, UserNotifier, UserRole}
 
   ## Database getters
 
@@ -350,4 +350,59 @@ defmodule Ankaa.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  @doc """
+  Creates a new user role.
+
+  ## Examples
+
+      iex> create_user_role(%{value: "doctor", description: "Medical professional"})
+      {:ok, %UserRole{}}
+
+      iex> create_user_role(%{value: "doctor"})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_user_role(attrs \\ %{}) do
+    %UserRole{}
+    |> UserRole.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Assigns a role to a user.
+
+  ## Examples
+
+      iex> assign_role(user, "doctor")
+      {:ok, %User{}}
+
+      iex> assign_role(user, "invalid_role")
+      {:error, %Ecto.Changeset{}}
+  """
+  def assign_role(%User{} = user, role) when is_binary(role) do
+    User.assign_role(user, role)
+  end
+
+  @doc """
+  Checks if a user has a specific role.
+
+  ## Examples
+
+      iex> has_role?(user, "doctor")
+      true
+
+      iex> has_role?(user, "nurse")
+      false
+  """
+  def has_role?(%User{} = user, role) when is_binary(role) do
+    User.has_role?(user, role)
+  end
+
+  # Role checking convenience functions
+  def is_doctor?(user), do: has_role?(user, "doctor")
+  def is_nurse?(user), do: has_role?(user, "nurse")
+  def is_admin?(user), do: has_role?(user, "admin")
+  def is_caregiver?(user), do: has_role?(user, "caregiver")
+  def is_technical_support?(user), do: has_role?(user, "technical_support")
+  def is_patient?(user), do: User.is_patient?(user)
 end

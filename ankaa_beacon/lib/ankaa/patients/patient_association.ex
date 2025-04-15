@@ -10,16 +10,16 @@ defmodule Ankaa.Patients.PatientAssociation do
     field(:relationship, :string)
     field(:can_alert, :boolean, default: false)
 
-    belongs_to(:user, User)
-    belongs_to(:patient, Patient)
+    belongs_to(:user, User, foreign_key: :user_id)
+    belongs_to(:patient, Patient, foreign_key: :patient_id)
 
     timestamps()
   end
 
   def changeset(patient_association, attrs) do
     patient_association
-    |> cast(attrs, [:relationship, :can_alert, :user_id, :patient_id])
-    |> validate_required([:relationship, :can_alert, :user_id, :patient_id])
+    |> cast(attrs, [:relationship, :can_alert, :patient_id, :user_id])
+    |> validate_required([:relationship, :patient_id, :user_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:patient_id)
     |> unique_constraint([:user_id, :patient_id],

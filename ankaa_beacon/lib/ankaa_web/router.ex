@@ -2,7 +2,6 @@ defmodule AnkaaWeb.Router do
   use AnkaaWeb, :router
 
   import AnkaaWeb.UserAuth
-  import AnkaaWeb.RoleAuth
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -62,6 +61,31 @@ defmodule AnkaaWeb.Router do
     post("/users/login", UserSessionController, :create)
   end
 
+  scope "/", AnkaaWeb do
+    pipe_through([:browser, :require_authenticated_user])
+
+    live_session :require_authenticated_user,
+      on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated}] do
+      live("/", DashboardLive, :index)
+      live("/dashboard", DashboardLive, :index)
+      live("/users/settings", UserSettingsLive, :edit)
+      live("/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email)
+    end
+  end
+
+  scope "/", AnkaaWeb do
+    pipe_through([:browser])
+
+    delete("/users/logout", UserSessionController, :delete)
+
+    live_session :current_user,
+      on_mount: [{AnkaaWeb.UserAuth, :mount_current_user}] do
+      live("/users/confirm/:token", UserConfirmationLive, :edit)
+      live("/users/confirm", UserConfirmationInstructionsLive, :new)
+      live("/register-patient/:token", PatientRegistrationLive, :new)
+    end
+  end
+
   # Patient routes
   scope "/", AnkaaWeb do
     pipe_through([:browser, :require_authenticated_user])
@@ -74,6 +98,16 @@ defmodule AnkaaWeb.Router do
       # live("/health/alerts", PatientHealthLive.Alerts, :index)
       # live("/health/alerts/:id", PatientHealthLive.Alerts, :show)
       live("/dashboard", DashboardLive.Index, :index)
+    end
+  end
+
+  # Authenticated routes
+  scope "/", AnkaaWeb do
+    pipe_through([:browser, :require_authenticated_user])
+
+    live_session :authenticated,
+      on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated}] do
+      live("/register-patient", PatientRegistrationEntryLive, :new)
     end
   end
 
@@ -134,16 +168,4 @@ defmodule AnkaaWeb.Router do
   #     live("/users/:id/show/edit", Admin.UserLive.Show, :edit)
   #   end
   # end
-
-  scope "/", AnkaaWeb do
-    pipe_through([:browser])
-
-    delete("/users/logout", UserSessionController, :delete)
-
-    live_session :current_user,
-      on_mount: [{AnkaaWeb.UserAuth, :mount_current_user}] do
-      live("/users/confirm/:token", UserConfirmationLive, :edit)
-      live("/users/confirm", UserConfirmationInstructionsLive, :new)
-    end
-  end
 end

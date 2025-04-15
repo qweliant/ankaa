@@ -13,7 +13,7 @@ defmodule Ankaa.Patients.Patient do
     field(:timezone, :string)
     field(:device_id, :string)
 
-    belongs_to(:user, User)
+    belongs_to(:user, User, foreign_key: :user_id)
     has_many(:patient_associations, Ankaa.Patients.PatientAssociation)
     has_many(:associated_users, through: [:patient_associations, :user])
 

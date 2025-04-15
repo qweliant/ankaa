@@ -4,9 +4,6 @@ defmodule Ankaa.AccountsFixtures do
   entities via the `Ankaa.Accounts` context.
   """
 
-  def unique_user_email, do: "user#{System.unique_integer()}@example.com"
-  def valid_user_password, do: "hello world!"
-
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       email: unique_user_email(),
@@ -14,13 +11,28 @@ defmodule Ankaa.AccountsFixtures do
     })
   end
 
+  def valid_user_password, do: "hello world!123"
+
+  def unique_user_email, do: "user#{System.unique_integer()}@example.com"
+
   def user_fixture(attrs \\ %{}) do
     {:ok, user} =
       attrs
-      |> valid_user_attributes()
+      |> Enum.into(%{
+        email: unique_user_email(),
+        password: valid_user_password()
+      })
       |> Ankaa.Accounts.register_user()
 
-    user
+    # If a role was provided in attrs, assign it
+    case Map.get(attrs, :role) do
+      nil ->
+        user
+
+      role ->
+        {:ok, user_with_role} = Ankaa.Accounts.assign_role(user, role)
+        user_with_role
+    end
   end
 
   def extract_user_token(fun) do

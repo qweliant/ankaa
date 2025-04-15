@@ -1,6 +1,7 @@
 defmodule AnkaaWeb.RoleAuth do
   import Phoenix.LiveView
   import Phoenix.Component
+  use AnkaaWeb, :verified_routes
 
   def on_mount(:require_role, roles, _params, _session, socket) do
     socket = mount_current_user(socket)

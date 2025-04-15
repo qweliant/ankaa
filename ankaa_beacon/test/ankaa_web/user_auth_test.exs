@@ -22,7 +22,7 @@ defmodule AnkaaWeb.UserAuthTest do
       conn = UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/dashboard"
       assert Accounts.get_user_by_session_token(token)
     end
 
@@ -216,7 +216,7 @@ defmodule AnkaaWeb.UserAuthTest do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
       conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authenticated([])
       assert conn.halted
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/dashboard"
     end
 
     test "does not redirect if user is not authenticated", %{conn: conn} do
@@ -267,6 +267,61 @@ defmodule AnkaaWeb.UserAuthTest do
       conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
       refute conn.halted
       refute conn.status
+    end
+  end
+
+  describe "User Roles" do
+    test "creating a new role", %{user: user} do
+      # Try to create a role that doesn't exist
+      role_attrs = %{
+        value: "new_role",
+        description: "A new role for testing"
+      }
+
+      {:ok, role} = Accounts.create_user_role(role_attrs)
+
+      assert role.value == "new_role"
+      assert role.description == "A new role for testing"
+    end
+
+    test "assigning a role to a user", %{user: user} do
+      # Use an existing role from the migration
+      role = "nurse"
+
+      # Assign role to user
+      {:ok, updated_user} = Accounts.assign_role(user, role)
+
+      # Check if user has the correct role
+      assert Accounts.has_role?(updated_user, "nurse")
+    end
+
+    test "validating user role access", %{user: user} do
+      # Use existing roles from the migration
+      roles = ["doctor", "nurse", "admin", "caregiver", "technical_support"]
+
+      for role <- roles do
+        # Assign role to user
+        {:ok, updated_user} = Accounts.assign_role(user, role)
+
+        # Check if user has the correct role
+        assert Accounts.has_role?(updated_user, role)
+      end
+
+      # Check that user does not have a role they haven't been assigned
+      refute Accounts.has_role?(user, "non_existent_role")
+    end
+
+    test "role checking functions", %{user: user} do
+      # Use an existing role from the migration
+      role = "admin"
+
+      # Assign role to user
+      {:ok, updated_user} = Accounts.assign_role(user, role)
+
+      # Check if user has the correct role using role checking functions
+      assert Accounts.is_admin?(updated_user)
+      refute Accounts.is_doctor?(updated_user)
+      refute Accounts.is_nurse?(updated_user)
     end
   end
 end

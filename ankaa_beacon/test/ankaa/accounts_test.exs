@@ -38,7 +38,7 @@ defmodule Ankaa.AccountsTest do
   describe "get_user!/1" do
     test "raises if id is invalid" do
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(-1)
+        Accounts.get_user!(Ecto.UUID.generate())
       end
     end
 
@@ -503,6 +503,70 @@ defmodule Ankaa.AccountsTest do
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+    end
+  end
+
+  describe "users" do
+    alias Ankaa.Accounts.User
+
+    import Ankaa.AccountsFixtures
+
+    @valid_attrs %{
+      email: "test@example.com",
+      password: "hello world!123"
+    }
+    @update_attrs %{
+      email: "updated@example.com",
+      password: "updated world!123"
+    }
+    @invalid_attrs %{email: nil, password: nil}
+
+    test "register_user/1 with valid data creates a user" do
+      assert {:ok, %User{} = user} = Accounts.register_user(@valid_attrs)
+      assert user.email == "test@example.com"
+      assert is_binary(user.hashed_password)
+      assert is_nil(user.role)
+    end
+
+    test "register_user/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.register_user(@invalid_attrs)
+    end
+
+    test "get_user!/1 returns the user with given id" do
+      user = user_fixture()
+      assert Accounts.get_user!(user.id) == user
+    end
+
+    test "get_user!/1 raises if id is invalid" do
+      assert_raise Ecto.NoResultsError, fn ->
+        Accounts.get_user!(Ecto.UUID.generate())
+      end
+    end
+
+    test "assign_role/2 assigns a valid role to a user" do
+      user = user_fixture()
+      assert {:ok, %User{} = updated_user} = Accounts.assign_role(user, "nurse")
+      assert updated_user.role == "nurse"
+    end
+
+    test "assign_role/2 with invalid role returns error changeset" do
+      user = user_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.assign_role(user, "invalid_role")
+    end
+
+    test "has_role?/2 checks if a user has a specific role" do
+      user = user_fixture(%{role: "doctor"})
+      assert Accounts.has_role?(user, "doctor")
+      refute Accounts.has_role?(user, "nurse")
+    end
+
+    test "role convenience functions work correctly" do
+      user = user_fixture(%{role: "doctor"})
+      assert Accounts.is_doctor?(user)
+      refute Accounts.is_nurse?(user)
+      refute Accounts.is_admin?(user)
+      refute Accounts.is_caregiver?(user)
+      refute Accounts.is_technical_support?(user)
     end
   end
 end

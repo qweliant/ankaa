@@ -2,6 +2,8 @@ defmodule Ankaa.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "users" do
     field(:email, :string)
     field(:password, :string, virtual: true, redact: true)
@@ -164,21 +166,42 @@ defmodule Ankaa.Accounts.User do
     end
   end
 
-  # Add helper functions for role checking
-  def is_doctor?(%__MODULE__{role: "doctor"}), do: true
-  def is_doctor?(_), do: false
+  @doc """
+  A changeset for updating a user's role.
+  """
+  def role_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:role])
+    |> validate_required([:role])
+    |> foreign_key_constraint(:role, name: :users_role_fkey, message: "is not a valid role")
+  end
 
-  def is_nurse?(%__MODULE__{role: "nurse"}), do: true
-  def is_nurse?(_), do: false
+  @doc """
+  Assigns a role to a user.
+  """
+  def assign_role(user, role) when is_binary(role) do
+    user
+    |> role_changeset(%{role: role})
+    |> Ankaa.Repo.update()
+    |> case do
+      {:ok, user} -> {:ok, user}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
 
-  def is_caregiver?(%__MODULE__{role: "caregiver"}), do: true
-  def is_caregiver?(_), do: false
+  @doc """
+  Checks if a user has a specific role.
+  """
+  def has_role?(%__MODULE__{role: user_role}, role) when is_binary(role) do
+    user_role == role
+  end
 
-  def is_technical_support?(%__MODULE__{role: "technical_support"}), do: true
-  def is_technical_support?(_), do: false
-
-  def is_admin?(%__MODULE__{role: "admin"}), do: true
-  def is_admin?(_), do: false
+  # Role checking functions
+  def is_doctor?(user), do: has_role?(user, "doctor")
+  def is_nurse?(user), do: has_role?(user, "nurse")
+  def is_admin?(user), do: has_role?(user, "admin")
+  def is_caregiver?(user), do: has_role?(user, "caregiver")
+  def is_technical_support?(user), do: has_role?(user, "technical_support")
 
   def is_patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
   def is_patient?(_), do: false
