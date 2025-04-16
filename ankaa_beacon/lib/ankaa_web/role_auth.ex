@@ -26,6 +26,10 @@ defmodule AnkaaWeb.RoleAuth do
     on_mount(:require_role, ["nurse", "doctor", "admin"], nil, nil, socket)
   end
 
+  def on_mount(:require_doctor_or_nurse, _params, _session, socket) do
+    on_mount(:require_role, ["doctor", "nurse", "admin"], nil, nil, socket)
+  end
+
   def on_mount(:require_caregiver, _params, _session, socket) do
     on_mount(:require_role, ["caregiver", "nurse", "doctor", "admin"], nil, nil, socket)
   end

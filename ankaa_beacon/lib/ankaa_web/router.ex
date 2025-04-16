@@ -109,31 +109,36 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # # Doctor + Nurse routes
-  # scope "/careprovider", AnkaaWeb do
-  #   pipe_through([:browser, :require_authenticated_user])
+  # Doctor + Nurse routes
+  scope "/careprovider", AnkaaWeb do
+    pipe_through([:browser, :require_authenticated_user])
 
-  #   live_session :doctor, :nurse,
-  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_doctor, :require_nurse}] do
-  #     live("/patients", PatientLive.Index, :index)
-  #     live("/patients/new", PatientLive.Index, :new)
-  #     live("/patients/:id/edit", PatientLive.Index, :edit)
-  #     live("/patient/:id", PatientLive.Show, :show)
-  #     live("/patient/:id/show/edit", PatientLive.Show, :edit)
-  #   end
-  # end
+    live_session :care_provider,
+      on_mount: [
+        {AnkaaWeb.UserAuth, :ensure_authenticated},
+        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse}
+      ] do
+      live("/patients", PatientLive.Index, :index)
+      live("/patients/new", PatientLive.Index, :new)
+      live("/patients/:id/edit", PatientLive.Index, :edit)
+      live("/patient/:id", PatientLive.Show, :show)
+      live("/patient/:id/show/edit", PatientLive.Show, :edit)
+    end
+  end
 
-  # # Caregiver routes
-  # scope "/caregiver", AnkaaWeb do
-  #   pipe_through([:browser, :require_authenticated_user])
+  # Caregiver routes
+  scope "/caregiver", AnkaaWeb do
+    pipe_through([:browser, :require_authenticated_user])
 
-  #   live_session :caregiver,
-  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_caregiver}] do
-  #     live("/careingfor", CaringForLive.Index, :index)
-  #     live("/careingfor/:id", CaringForLive.Show, :show)
-  #     live("/careingfor/:id/alerts", CaringForLive.Alerts, :index)
-  #   end
-  # end
+    live_session :caregiver,
+      on_mount: [
+        {AnkaaWeb.UserAuth, :ensure_authenticated},
+        {AnkaaWeb.RoleAuth, :require_caregiver}
+      ] do
+      live("/caringfor", CaringForLive.Index, :index)
+      live("/caringfor/:id", CaringForLive.Show, :show)
+    end
+  end
 
   # # Technical Support routes
   # scope "/support", AnkaaWeb do

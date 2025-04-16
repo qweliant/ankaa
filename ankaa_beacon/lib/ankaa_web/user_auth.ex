@@ -229,27 +229,22 @@ defmodule AnkaaWeb.UserAuth do
     user = conn.assigns[:current_user]
 
     cond do
-      # Not logged in
       !user ->
         ~p"/"
 
-      # Is a patient
       Ankaa.Accounts.User.is_patient?(user) ->
         ~p"/patient/health"
 
-      # No role yet
       !user.role ->
         ~p"/register"
 
-      # Has role but not a patient
       user.role ->
         case user.role do
-          "doctor" -> ~p"/careprovider/dashboard"
-          "nurse" -> ~p"/careprovider/dashboard"
-          "caregiver" -> ~p"/caregiver/dashboard"
-          "technical_support" -> ~p"/support/dashboard"
-          "admin" -> ~p"/admin/dashboard"
-          # fallback for unknown roles
+          "doctor" -> ~p"/careprovider/patients"
+          "nurse" -> ~p"/careprovider/patients"
+          "caregiver" -> ~p"/caregiver/caringfor"
+          "technical_support" -> ~p"/support/home"
+          "admin" -> ~p"/admin/users"
           _ -> ~p"/register"
         end
     end
