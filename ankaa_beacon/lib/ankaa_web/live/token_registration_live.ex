@@ -7,12 +7,19 @@ defmodule AnkaaWeb.TokenRegistrationLive do
   alias Ankaa.Patients
 
   def mount(_params, _session, socket) do
-    {:ok,
-     assign(socket,
-       form: to_form(%{"token" => ""}, as: :user),
-       show_name_form: false,
-       name_form: to_form(%{"name" => ""}, as: :patient)
-     )}
+    if socket.assigns.current_user.role || socket.assigns.current_user.patient do
+      {:ok,
+       push_navigate(socket,
+         to: signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
+       )}
+    else
+      {:ok,
+       assign(socket,
+         form: to_form(%{"token" => ""}, as: :user),
+         show_name_form: false,
+         name_form: to_form(%{"name" => ""}, as: :patient)
+       )}
+    end
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do

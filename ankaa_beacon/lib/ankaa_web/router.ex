@@ -2,6 +2,7 @@ defmodule AnkaaWeb.Router do
   use AnkaaWeb, :router
 
   import AnkaaWeb.UserAuth
+  import AnkaaWeb.RoleAuth
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -94,7 +95,10 @@ defmodule AnkaaWeb.Router do
     pipe_through([:browser, :require_authenticated_user])
 
     live_session :patient,
-      on_mount: [{AnkaaWeb.RoleAuth, :require_patient}] do
+      on_mount: [
+        {AnkaaWeb.UserAuth, :ensure_authenticated},
+        {AnkaaWeb.RoleAuth, :require_patient}
+      ] do
       # live("/health", PatientHealthLive.Index, :index)
       # live("/health/readings", PatientHealthLive.Readings, :index)
       # live("/health/readings/:id", PatientHealthLive.Readings, :show)
@@ -110,7 +114,7 @@ defmodule AnkaaWeb.Router do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :doctor, :nurse,
-  #     on_mount: [{AnkaaWeb.RoleAuth, :require_doctor, :require_nurse}] do
+  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_doctor, :require_nurse}] do
   #     live("/patients", PatientLive.Index, :index)
   #     live("/patients/new", PatientLive.Index, :new)
   #     live("/patients/:id/edit", PatientLive.Index, :edit)
@@ -124,7 +128,7 @@ defmodule AnkaaWeb.Router do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :caregiver,
-  #     on_mount: [{AnkaaWeb.RoleAuth, :require_caregiver}] do
+  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_caregiver}] do
   #     live("/careingfor", CaringForLive.Index, :index)
   #     live("/careingfor/:id", CaringForLive.Show, :show)
   #     live("/careingfor/:id/alerts", CaringForLive.Alerts, :index)
@@ -136,7 +140,7 @@ defmodule AnkaaWeb.Router do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :technical_support,
-  #     on_mount: [{AnkaaWeb.RoleAuth, :require_technical_support}] do
+  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_technical_support}] do
   #     live("/home", SupportDashboardLive.Index, :index)
   #     live("/devices", DeviceSupportLive.Index, :index)
   #     live("/device/:id", DeviceSupportLive.Show, :show)
@@ -154,7 +158,7 @@ defmodule AnkaaWeb.Router do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :admin,
-  #     on_mount: [{AnkaaWeb.RoleAuth, :require_role, ["admin"]}] do
+  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_role, ["admin"]}] do
   #     live("/users", Admin.UserLive.Index, :index)
   #     live("/users/new", Admin.UserLive.Index, :new)
   #     live("/users/:id/edit", Admin.UserLive.Index, :edit)

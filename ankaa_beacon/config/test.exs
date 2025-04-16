@@ -33,15 +33,6 @@ config :ankaa, Ankaa.TimescaleRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
-# Configure Redis for testing
-config :ankaa, Ankaa.Redis,
-  host: "localhost",
-  port: 6379,
-  database: 1,
-  pool_size: 5,
-  pool_max_overflow: 2,
-  enable_notifications: true
-
 # Configure MQTT for testing
 config :ankaa, :mqtt,
   host: "localhost",

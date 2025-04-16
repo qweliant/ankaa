@@ -12,15 +12,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - ankaa_network
-  redis:
-    image: redis:7-alpine
-    container_name: ankaa_redis_dev
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - ankaa_network
   timescale:
     image: timescale/timescaledb-ha:pg17
     container_name: ankaa_timescale_dev

@@ -22,22 +22,22 @@
                   <.link href={~p"/"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                 <% !@current_user.role -> %>
                   <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Ankaa</.link>
-                <% @current_user.role && !Ankaa.Accounts.User.is_patient?(@current_user) -> %>
+                <% @current_user.role && !@current_user.patient -> %>
                   <%= case @current_user.role do %>
                     <% "doctor" -> %>
-                      <.link href={~p"/careprovider/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                     <% "nurse" -> %>
-                      <.link href={~p"/careprovider/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                     <% "caregiver" -> %>
-                      <.link href={~p"/caregiver/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/caregiver/careingfor"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                     <% "technical_support" -> %>
-                      <.link href={~p"/support/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/support/home"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                     <% "admin" -> %>
-                      <.link href={~p"/admin/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/admin/users"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                     <% _ -> %>
                       <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Ankaa</.link>
                   <% end %>
-                <% Ankaa.Accounts.User.is_patient?(@current_user) -> %>
+                <% @current_user.patient -> %>
                   <.link href={~p"/patient/dashboard"} class="text-xl font-bold text-gray-900">Ankaa</.link>
               <% end %>
             </div>

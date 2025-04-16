@@ -7,10 +7,6 @@
 # General application configuration
 import Config
 
-config :ankaa, Ankaa.Redis,
-  host: "localhost",
-  port: 6379
-
 config :ankaa,
   ecto_repos: [Ankaa.Repo, Ankaa.TimescaleRepo],
   generators: [timestamp_type: :utc_datetime]
