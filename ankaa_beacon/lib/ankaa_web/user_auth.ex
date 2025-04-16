@@ -233,12 +233,16 @@ defmodule AnkaaWeb.UserAuth do
       !user ->
         ~p"/"
 
+      # Is a patient
+      Ankaa.Accounts.User.is_patient?(user) ->
+        ~p"/patient/dashboard"
+
       # No role yet
       !user.role ->
         ~p"/register"
 
-      # Has role but no patient association
-      user.role && !Ankaa.Accounts.User.is_patient?(user) ->
+      # Has role but not a patient
+      user.role ->
         case user.role do
           "doctor" -> ~p"/careprovider/dashboard"
           "nurse" -> ~p"/careprovider/dashboard"
@@ -248,10 +252,6 @@ defmodule AnkaaWeb.UserAuth do
           # fallback for unknown roles
           _ -> ~p"/register"
         end
-
-      # Has role and is a patient
-      Ankaa.Accounts.User.is_patient?(user) ->
-        ~p"/patient/dashboard"
     end
   end
 end

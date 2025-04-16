@@ -1,10 +1,12 @@
 defmodule AnkaaWeb.PatientEntryLive do
   use AnkaaWeb, :live_view
   import AnkaaWeb.UserAuth
+  import Ecto.Query
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Patient
   alias Ankaa.Accounts
+  alias Ankaa.Repo
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -28,9 +30,14 @@ defmodule AnkaaWeb.PatientEntryLive do
         # Assign patient role to user
         {:ok, _user} = Accounts.assign_role(socket.assigns.current_user, "patient")
 
+        # Reload user and preload patient association
+        user =
+          Repo.get(Accounts.User, socket.assigns.current_user.id)
+          |> Repo.preload(:patient)
+
         {:noreply,
          redirect(socket,
-           to: signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
+           to: signed_in_path(%Plug.Conn{assigns: %{current_user: user}})
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->

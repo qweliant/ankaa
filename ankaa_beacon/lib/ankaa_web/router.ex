@@ -69,7 +69,6 @@ defmodule AnkaaWeb.Router do
       on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated}] do
       # Role and patient registration routes
       live("/register", TokenRegistrationLive, :new)
-      live("/patients/entry", PatientEntryLive, :new)
 
       # User settings
       live("/users/settings", UserSettingsLive, :edit)
@@ -102,6 +101,7 @@ defmodule AnkaaWeb.Router do
       # live("/health/alerts", PatientHealthLive.Alerts, :index)
       # live("/health/alerts/:id", PatientHealthLive.Alerts, :show)
       live("/dashboard", DashboardLive, :index)
+      live("/devices/new", DeviceEntryLive, :new)
     end
   end
 

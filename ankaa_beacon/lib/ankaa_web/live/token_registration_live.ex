@@ -4,19 +4,29 @@ defmodule AnkaaWeb.TokenRegistrationLive do
 
   alias Ankaa.Accounts
   alias Ankaa.UserAuth
+  alias Ankaa.Patients
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{"token" => ""}, as: :user))}
+    {:ok,
+     assign(socket,
+       form: to_form(%{"token" => ""}, as: :user),
+       show_name_form: false,
+       name_form: to_form(%{"name" => ""}, as: :patient)
+     )}
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
     {:noreply, assign(socket, form: to_form(user_params, as: :user))}
   end
 
+  def handle_event("validate_name", %{"patient" => patient_params}, socket) do
+    {:noreply, assign(socket, name_form: to_form(patient_params, as: :patient))}
+  end
+
   def handle_event("save", %{"user" => %{"token" => token}}, socket) do
     case token do
       "patient" ->
-        {:noreply, push_navigate(socket, to: ~p"/patients/entry")}
+        {:noreply, assign(socket, show_name_form: true)}
 
       role when role in ["doctor", "nurse", "admin", "caregiver", "technical_support"] ->
         case Accounts.assign_role(socket.assigns.current_user, role) do
@@ -42,6 +52,27 @@ defmodule AnkaaWeb.TokenRegistrationLive do
     end
   end
 
+  def handle_event("save_name", %{"patient" => %{"name" => name}}, socket) do
+    user = socket.assigns.current_user
+
+    if user.patient do
+      {:noreply, push_navigate(socket, to: ~p"/patient/devices/new")}
+    else
+      attrs = %{name: name, user_id: user.id}
+
+      case Patients.create_patient(attrs, user) do
+        {:ok, _patient} ->
+          {:noreply, push_navigate(socket, to: ~p"/patient/devices/new")}
+
+        {:error, _changeset} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Failed to create patient profile. Please try again.")
+           |> assign(name_form: to_form(%{"name" => ""}, as: :patient))}
+      end
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
@@ -50,19 +81,36 @@ defmodule AnkaaWeb.TokenRegistrationLive do
         <:subtitle>Please enter the token you received to continue with registration.</:subtitle>
       </.header>
 
-      <.simple_form
-        for={@form}
-        id="token_form"
-        phx-submit="save"
-        phx-change="validate"
-      >
-        <.input field={@form[:token]} type="text" label="Token" required />
-        <:actions>
-          <.button phx-disable-with="Processing..." class="w-full">
-            Continue
-          </.button>
-        </:actions>
-      </.simple_form>
+      <%= if !@show_name_form do %>
+        <.simple_form
+          for={@form}
+          id="token_form"
+          phx-submit="save"
+          phx-change="validate"
+        >
+          <.input field={@form[:token]} type="text" label="Token" required />
+          <:actions>
+            <.button phx-disable-with="Processing..." class="w-full">
+              Continue
+            </.button>
+          </:actions>
+        </.simple_form>
+      <% else %>
+        <.header class="text-center mt-8">Enter Your Name</.header>
+        <.simple_form
+          for={@name_form}
+          id="name_form"
+          phx-submit="save_name"
+          phx-change="validate_name"
+        >
+          <.input field={@name_form[:name]} type="text" label="Full Name" required />
+          <:actions>
+            <.button phx-disable-with="Registering..." class="w-full">
+              Register as Patient
+            </.button>
+          </:actions>
+        </.simple_form>
+      <% end %>
     </div>
     """
   end
