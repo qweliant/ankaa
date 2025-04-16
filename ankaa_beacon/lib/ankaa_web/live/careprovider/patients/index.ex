@@ -1,4 +1,4 @@
-defmodule AnkaaWeb.CareProvider.PatientsLive do
+defmodule AnkaaWeb.CareProvider.PatientsLive.Index do
   use AnkaaWeb, :live_view
 
   @impl true
@@ -29,9 +29,11 @@ defmodule AnkaaWeb.CareProvider.PatientsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-[98%] mx-auto px-2 sm:px-4 lg:px-6 py-8">
       <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-bold text-slate-900">My Patients</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold text-slate-900">My Patients</h1>
+        </div>
         <div class="flex items-center space-x-4">
           <div class="relative">
             <input
@@ -55,7 +57,7 @@ defmodule AnkaaWeb.CareProvider.PatientsLive do
         <ul role="list" class="divide-y divide-gray-200">
           <%= for patient <- @patients do %>
             <li>
-              <.link navigate={~p"/careprovider/patients/#{patient.id}"} class="block hover:bg-gray-50">
+              <.link navigate={~p"/careprovider/patient/#{patient.id}"} class="block hover:bg-gray-50">
                 <div class="px-4 py-4 sm:px-6">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center">
