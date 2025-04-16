@@ -235,7 +235,7 @@ defmodule AnkaaWeb.UserAuth do
 
       # Is a patient
       Ankaa.Accounts.User.is_patient?(user) ->
-        ~p"/patient/dashboard"
+        ~p"/patient/health"
 
       # No role yet
       !user.role ->

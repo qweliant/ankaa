@@ -99,13 +99,13 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.UserAuth, :ensure_authenticated},
         {AnkaaWeb.RoleAuth, :require_patient}
       ] do
-      # live("/health", PatientHealthLive.Index, :index)
-      # live("/health/readings", PatientHealthLive.Readings, :index)
-      # live("/health/readings/:id", PatientHealthLive.Readings, :show)
-      # live("/health/alerts", PatientHealthLive.Alerts, :index)
-      # live("/health/alerts/:id", PatientHealthLive.Alerts, :show)
-      live("/dashboard", DashboardLive, :index)
+      live("/health", HealthLive, :index)
+      live("/monitoring", MonitoringLive, :index)
       live("/devices/new", DeviceEntryLive, :new)
+      live("/devices", DeviceLive, :index)
+      live("/devices/:id/edit", DeviceLive, :edit)
+      live("/carenetwork/invite", CareNetworkInviteLive, :new)
+      live("/carenetwork/", CareNetworkLive, :index)
     end
   end
 

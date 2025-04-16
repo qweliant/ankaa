@@ -66,6 +66,5 @@ networks:
 volumes:
   postgres_data:
   timescale_data:
-  redis_data:
   mosquitto_data:
   mosquitto_logs:
