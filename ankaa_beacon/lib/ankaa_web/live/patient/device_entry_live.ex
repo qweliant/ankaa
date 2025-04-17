@@ -70,9 +70,13 @@ defmodule AnkaaWeb.DeviceEntryLive do
                     name="device[type]"
                     class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                   >
-                    <option value="dialysis">Dialysis Machine</option>
-                    <option value="blood_pressure">Blood Pressure Monitor</option>
+                    <option value="">Select a device type</option>
+                    <option value="dialysis" selected={Ecto.Changeset.get_field(@changeset, :type) == "dialysis"}>Dialysis Machine</option>
+                    <option value="blood_pressure" selected={Ecto.Changeset.get_field(@changeset, :type) == "blood_pressure"}>Blood Pressure Monitor</option>
                   </select>
+                  <%= for error <- Ecto.Changeset.get_field(@changeset, :errors, []) |> Keyword.get_values(:type) do %>
+                    <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
+                  <% end %>
                 </div>
 
                 <div>
@@ -83,8 +87,12 @@ defmodule AnkaaWeb.DeviceEntryLive do
                     type="text"
                     name="device[device_id]"
                     id="device_id"
+                    value={Ecto.Changeset.get_field(@changeset, :device_id)}
                     class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                   />
+                  <%= for error <- Ecto.Changeset.get_field(@changeset, :errors, []) |> Keyword.get_values(:device_id) do %>
+                    <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
+                  <% end %>
                 </div>
 
                 <div>
@@ -95,6 +103,7 @@ defmodule AnkaaWeb.DeviceEntryLive do
                     type="text"
                     name="device[model]"
                     id="model"
+                    value={Ecto.Changeset.get_field(@changeset, :model)}
                     class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                   />
                 </div>
