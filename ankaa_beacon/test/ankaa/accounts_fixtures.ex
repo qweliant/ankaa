@@ -11,9 +11,8 @@ defmodule Ankaa.AccountsFixtures do
     {:ok, user} =
       attrs
       |> Enum.into(%{
-        email: "some@email.com",
-        password: "some password",
-        role: "doctor"
+        email: unique_user_email(),
+        password: "some password"
       })
       |> Ankaa.Accounts.register_user()
 
@@ -33,8 +32,7 @@ defmodule Ankaa.AccountsFixtures do
       attrs
       |> Enum.into(%{
         email: unique_user_email(),
-        password: "some password",
-        role: "doctor"
+        password: "some password"
       })
       |> Ankaa.Accounts.register_user()
 

@@ -232,11 +232,11 @@ defmodule AnkaaWeb.UserAuth do
       !user ->
         ~p"/"
 
-      Ankaa.Accounts.User.is_patient?(user) ->
-        ~p"/patient/health"
-
       !user.role ->
         ~p"/register"
+
+      Ankaa.Accounts.User.is_patient?(user) ->
+        ~p"/patient/health"
 
       user.role ->
         case user.role do

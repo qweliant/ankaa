@@ -15,10 +15,10 @@ defmodule AnkaaWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/dashboard"
+      assert redirected_to(conn) == ~p"/"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/dashboard")
+      conn = get(conn, ~p"/register")
       response = html_response(conn, 200)
       assert response =~ user.email
       assert response =~ ~p"/users/settings"
@@ -36,7 +36,7 @@ defmodule AnkaaWeb.UserSessionControllerTest do
           }
         })
 
-      assert redirected_to(conn) == ~p"/dashboard"
+      assert redirected_to(conn) == ~p"/"
       assert conn.cookies["_ankaa_web_user_remember_me"]
     end
 
@@ -67,9 +67,9 @@ defmodule AnkaaWeb.UserSessionControllerTest do
           }
         })
 
-      assert redirected_to(conn) == ~p"/dashboard"
-      conn = get(conn, ~p"/dashboard")
-      assert html_response(conn, 200) =~ "Patient Monitoring"
+      assert redirected_to(conn) == ~p"/"
+      conn = get(conn, ~p"/register")
+      assert html_response(conn, 200) =~ "Complete Your Registration"
     end
 
     test "login following password update", %{conn: conn, user: user} do

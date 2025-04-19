@@ -6,7 +6,7 @@ defmodule Ankaa.Repo.Migrations.CreateSessions do
       add(:date, :date)
       add(:duration, :integer)
       add(:notes, :text)
-      add(:patient_id, references(:patients, on_delete: :delete_all))
+      add(:patient_id, references(:patients, type: :binary_id, on_delete: :delete_all))
 
       timestamps()
     end

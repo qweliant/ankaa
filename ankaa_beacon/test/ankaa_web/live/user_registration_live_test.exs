@@ -17,7 +17,7 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/users/register")
-        |> follow_redirect(conn, ~p"/dashboard")
+        |> follow_redirect(conn, ~p"/register")
 
       assert {:ok, _conn} = result
     end
@@ -45,10 +45,10 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
       render_submit(form)
       conn = follow_trigger_action(form, conn)
 
-      assert redirected_to(conn) == ~p"/dashboard"
+      assert redirected_to(conn) == ~p"/"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/dashboard")
+      conn = get(conn, ~p"/register")
       response = html_response(conn, 200)
       assert response =~ email
       assert response =~ "Settings"
