@@ -21,16 +21,13 @@ import "phoenix_html";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
-import LineChart from "./hooks/line_chart";
 
 const csrfToken = (
   document.querySelector("meta[name='csrf-token']") as HTMLElement
 ).getAttribute("content");
 
 // Register our hooks
-const hooks = {
-  LineChart,
-};
+const hooks = {};
 
 // Custom loading animation setup
 topbar.config({
