@@ -35,6 +35,41 @@ defmodule Ankaa.AccountsFixtures do
     end
   end
 
+  def doctor_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "doctor"}, attrs))
+  end
+
+  def nurse_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "nurse"}, attrs))
+  end
+
+  def caregiver_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "caregiver"}, attrs))
+  end
+
+  def technical_support_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "technical_support"}, attrs))
+  end
+
+  def admin_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "admin"}, attrs))
+  end
+
+  def patient_fixture(attrs \\ %{}) do
+    user = user_fixture(attrs)
+
+    # Create patient record
+    patient_attrs = %{
+      name: "Test Patient",
+      user_id: user.id
+    }
+
+    {:ok, patient} = Ankaa.Patients.create_patient(patient_attrs, user)
+
+    # Reload user to include patient association
+    Ankaa.Repo.preload(user, :patient)
+  end
+
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
