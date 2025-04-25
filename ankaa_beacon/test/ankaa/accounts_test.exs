@@ -543,6 +543,15 @@ defmodule Ankaa.AccountsTest do
       end
     end
 
+    test "update_user/2 with valid data updates the user", %{user: user} do
+      assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
+      assert user.email == "updated@example.com"
+    end
+
+    test "update_user/2 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_user( @invalid_attrs)
+    end
+
     test "assign_role/2 assigns a valid role to a user" do
       user = user_fixture()
       assert {:ok, %User{} = updated_user} = Accounts.assign_role(user, "nurse")
