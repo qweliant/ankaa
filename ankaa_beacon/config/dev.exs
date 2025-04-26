@@ -2,25 +2,32 @@ import Config
 
 # Configure your database
 config :ankaa, Ankaa.Repo,
-  username: "user",
-  password: "password",
-  hostname: "localhost",
-  database: "ankaa_dev",
+  username: System.get_env("POSTGRES_USER", "user"),
+  password: System.get_env("POSTGRES_PASSWORD", "password"),
+  hostname: System.get_env("POSTGRES_HOST", "localhost"),
+  database: System.get_env("POSTGRES_DB", "ankaa_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: String.to_integer(System.get_env("POSTGRES_POOL_SIZE", "10"))
 
 # TimescaleDB config
 config :ankaa, Ankaa.TimescaleRepo,
   migration_primary_key: [name: :id, type: :binary_id],
   migration_source: "timescale_schema_migrations",
-  database: "ankaa_timescale_dev",
-  username: "user",
-  password: "password",
-  hostname: "localhost",
-  port: 5433,
-  pool_size: 10,
+  database: System.get_env("TIMESCALE_DB", "ankaa_timescale_dev"),
+  username: System.get_env("TIMESCALE_USER", "user"),
+  password: System.get_env("TIMESCALE_PASSWORD", "password"),
+  hostname: System.get_env("TIMESCALE_HOST", "localhost"),
+  port: String.to_integer(System.get_env("TIMESCALE_PORT", "5433")),
+  pool_size: String.to_integer(System.get_env("TIMESCALE_POOL_SIZE", "10")),
   migrations_path: "priv/timescale_repo/migrations"
+
+# MQTT Configuration
+config :ankaa, :mqtt,
+  host: System.get_env("MQTT_HOST", "localhost"),
+  port: String.to_integer(System.get_env("MQTT_PORT", "1883")),
+  username: System.get_env("MQTT_USERNAME"),
+  password: System.get_env("MQTT_PASSWORD")
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -31,11 +38,15 @@ config :ankaa, Ankaa.TimescaleRepo,
 # Binding to loopback ipv4 address prevents access from other machines.
 config :ankaa, AnkaaWeb.Endpoint,
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT", "4000"))],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "3v+8HkjX7xIsfOa7UR02eyboYnxi5TiEunfhZc7pk9NfWOfxVl4K0hr1J/XkIIcA",
+  secret_key_base:
+    System.get_env(
+      "SECRET_KEY_BASE",
+      "3v+8HkjX7xIsfOa7UR02eyboYnxi5TiEunfhZc7pk9NfWOfxVl4K0hr1J/XkIIcA"
+    ),
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:ankaa, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:ankaa, ~w(--watch)]}
@@ -95,3 +106,14 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :ankaa_beacon, AnkaaBeaconWeb.Endpoint,
+  watchers: [
+    node: [
+      "node_modules/esbuild/bin/esbuild",
+      "--watch",
+      "--sourcemap=inline",
+      "--bundle",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]

@@ -17,12 +17,13 @@ defmodule Ankaa.Workers.MQTTConsumer do
   def init(_opts) do
     # MQTT connection configuration
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
+    mqtt_config = Application.get_env(:ankaa, :mqtt)
 
     # Start the MQTT client with options seen here: https://github.com/emqx/emqtt?tab=readme-ov-file#option
     {:ok, client} =
       :emqtt.start_link([
-        {:host, "localhost"},
-        {:port, 1883},
+        {:host, String.to_charlist(mqtt_config[:host])},
+        {:port, mqtt_config[:port]},
         {:clientid, String.to_charlist(client_id)},
         {:clean_start, true},
         {:keepalive, 30},
@@ -37,7 +38,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
     # Connect to the broker
     case :emqtt.connect(client) do
       {:ok, _} ->
-        Logger.info("🔌 Connected to MQTT broker at localhost:1883")
+        Logger.info("🔌 Connected to MQTT broker at #{mqtt_config[:host]}:#{mqtt_config[:port]}")
         # Subscribe to topics
         :emqtt.subscribe(client, [
           # Match all device telemetry
@@ -155,7 +156,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
   end
 
   defp save_reading(reading) do
-    Logger.debug("💾 Saving reading: #{inspect(reading, pretty: true)}")
+    Logger.debug("💾 Saving reading")
 
     case reading do
       %DialysisDeviceReading{} ->

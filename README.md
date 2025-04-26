@@ -1,3 +1,5 @@
+#
+
 <!-- PROJECT SHIELDS -->
 
 [![Contributors][contributors-shield]][contributors-url]
@@ -41,6 +43,7 @@
       </ul>
     </li>
     <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#impact--implications">Impact & Implications</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -51,7 +54,9 @@
 
 ## About The Project
 
-Ankaa is a proof-of-concept for a real-time monitoring and alert system designed specifically for home hemodialysis. The system focuses on detecting critical risks such as severe hypotension and blood loss, integrating with NxStage setups to provide automated emergency detection, caregiver alerts, and AI-driven anomaly detection. This ensures patient safety even without immediate medical assistance.
+Ankaa is a proof-of-concept for a real-time monitoring and alert system designed specifically for home hemodialysis. The system focuses on detecting critical risks such as severe hypotension and blood loss, integrating with health monitoring setups to provide automated emergency detection, and caregiver alerts. This ensures patient safety even without immediate medical assistance.
+
+The project was born from a personal need to make home hemodialysis safer and more accessible. As someone who has experienced the challenges of home dialysis firsthand, I understand the importance of having a reliable safety net that can detect and respond to critical situations, especially when medical assistance isn't immediately available.
 
 Key Features:
 
@@ -60,6 +65,15 @@ Key Features:
 - Care network management
 - Support for hemodialysis and blood pressure monitoring
 - Web-based interface for monitoring
+- Integration with existing dialysis equipment
+
+The system aims to:
+
+- Reduce anxiety and stress during home dialysis sessions
+- Provide peace of mind for both patients and caregivers
+- Enable faster response to critical situations
+- Make home dialysis more accessible to those who might otherwise be hesitant
+- Create a safety net that works even without immediate medical assistance
 
 ### Built With
 
@@ -84,14 +98,16 @@ Key Features:
 ### Installation
 
 1. Clone the repo
-   ```sh
+
+   ````sh
    git clone https://github.com/qweliant/ankaa.git
-   ```
-2. Start the services using Docker Compose
+   ```2. Start the services using Docker Compose
+
    ```sh
    docker-compose up -d
-   ```
-3. Access the web interface at `http://localhost:4000`
+   ````
+
+2. Access the web interface at `http://localhost:4000`
 
 <!-- ARCHITECTURE -->
 
@@ -135,6 +151,24 @@ The system is built as a microservices architecture with the following component
 
 See the [open issues](https://github.com/qweliant/ankaa/issues) for a full list of proposed features.
 
+### Impact & Implications
+
+This project addresses several critical barriers to home dialysis adoption:
+
+- **Safety Concerns**: By providing real-time monitoring and automated emergency detection, the system helps mitigate the primary fear of complications occurring during home treatment.
+
+- **Accessibility**: Making home dialysis feel safer could increase adoption rates, potentially allowing more patients to benefit from the flexibility and quality of life improvements that home treatment offers.
+
+- **Care Network Support**: The system empowers family members and caregivers to be more confident in supporting home dialysis patients, creating a stronger support network.
+
+- **Healthcare Evolution**: This technology could influence healthcare policies and insurance coverage for home dialysis by demonstrating that remote monitoring systems can effectively enhance patient safety.
+
+- **Patient Autonomy**: By providing a reliable safety net, patients gain more independence in managing their treatment while maintaining connection to their care network.
+
+- **Cost Implications**: By enabling more patients to safely perform dialysis at home, this system could help reduce the overall cost of care while improving patient outcomes.
+
+- **Quality of Life**: The combination of safety features and remote monitoring allows patients to maintain their normal routines and lifestyle while ensuring their wellbeing during treatment.
+
 <!-- CONTRIBUTING -->
 
 ## Contributing
@@ -151,7 +185,14 @@ Contributions are what make the open source community such an amazing place to l
 
 ## License
 
-Distributed under the Unlicense License. See `LICENSE` for more information.
+This project is licensed under the Business Source License 1.1. This license:
+
+- Permits non-production use including research, experimentation, development, testing, personal projects, and non-commercial evaluation
+- Does not grant the right to use the software in a production environment
+- Requires that any modified works carry prominent notices of changes
+- Includes a change date (2027-04-14) after which the license will change to MIT License
+
+For full license terms, see the [LICENSE](LICENSE) file.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 

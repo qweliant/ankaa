@@ -114,4 +114,40 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+
+  # Configure MQTT
+  config :ankaa, :mqtt,
+    host: System.get_env("MQTT_HOST", "localhost"),
+    port: String.to_integer(System.get_env("MQTT_PORT", "1883")),
+    username: System.get_env("MQTT_USERNAME"),
+    password: System.get_env("MQTT_PASSWORD")
+
+  # Configure TimescaleDB
+  config :ankaa, Ankaa.TimescaleRepo,
+    url: System.get_env("TIMESCALE_URL"),
+    pool_size: String.to_integer(System.get_env("TIMESCALE_POOL_SIZE") || "10")
+
+  # Configure the endpoint
+  config :ankaa, AnkaaWeb.Endpoint,
+    url: [
+      host: System.get_env("PHOENIX_HOST", "localhost"),
+      port: String.to_integer(System.get_env("PORT", "4000"))
+    ],
+    http: [
+      port: String.to_integer(System.get_env("PORT", "4000")),
+      ip: {0, 0, 0, 0, 0, 0, 0, 0}
+    ],
+    secret_key_base: System.get_env("SECRET_KEY_BASE")
+
+  # Configure mailer
+  config :ankaa, Ankaa.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_HOST"),
+    port: String.to_integer(System.get_env("SMTP_PORT", "587")),
+    username: System.get_env("SMTP_USERNAME"),
+    password: System.get_env("SMTP_PASSWORD"),
+    ssl: true,
+    tls: :always,
+    auth: :always,
+    retries: 2
 end
