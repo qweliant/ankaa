@@ -107,7 +107,7 @@ config :phoenix_live_view,
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
-config :ankaa_beacon, AnkaaBeaconWeb.Endpoint,
+config :ankaa, AnkaaBeaconWeb.Endpoint,
   watchers: [
     node: [
       "node_modules/esbuild/bin/esbuild",

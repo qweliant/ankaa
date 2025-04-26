@@ -75,6 +75,7 @@ defmodule Ankaa.Accounts do
 
   """
   def register_user(attrs) do
+    IO.inspect(attrs, label: "DEBUG: User attributes")
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
