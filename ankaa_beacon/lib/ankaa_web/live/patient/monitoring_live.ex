@@ -2,7 +2,6 @@ defmodule AnkaaWeb.MonitoringLive do
   use AnkaaWeb, :live_view
   use AnkaaWeb, :patient_layout
 
-  alias Ankaa.Monitoring.{BPDeviceReading, DialysisDeviceReading}
   alias Ankaa.Patients
   alias Ankaa.Patients.Device
 

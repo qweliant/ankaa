@@ -114,7 +114,7 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
   @impl true
   def handle_event(
         "invite",
-        %{"email" => email, "role" => role, "permissions" => permissions},
+        %{"email" => email, "role" => _role, "permissions" => _permissions},
         socket
       ) do
     # In a real app, this would send an email invitation

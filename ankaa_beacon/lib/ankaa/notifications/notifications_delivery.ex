@@ -54,7 +54,7 @@ defmodule Ankaa.Notifications.Delivery do
       :ok ->
         delivery
         |> changeset(Map.merge(attrs, %{status: :delivered}))
-        |> Repo.update()
+        |> Ankaa.Repo.update() # this would update the delivery status to delivered in the database
 
       {:error, reason} ->
         delivery
@@ -65,7 +65,7 @@ defmodule Ankaa.Notifications.Delivery do
             error_message: error_message(reason)
           })
         )
-        |> Repo.update()
+        |> Ankaa.Repo.update() # this would update the delivery status to failed in the database
     end
   end
 

@@ -4,7 +4,6 @@ defmodule Ankaa.Workers.MQTTConsumer do
   """
   use GenServer
   alias Ankaa.Monitoring.{DialysisDeviceReading, BPDeviceReading}
-  alias Ankaa.Notifications
   require Logger
 
   # Client API

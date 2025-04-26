@@ -64,7 +64,7 @@ defmodule Ankaa.AccountsFixtures do
       user_id: user.id
     }
 
-    {:ok, patient} = Ankaa.Patients.create_patient(patient_attrs, user)
+    {:ok, _patient} = Ankaa.Patients.create_patient(patient_attrs, user)
 
     # Reload user to include patient association
     Ankaa.Repo.preload(user, :patient)

@@ -3,7 +3,6 @@ defmodule AnkaaWeb.DeviceLive do
   use AnkaaWeb, :patient_layout
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.Device
 
   @impl true
   def mount(_params, _session, socket) do

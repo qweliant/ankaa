@@ -243,8 +243,8 @@ defmodule AnkaaWeb.UserAuth do
           "doctor" -> ~p"/careprovider/patients"
           "nurse" -> ~p"/careprovider/patients"
           "caregiver" -> ~p"/caregiver/caringfor"
-          "technical_support" -> ~p"/support/home"
-          "admin" -> ~p"/admin/users"
+          # "technical_support" -> ~p"/support/home"
+          # "admin" -> ~p"/admin/users"
           _ -> ~p"/register"
         end
     end

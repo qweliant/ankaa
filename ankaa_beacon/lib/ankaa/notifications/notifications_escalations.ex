@@ -56,7 +56,7 @@ defmodule Ankaa.Notifications.EscalationPolicy do
         escalation_level: next_level,
         next_escalation_at: next_time
       })
-      |> Repo.update()
+      # |> Ankaa.Repo.update() # this would update the escalation level and next escalation time in the database
     end
   end
 

@@ -3,7 +3,6 @@ defmodule Ankaa.Monitoring.Threshold do
   Schema and functions for patient-specific monitoring thresholds
   """
   use Ecto.Schema
-  import Ecto.Changeset
 
   schema "thresholds" do
     field(:device_type, Ecto.Enum, values: [:dialysis, :bp])
@@ -23,7 +22,7 @@ defmodule Ankaa.Monitoring.Threshold do
   Gets all thresholds for a specific patient and device type
   """
   @spec get_for_patient(User.t(), atom()) :: [Threshold.t()]
-  def get_for_patient(patient, device_type) do
+  def get_for_patient(_patient, _device_type) do
     # Query thresholds for this patient and device type
   end
 end

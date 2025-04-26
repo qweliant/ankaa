@@ -2,7 +2,6 @@ defmodule AnkaaWeb.Router do
   use AnkaaWeb, :router
 
   import AnkaaWeb.UserAuth
-  import AnkaaWeb.RoleAuth
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -156,17 +155,20 @@ defmodule AnkaaWeb.Router do
   #   end
   # end
 
-  # # Admin routes
+  # Admin routes
   # scope "/admin", AnkaaWeb do
   #   pipe_through([:browser, :require_authenticated_user])
 
   #   live_session :admin,
-  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_role, ["admin"]}] do
+  #     on_mount: [
+  #       {AnkaaWeb.UserAuth, :ensure_authenticated},
+  #       {AnkaaWeb.RoleAuth, :require_role, ["admin"]}
+  #     ] do
   #     live("/users", Admin.UserLive.Index, :index)
-  #     live("/users/new", Admin.UserLive.Index, :new)
-  #     live("/users/:id/edit", Admin.UserLive.Index, :edit)
-  #     live("/users/:id", Admin.UserLive.Show, :show)
-  #     live("/users/:id/show/edit", Admin.UserLive.Show, :edit)
+  #     # live("/users/new", Admin.UserLive.Index, :new)
+  #     # live("/users/:id/edit", Admin.UserLive.Index, :edit)
+  #     # live("/users/:id", Admin.UserLive.Show, :show)
+  #     # live("/users/:id/show/edit", Admin.UserLive.Show, :edit)
   #   end
   # end
 end

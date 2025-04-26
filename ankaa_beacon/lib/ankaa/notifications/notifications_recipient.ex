@@ -23,7 +23,7 @@ defmodule Ankaa.Notifications.Recipient do
   Gets all recipients for a patient by role.
   """
   @spec get_recipients_by_role(User.t(), atom()) :: [Recipient.t()]
-  def get_recipients_by_role(patient, role) do
+  def get_recipients_by_role(_patient, _role) do
     # Logic to fetch recipients by role
   end
 end

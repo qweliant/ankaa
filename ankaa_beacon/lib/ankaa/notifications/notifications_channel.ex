@@ -4,7 +4,6 @@ defmodule Ankaa.Notifications.Channel do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ankaa.Repo
   alias Ankaa.Notifications.Delivery
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -56,22 +55,22 @@ defmodule Ankaa.Notifications.Channel do
     end
   end
 
-  defp deliver_sms(channel) do
+  defp deliver_sms(_channel) do
     # SMS delivery implementation
     {:ok, %Delivery{}}
   end
 
-  defp deliver_email(channel) do
+  defp deliver_email(_channel) do
     # Email delivery implementation
     {:ok, %Delivery{}}
   end
 
-  defp deliver_app(channel) do
+  defp deliver_app(_channel) do
     # Push notification implementation
     {:ok, %Delivery{}}
   end
 
-  defp deliver_voice(channel) do
+  defp deliver_voice(_channel) do
     # Voice call implementation
     {:ok, %Delivery{}}
   end

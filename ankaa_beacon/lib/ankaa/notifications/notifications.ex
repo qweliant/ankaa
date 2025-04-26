@@ -4,10 +4,9 @@ defmodule Ankaa.Notifications do
   Focuses on core alert creation and threshold violation detection.
   """
 
-  alias Ankaa.Notifications.{Alert, Channel, Delivery, EscalationPolicy, Recipient}
+  alias Ankaa.Notifications.{Alert}
   alias Ankaa.Accounts.User
   alias Ankaa.Monitoring.{DeviceReading, ThresholdViolation}
-  alias Ankaa.Repo
 
   @doc """
   Processes a device reading and creates an alert if thresholds are violated.

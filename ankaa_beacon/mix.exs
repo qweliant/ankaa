@@ -59,9 +59,7 @@ defmodule Ankaa.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-
       # MQTT Client
-      # {:emqtt, "~> 1.11"}
       {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]},
       # Test dependencies
       {:ex_machina, "~> 2.7", only: :test},
@@ -82,6 +80,10 @@ defmodule Ankaa.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      "docker.test": ["cmd docker compose exec -T phoenix mix test"],
+      "docker.test.parallel": [
+        "cmd docker compose exec -T phoenix mix test --partitions 4 --max-cases 10"
+      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind ankaa", "esbuild ankaa"],
       "assets.deploy": [

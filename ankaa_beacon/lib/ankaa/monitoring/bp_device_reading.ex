@@ -4,7 +4,6 @@ defmodule Ankaa.Monitoring.BPDeviceReading do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ankaa.TimescaleRepo
   alias Ankaa.Monitoring.ThresholdViolation
   @behaviour Ankaa.Monitoring.DeviceReading
 
