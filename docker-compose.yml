@@ -77,6 +77,8 @@ services:
       - ankaa_network
     volumes:
       - ./ankaa_beacon:/app
+      - phoenix_deps:/app/deps
+      - phoenix_build:/app/_build
 
 networks:
   ankaa_network:
@@ -87,3 +89,5 @@ volumes:
   timescale_data:
   mosquitto_data:
   mosquitto_logs:
+  phoenix_deps:
+  phoenix_build:
