@@ -58,29 +58,28 @@ services:
       - RUST_LOG=info
     networks:
       - ankaa_network
-  # phoenix:
-  #   build:
-  #     context: ./ankaa_beacon
-  #     dockerfile: Dockerfile.dev
-  #   container_name: ankaa_phoenix
-  #   depends_on:
-  #     - postgres
-  #     - timescale
-  #     - mqtt
-  #   env_file:
-  #     - ./ankaa_beacon/.env
-  #   environment:
-  #     - POSTGRES_HOST=postgres
-  #     - TIMESCALE_HOST=timescale
-  #     - MQTT_HOST=mqtt_broker
-  #     - MIX_ENV=dev
-  #   ports:
-  #     - "4000:4000"
-  #   networks:
-  #     - ankaa_network
-  #   volumes:
-  #     - ./ankaa_beacon:/app
-
+  phoenix:
+    build:
+      context: ./ankaa_beacon
+      dockerfile: Dockerfile.dev
+    container_name: ankaa_phoenix
+    depends_on:
+      - postgres
+      - timescale
+      - mqtt
+    env_file:
+      - ./ankaa_beacon/.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - TIMESCALE_HOST=timescale
+      - MQTT_HOST=mqtt_broker
+      - MIX_ENV=dev
+    ports:
+      - "4000:4000"
+    networks:
+      - ankaa_network
+    volumes:
+      - ./ankaa_beacon:/app
 
 networks:
   ankaa_network:

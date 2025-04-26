@@ -28,13 +28,13 @@ RUN mix local.hex --force && \
 # Set development environment
 ENV MIX_ENV=dev
 
-# Copy only mix files first
+# Copy mix files
 COPY mix.exs mix.lock ./
+COPY config config
 
-# Get and compile dependencies separately
-RUN mix deps.get
-RUN mix deps.compile
-RUN mix deps.compile bcrypt_elixir --force
+# Get dependencies and compile them in the container
+RUN mix deps.get && \
+    mix deps.compile
 
 EXPOSE 4000
 
