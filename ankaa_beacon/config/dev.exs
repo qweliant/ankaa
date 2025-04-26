@@ -6,6 +6,7 @@ config :ankaa, Ankaa.Repo,
   password: System.get_env("POSTGRES_PASSWORD", "password"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   database: System.get_env("POSTGRES_DB", "ankaa_dev"),
+  port: String.to_integer(System.get_env("TIMESCALE_PORT", "5432")),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: String.to_integer(System.get_env("POSTGRES_POOL_SIZE", "10"))

@@ -3,9 +3,18 @@ FROM hexpm/elixir:1.18.3-erlang-27.3.3-debian-bullseye-20250407-slim
 # Install build dependencies
 RUN apt-get update -y && apt-get install -y \
     build-essential \
+    gcc \
+    make \
     git \
     inotify-tools \
     curl \
+    libstdc++6 \
+    openssl \
+    libncurses5 \
+    locales \
+    ca-certificates \
+    libgmp-dev \      
+    libssl-dev \      
     && curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
@@ -19,11 +28,14 @@ RUN mix local.hex --force && \
 # Set development environment
 ENV MIX_ENV=dev
 
-# We don't copy the source code here because it will be mounted as a volume
-# This allows for live code reloading
+# Copy only mix files first
+COPY mix.exs mix.lock ./
 
-# Default Phoenix port
+# Get and compile dependencies separately
+RUN mix deps.get
+RUN mix deps.compile
+RUN mix deps.compile bcrypt_elixir --force
+
 EXPOSE 4000
 
-# Install mix dependencies and npm dependencies on container start
 CMD ["sh", "-c", "cd assets && npm install && cd .. && mix deps.get && mix ecto.migrate && mix phx.server"]
