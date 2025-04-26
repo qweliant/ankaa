@@ -7,9 +7,11 @@ defmodule Ankaa.Notifications.Channel do
   alias Ankaa.Repo
   alias Ankaa.Notifications.Delivery
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "notification_channels" do
     field(:type, Ecto.Enum, values: [:sms, :email, :app, :voice])
-    # phone number, email, user_id, etc.
+    # phone_number, email, user_id, etc.
     field(:identifier, :string)
     field(:is_active, :boolean, default: true)
     field(:last_delivery_attempt, :utc_datetime)

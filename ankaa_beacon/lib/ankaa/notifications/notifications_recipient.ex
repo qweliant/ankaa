@@ -5,12 +5,14 @@ defmodule Ankaa.Notifications.Recipient do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "alert_recipients" do
-    field :role, Ecto.Enum, values: [:caregiver, :doctor, :support_agent, :emergency_contact]
-    field :channels, {:array, Ecto.Enum}, values: [:sms, :email, :app, :voice]
+    field(:role, Ecto.Enum, values: [:caregiver, :doctor, :support_agent, :emergency_contact])
+    field(:channels, {:array, Ecto.Enum}, values: [:sms, :email, :app, :voice])
 
-    belongs_to :user, Ankaa.Accounts.User
-    belongs_to :patient, Ankaa.Accounts.User, references: :id
+    belongs_to(:user, Ankaa.Accounts.User)
+    belongs_to(:patient, Ankaa.Accounts.User, references: :id)
 
     timestamps()
   end

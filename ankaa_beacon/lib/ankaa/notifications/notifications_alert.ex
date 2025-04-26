@@ -6,6 +6,8 @@ defmodule Ankaa.Notifications.Alert do
   import Ecto.Changeset
   alias Ankaa.Repo
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "alerts" do
     field(:title, :string)
     field(:message, :string)
