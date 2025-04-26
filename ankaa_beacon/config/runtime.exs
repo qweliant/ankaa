@@ -21,12 +21,13 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  # Configure PostgreSQL
   database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+    "ecto://#{System.get_env("POSTGRES_USER")}:#{System.get_env("POSTGRES_PASSWORD")}@#{System.get_env("POSTGRES_HOST")}/#{System.get_env("POSTGRES_DB")}"
+
+  # Configure TimescaleDB
+  timescale_url =
+    "ecto://#{System.get_env("TIMESCALE_USER")}:#{System.get_env("TIMESCALE_PASSWORD")}@#{System.get_env("TIMESCALE_HOST")}/#{System.get_env("TIMESCALE_DB")}"
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
@@ -35,6 +36,18 @@ if config_env() == :prod do
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
+
+  # Configure TimescaleDB
+  config :ankaa, Ankaa.TimescaleRepo,
+    url: timescale_url,
+    pool_size: String.to_integer(System.get_env("TIMESCALE_POOL_SIZE") || "10")
+
+  # Configure MQTT
+  config :ankaa, :mqtt,
+    host: System.get_env("MQTT_HOST", "localhost"),
+    port: String.to_integer(System.get_env("MQTT_PORT", "1883")),
+    username: System.get_env("MQTT_USERNAME"),
+    password: System.get_env("MQTT_PASSWORD")
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -114,40 +127,4 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
-
-  # Configure MQTT
-  config :ankaa, :mqtt,
-    host: System.get_env("MQTT_HOST", "localhost"),
-    port: String.to_integer(System.get_env("MQTT_PORT", "1883")),
-    username: System.get_env("MQTT_USERNAME"),
-    password: System.get_env("MQTT_PASSWORD")
-
-  # Configure TimescaleDB
-  config :ankaa, Ankaa.TimescaleRepo,
-    url: System.get_env("TIMESCALE_URL"),
-    pool_size: String.to_integer(System.get_env("TIMESCALE_POOL_SIZE") || "10")
-
-  # Configure the endpoint
-  config :ankaa, AnkaaWeb.Endpoint,
-    url: [
-      host: System.get_env("PHOENIX_HOST", "localhost"),
-      port: String.to_integer(System.get_env("PORT", "4000"))
-    ],
-    http: [
-      port: String.to_integer(System.get_env("PORT", "4000")),
-      ip: {0, 0, 0, 0, 0, 0, 0, 0}
-    ],
-    secret_key_base: System.get_env("SECRET_KEY_BASE")
-
-  # Configure mailer
-  config :ankaa, Ankaa.Mailer,
-    adapter: Swoosh.Adapters.SMTP,
-    relay: System.get_env("SMTP_HOST"),
-    port: String.to_integer(System.get_env("SMTP_PORT", "587")),
-    username: System.get_env("SMTP_USERNAME"),
-    password: System.get_env("SMTP_PASSWORD"),
-    ssl: true,
-    tls: :always,
-    auth: :always,
-    retries: 2
 end

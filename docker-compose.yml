@@ -70,9 +70,6 @@ services:
     env_file:
       - ./ankaa_beacon/.env
     environment:
-      - POSTGRES_HOST=postgres
-      - TIMESCALE_HOST=timescale
-      - MQTT_HOST=mqtt_broker
       - MIX_ENV=dev
     ports:
       - "4000:4000"
