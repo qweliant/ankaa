@@ -32,8 +32,13 @@ defmodule Ankaa.Workers.MQTTConsumer do
         {:properties, %{}},
         # Add debug logging
         {:debug, true},
-        # {:enable_ssl, true},
-        # {:cafile, "ankaa_beacon/priv/certs/emqxsl-ca.crt"}
+        {:enable_ssl, true}
+        # {:ssl_opts,
+        #  [
+        #    verify: :verify_peer,
+        #    cacertfile: System.get_env("EMQX_CA_CERT_PATH")
+        #  ]}
+        # {:ssl_opts, [verify: :verify_none]}
       ])
 
     # Connect to the broker

@@ -21,10 +21,20 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  IO.inspect(System.get_env("PROD_POSTGRES_USER"), label: "PROD_POSTGRES_USER")
+  IO.inspect(System.get_env("PROD_POSTGRES_PASSWORD"), label: "PROD_POSTGRES_PASSWORD")
+  IO.inspect(System.get_env("PROD_POSTGRES_HOST"), label: "PROD_POSTGRES_HOST")
+  IO.inspect(System.get_env("PROD_POSTGRES_DB"), label: "PROD_POSTGRES_DB")
+  IO.inspect(System.get_env("PROD_POSTGRES_PORT"), label: "PROD_POSTGRES_PORT")
   # Configure PostgreSQL
   database_url =
     "ecto://#{System.get_env("PROD_POSTGRES_USER")}:#{System.get_env("PROD_POSTGRES_PASSWORD")}@#{System.get_env("PROD_POSTGRES_HOST")}/#{System.get_env("PROD_POSTGRES_DB")}"
 
+  IO.inspect(System.get_env("PROD_TIMESCALE_USER"), label: "PROD_TIMESCALE_USER")
+  IO.inspect(System.get_env("PROD_TIMESCALE_PASSWORD"), label: "PROD_TIMESCALE_PASSWORD")
+  IO.inspect(System.get_env("PROD_TIMESCALE_HOST"), label: "PROD_TIMESCALE_HOST")
+  IO.inspect(System.get_env("PROD_TIMESCALE_DB"), label: "PROD_TIMESCALE_DB")
+  IO.inspect(System.get_env("PROD_TIMESCALE_PORT"), label: "PROD_TIMESCALE_PORT")
   # Configure TimescaleDB
   timescale_url =
     "ecto://#{System.get_env("PROD_TIMESCALE_USER")}:#{System.get_env("PROD_TIMESCALE_PASSWORD")}@#{System.get_env("PROD_TIMESCALE_HOST")}/#{System.get_env("PROD_TIMESCALE_DB")}"
@@ -33,10 +43,16 @@ if config_env() == :prod do
 
   config :ankaa, Ankaa.Repo,
     url: database_url,
-    socket_options: maybe_ipv6
+    socket_options: maybe_ipv6,
+    ssl: [
+      verify: :verify_none
+    ]
 
   config :ankaa, Ankaa.TimescaleRepo,
-    url: timescale_url
+    url: timescale_url,
+    ssl: [
+      verify: :verify_none
+    ]
 
   # Configure MQTT
   config :ankaa, :mqtt,
@@ -71,14 +87,14 @@ if config_env() == :prod do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :ankaa, AnkaaWeb.Endpoint,
-  #       https: [
-  #         ...,
-  #         port: 443,
-  #         cipher_suite: :strong,
-  #         keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
-  #         certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
-  #       ]
+  config :ankaa, AnkaaWeb.Endpoint,
+    https: [
+      port: 443,
+      cipher_suite: :strong,
+      keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
+      certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
+    ]
+
   #
   # The `cipher_suite` is set to `:strong` to support only the
   # latest and more secure SSL ciphers. This means old browsers
