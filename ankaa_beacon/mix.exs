@@ -80,10 +80,6 @@ defmodule Ankaa.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "docker.test": ["cmd docker compose exec -T phoenix mix test"],
-      "docker.test.parallel": [
-        "cmd docker compose exec -T phoenix mix test --partitions 4 --max-cases 10"
-      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind ankaa", "esbuild ankaa"],
       "assets.deploy": [

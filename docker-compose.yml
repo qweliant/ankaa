@@ -25,6 +25,10 @@ services:
       - timescale_data:/var/lib/postgresql/data
     networks:
       - ankaa_network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
   mqtt:
     image: eclipse-mosquitto:2.0
     container_name: mqtt_broker
@@ -58,6 +62,10 @@ services:
       - RUST_LOG=info
     networks:
       - ankaa_network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
   phoenix:
     build:
       context: ./ankaa_beacon
@@ -79,6 +87,10 @@ services:
       - ./ankaa_beacon:/app
       - phoenix_deps:/app/deps
       - phoenix_build:/app/_build
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   ankaa_network:

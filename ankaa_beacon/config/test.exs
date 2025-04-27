@@ -15,32 +15,12 @@ config :bcrypt_elixir, :log_rounds, 1
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-# config :ankaa, Ankaa.Repo,
-#   username: "user",
-#   password: "password",
-#   hostname: "localhost",
-#   database: "ankaa_test",
-#   port: 5432,
-#   pool: Ecto.Adapters.SQL.Sandbox,
-#   pool_size: 10
-
-# # Configure TimescaleDB
-# config :ankaa, Ankaa.TimescaleRepo,
-#   username: "user",
-#   password: "password",
-#   hostname: "localhost",
-#   database: "ankaa_timescale_test",
-#   port: 5433,
-#   pool: Ecto.Adapters.SQL.Sandbox,
-#   pool_size: 10
-
 # Configure your database
 config :ankaa, Ankaa.Repo,
   username: "user",
   password: "password",
-  # Changed to match container name
-  hostname: "ankaa_postgres_dev",
-  database: "ankaa_test#{System.get_env("MIX_TEST_PARTITION")}",
+  hostname: "localhost",
+  database: "ankaa_test",
   port: 5432,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
@@ -49,17 +29,15 @@ config :ankaa, Ankaa.Repo,
 config :ankaa, Ankaa.TimescaleRepo,
   username: "user",
   password: "password",
-  # Changed to match container name
-  hostname: "ankaa_timescale_dev",
-  database: "ankaa_timescale_test#{System.get_env("MIX_TEST_PARTITION")}",
-  # Changed to match container's internal port
-  port: 5432,
+  hostname: "localhost",
+  database: "ankaa_timescale_test",
+  port: 5433,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
 # Configure MQTT for testing
 config :ankaa, :mqtt,
-  host: "localhost",
+  host: "mqtt_broker",
   port: 1883,
   client_id: "ankaa_test",
   username: nil,
