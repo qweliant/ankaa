@@ -23,7 +23,7 @@ defmodule AnkaaWeb.RoleAuth do
   end
 
   def on_mount(:require_nurse, _params, _session, socket) do
-    on_mount(:require_role, ["nurse", "doctor", "admin"], nil, nil, socket)
+    on_mount(:require_role, ["nurse", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_doctor_or_nurse, _params, _session, socket) do
@@ -31,7 +31,7 @@ defmodule AnkaaWeb.RoleAuth do
   end
 
   def on_mount(:require_caregiver, _params, _session, socket) do
-    on_mount(:require_role, ["caregiver", "nurse", "doctor", "admin"], nil, nil, socket)
+    on_mount(:require_role, ["caregiver"], nil, nil, socket)
   end
 
   def on_mount(:require_technical_support, _params, _session, socket) do
@@ -54,8 +54,11 @@ defmodule AnkaaWeb.RoleAuth do
   end
 
   defp mount_current_user(socket) do
+    # Get the session from assigns if available
+    session = socket.assigns[:session] || %{}
+
     assign_new(socket, :current_user, fn ->
-      if user_token = get_connect_params(socket)["user_token"] do
+      if user_token = session["user_token"] do
         Ankaa.Accounts.get_user_by_session_token(user_token)
       end
     end)
