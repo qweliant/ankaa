@@ -18,3 +18,34 @@ config :logger, level: :info
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+
+# Configure your primary PostgreSQL database
+config :ankaa, Ankaa.Repo,
+  username: System.get_env("PROD_POSTGRES_USER"),
+  password: System.get_env("PROD_POSTGRES_PASSWORD"),
+  hostname: System.get_env("PROD_POSTGRES_HOST"),
+  database: System.get_env("PROD_POSTGRES_NAME"),
+  port: String.to_integer(System.get_env("PROD_POSTGRES_PORT") || "5432"),
+  ssl: true
+
+# Configure your TimescaleDB database
+config :ankaa, Ankaa.TimescaleRepo,
+  username: System.get_env("PROD_TIMESCALE_USER"),
+  password: System.get_env("PROD_TIMESCALE_PASSWORD"),
+  hostname: System.get_env("PROD_TIMESCALE_HOST"),
+  database: System.get_env("PROD_TIMESCALE_NAME"),
+  port: String.to_integer(System.get_env("TIMESCALE_PORT") || "5433"),
+  ssl: true
+
+# Configure your MQTT broker
+config :ankaa, :mqtt,
+  host: System.get_env("PROD_MQTT_HOST"),
+  port: String.to_integer(System.get_env("PROD_MQTT_PORT") || "1883"),
+  client_id: System.get_env("PROD_MQTT_CLIENT_ID"),
+  username: System.get_env("PROD_MQTT_USERNAME"),
+  password: System.get_env("PROD_MQTT_PASSWORD")
+
+# ssl: true,
+# ssl_opts: [
+#   cacertfile: "ankaa_beacon/priv/certs/emqxsl-ca.crt"
+# ]

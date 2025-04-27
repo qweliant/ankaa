@@ -31,7 +31,9 @@ defmodule Ankaa.Workers.MQTTConsumer do
         # MQTT 5.0 properties
         {:properties, %{}},
         # Add debug logging
-        {:debug, true}
+        {:debug, true},
+        # {:enable_ssl, true},
+        # {:cafile, "ankaa_beacon/priv/certs/emqxsl-ca.crt"}
       ])
 
     # Connect to the broker

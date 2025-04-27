@@ -23,37 +23,29 @@ end
 if config_env() == :prod do
   # Configure PostgreSQL
   database_url =
-    "ecto://#{System.get_env("POSTGRES_USER")}:#{System.get_env("POSTGRES_PASSWORD")}@#{System.get_env("POSTGRES_HOST")}/#{System.get_env("POSTGRES_DB")}"
+    "ecto://#{System.get_env("PROD_POSTGRES_USER")}:#{System.get_env("PROD_POSTGRES_PASSWORD")}@#{System.get_env("PROD_POSTGRES_HOST")}/#{System.get_env("PROD_POSTGRES_DB")}"
 
   # Configure TimescaleDB
   timescale_url =
-    "ecto://#{System.get_env("TIMESCALE_USER")}:#{System.get_env("TIMESCALE_PASSWORD")}@#{System.get_env("TIMESCALE_HOST")}/#{System.get_env("TIMESCALE_DB")}"
+    "ecto://#{System.get_env("PROD_TIMESCALE_USER")}:#{System.get_env("PROD_TIMESCALE_PASSWORD")}@#{System.get_env("PROD_TIMESCALE_HOST")}/#{System.get_env("PROD_TIMESCALE_DB")}"
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :ankaa, Ankaa.Repo,
-    # ssl: true,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 
-  # Configure TimescaleDB
   config :ankaa, Ankaa.TimescaleRepo,
-    url: timescale_url,
-    pool_size: String.to_integer(System.get_env("TIMESCALE_POOL_SIZE") || "10")
+    url: timescale_url
 
   # Configure MQTT
   config :ankaa, :mqtt,
-    host: System.get_env("MQTT_HOST", "localhost"),
-    port: String.to_integer(System.get_env("MQTT_PORT", "1883")),
-    username: System.get_env("MQTT_USERNAME"),
-    password: System.get_env("MQTT_PASSWORD")
+    host: System.get_env("PROD_MQTT_HOST", "localhost"),
+    port: String.to_integer(System.get_env("PROD_MQTT_PORT", "1883")),
+    username: System.get_env("PROD_MQTT_USERNAME"),
+    password: System.get_env("PROD_MQTT_PASSWORD")
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
-  # A default value is used in config/dev.exs and config/test.exs but you
-  # want to use a different value for prod and you most likely don't want
-  # to check this value into version control, so we use an environment
-  # variable instead.
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||
       raise """
@@ -69,10 +61,6 @@ if config_env() == :prod do
   config :ankaa, AnkaaWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
-      # Enable IPv6 and bind on all interfaces.
-      # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
-      # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
-      # for details about using IPv6 vs IPv4 and loopback vs public addresses.
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
