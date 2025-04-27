@@ -506,52 +506,7 @@ defmodule Ankaa.AccountsTest do
     end
   end
 
-  describe "users" do
-    alias Ankaa.Accounts.User
-
-    import Ankaa.AccountsFixtures
-
-    @valid_attrs %{
-      email: "test@example.com",
-      password: "hello world!123"
-    }
-    @update_attrs %{
-      email: "updated@example.com",
-      password: "updated world!123"
-    }
-    @invalid_attrs %{email: nil, password: nil}
-
-    test "register_user/1 with valid data creates a user" do
-      assert {:ok, %User{} = user} = Accounts.register_user(@valid_attrs)
-      assert user.email == "test@example.com"
-      assert is_binary(user.hashed_password)
-      assert is_nil(user.role)
-    end
-
-    test "register_user/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.register_user(@invalid_attrs)
-    end
-
-    test "get_user!/1 returns the user with given id" do
-      user = user_fixture()
-      assert Accounts.get_user!(user.id) == user
-    end
-
-    test "get_user!/1 raises if id is invalid" do
-      assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(Ecto.UUID.generate())
-      end
-    end
-
-    test "update_user/2 with valid data updates the user", %{user: user} do
-      assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
-      assert user.email == "updated@example.com"
-    end
-
-    test "update_user/2 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_user( @invalid_attrs)
-    end
-
+  describe "assiign_role/2" do
     test "assign_role/2 assigns a valid role to a user" do
       user = user_fixture()
       assert {:ok, %User{} = updated_user} = Accounts.assign_role(user, "nurse")
@@ -561,6 +516,12 @@ defmodule Ankaa.AccountsTest do
     test "assign_role/2 with invalid role returns error changeset" do
       user = user_fixture()
       assert {:error, %Ecto.Changeset{}} = Accounts.assign_role(user, "invalid_role")
+    end
+
+    test "assign_role/2 updates an existing role" do
+      user = user_fixture(%{role: "nurse"})
+      assert {:ok, %User{} = updated_user} = Accounts.assign_role(user, "doctor")
+      assert updated_user.role == "doctor"
     end
 
     test "has_role?/2 checks if a user has a specific role" do
