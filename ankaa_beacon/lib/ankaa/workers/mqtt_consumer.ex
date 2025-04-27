@@ -17,6 +17,8 @@ defmodule Ankaa.Workers.MQTTConsumer do
     # MQTT connection configuration
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
     mqtt_config = Application.get_env(:ankaa, :mqtt)
+    IO.inspect(mqtt_config, label: "MQTT CONFIG")
+    IO.inspect(System.get_env("EMQX_CA_CERT_PATH"), label: "CERT PATH")
 
     # Start the MQTT client with options seen here: https://github.com/emqx/emqtt?tab=readme-ov-file#option
     {:ok, client} =
@@ -24,20 +26,19 @@ defmodule Ankaa.Workers.MQTTConsumer do
         {:host, String.to_charlist(mqtt_config[:host])},
         {:port, mqtt_config[:port]},
         {:clientid, String.to_charlist(client_id)},
+        {:username, String.to_charlist(mqtt_config[:username])},
+        {:password, String.to_charlist(mqtt_config[:password])},
         {:clean_start, true},
-        {:keepalive, 30},
-        # Use MQTT 5.0
+        {:keepalive, 60},
         {:proto_ver, :v5},
-        # MQTT 5.0 properties
-        {:properties, %{}},
-        # Add debug logging
-        {:debug, true},
-        {:enable_ssl, true}
-        # {:ssl_opts,
-        #  [
-        #    verify: :verify_peer,
-        #    cacertfile: System.get_env("EMQX_CA_CERT_PATH")
-        #  ]}
+        {:reconnect, :infinity},
+        {:reconnect_timeout, 4000},
+        {:enable_ssl, true},
+        {:ssl_opts,
+         [
+           verify: :verify_peer,
+           cacertfile: System.get_env("EMQX_CA_CERT_PATH")
+         ]}
         # {:ssl_opts, [verify: :verify_none]}
       ])
 

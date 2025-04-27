@@ -21,20 +21,10 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  IO.inspect(System.get_env("PROD_POSTGRES_USER"), label: "PROD_POSTGRES_USER")
-  IO.inspect(System.get_env("PROD_POSTGRES_PASSWORD"), label: "PROD_POSTGRES_PASSWORD")
-  IO.inspect(System.get_env("PROD_POSTGRES_HOST"), label: "PROD_POSTGRES_HOST")
-  IO.inspect(System.get_env("PROD_POSTGRES_DB"), label: "PROD_POSTGRES_DB")
-  IO.inspect(System.get_env("PROD_POSTGRES_PORT"), label: "PROD_POSTGRES_PORT")
   # Configure PostgreSQL
   database_url =
     "ecto://#{System.get_env("PROD_POSTGRES_USER")}:#{System.get_env("PROD_POSTGRES_PASSWORD")}@#{System.get_env("PROD_POSTGRES_HOST")}/#{System.get_env("PROD_POSTGRES_DB")}"
 
-  IO.inspect(System.get_env("PROD_TIMESCALE_USER"), label: "PROD_TIMESCALE_USER")
-  IO.inspect(System.get_env("PROD_TIMESCALE_PASSWORD"), label: "PROD_TIMESCALE_PASSWORD")
-  IO.inspect(System.get_env("PROD_TIMESCALE_HOST"), label: "PROD_TIMESCALE_HOST")
-  IO.inspect(System.get_env("PROD_TIMESCALE_DB"), label: "PROD_TIMESCALE_DB")
-  IO.inspect(System.get_env("PROD_TIMESCALE_PORT"), label: "PROD_TIMESCALE_PORT")
   # Configure TimescaleDB
   timescale_url =
     "ecto://#{System.get_env("PROD_TIMESCALE_USER")}:#{System.get_env("PROD_TIMESCALE_PASSWORD")}@#{System.get_env("PROD_TIMESCALE_HOST")}/#{System.get_env("PROD_TIMESCALE_DB")}"
