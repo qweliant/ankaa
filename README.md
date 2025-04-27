@@ -1,6 +1,8 @@
 #
 
 <!-- PROJECT SHIELDS -->
+[![Tests](https://github.com/qweliant/ankaa/actions/workflows/ci.yml/badge.svg)](https://github.com/qweliant/ankaa/actions/workflows/ci.yml)
+[![Deploy](https://github.com/qweliant/ankaa/actions/workflows/ci.yml/badge.svg)](https://github.com/qweliant/ankaa/actions/workflows/ci.yml)
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
