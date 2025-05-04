@@ -1,0 +1,82 @@
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: ankaa_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d ankaa_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      timescale:
+        image: timescale/timescaledb-ha:pg17
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: ankaa_timescale_dev
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d ankaa_timescale_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mqtt:
+        image: eclipse-mosquitto:2.0
+        ports:
+          - 1883:1883
+          - 9001:9001
+        options: >-
+          --health-cmd "mosquitto_sub -h localhost -t 'test/topic' -C 1 -E 2>/dev/null || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18.3"
+          otp-version: "27.3.3"
+      - name: Cache deps
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.cache-name }}-
+      - name: Install dependencies
+        run: |
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+          mix deps.compile
+        working-directory: ankaa_beacon
+      - name: Set up database
+        run: mix ecto.create && mix ecto.migrate
+        working-directory: ankaa_beacon
+      - name: Run tests
+        run: mix test
+        working-directory: ankaa_beacon
