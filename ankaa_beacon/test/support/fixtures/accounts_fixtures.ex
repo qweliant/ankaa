@@ -13,8 +13,14 @@ defmodule Ankaa.AccountsFixtures do
 
   def valid_user_password, do: "hello world!123"
 
+  @doc """
+  Generate a unique user email.
+  """
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
 
+  @doc """
+  Generate a user.
+  """
   def user_fixture(attrs \\ %{}) do
     {:ok, user} =
       attrs
