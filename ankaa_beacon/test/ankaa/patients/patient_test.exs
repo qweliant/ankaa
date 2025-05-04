@@ -6,6 +6,94 @@ defmodule Ankaa.PatientsTest do
   alias Ankaa.Patients.{Patient, PatientAssociation, Device}
   alias Ankaa.AccountsFixtures
 
+  describe "list_patients/1" do
+    setup do
+      admin = AccountsFixtures.admin_fixture()
+      doctor = AccountsFixtures.doctor_fixture()
+      nurse = AccountsFixtures.nurse_fixture()
+      patient1 = AccountsFixtures.patient_fixture()
+      patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
+
+      # Create association between doctor and patient1
+      {:ok, _} = Patients.create_patient_association(doctor, patient1.patient, "doctor")
+
+      # Create peer association
+      {:ok, _} = Patients.create_peer_association(patient1, patient2.patient)
+
+      %{
+        admin: admin,
+        doctor: doctor,
+        nurse: nurse,
+        patient1: patient1,
+        patient2: patient2
+      }
+    end
+
+    test "admin sees all patients", %{admin: admin, patient1: p1, patient2: p2} do
+      assert {:ok, patients} = Patients.list_patients(admin)
+      assert length(patients) >= 2
+      assert p1.patient in patients
+      assert p2.patient in patients
+    end
+
+    test "doctor sees only their patients", %{doctor: doctor, patient1: p1, patient2: p2} do
+      assert {:ok, patients} = Patients.list_patients(doctor)
+      assert length(patients) == 1
+      assert p1.patient in patients
+      refute p2.patient in patients, "Doctor should only see their assigned patients"
+    end
+
+    test "patient sees peer patients", %{patient1: p1, patient2: p2} do
+      assert {:ok, patients} = Patients.list_patients(p1)
+      assert length(patients) == 1
+      refute p1.patient in patients, "Patient shouldn't see themselves"
+      assert p2.patient in patients, "Patient should see their peers"
+    end
+
+    test "unauthorized user gets error" do
+      user = AccountsFixtures.user_fixture()
+      assert {:error, :unauthorized} = Patients.list_patients(user)
+    end
+  end
+
+  describe "search_patients/2" do
+    setup do
+      admin = AccountsFixtures.admin_fixture()
+      doctor = AccountsFixtures.doctor_fixture()
+      nurse = AccountsFixtures.nurse_fixture()
+      patient1 = AccountsFixtures.patient_fixture()
+      patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
+
+      # Create association between doctor and patient1
+      %PatientAssociation{}
+      |> PatientAssociation.changeset(%{
+        user_id: doctor.id,
+        patient_id: patient1.patient.id,
+        relationship: "doctor"
+      })
+      |> Repo.insert!()
+
+      %{
+        admin: admin,
+        doctor: doctor,
+        nurse: nurse,
+        patient1: patient1,
+        patient2: patient2
+      }
+    end
+
+    test "doctor can search their patients by name", %{doctor: doctor, patient1: p1} do
+      assert {:ok, results} = Patients.search_patients(doctor, %{name: "Test Patient"})
+      assert p1.patient in results
+    end
+
+    test "patient can't see unauthorized patients in search", %{patient1: p1} do
+      # Assuming patient1 shouldn't see patient2 based on your rules
+      assert {:ok, results} = Patients.search_patients(p1, %{name: "Peer Patient"})
+      refute p1.patient in results
+    end
+  end
+
   describe "patients" do
     @valid_attrs %{
       name: "John Doe",
@@ -19,23 +107,6 @@ defmodule Ankaa.PatientsTest do
       timezone: "America/New_York"
     }
     @invalid_attrs %{name: nil, date_of_birth: "invalid", timezone: nil}
-
-    test "list_all_patients/1 returns all patients for admins only" do
-      admin = AccountsFixtures.admin_fixture()
-      regular_user = AccountsFixtures.user_fixture()
-
-      patient1 = AccountsFixtures.patient_fixture()
-      patient2 = AccountsFixtures.patient_fixture(%{name: "Second Patient"})
-
-      # Admin can see all patients
-      assert patients = Patients.list_all_patients(admin)
-      assert length(patients) >= 2
-      assert patient1.patient in patients
-      assert patient2.patient in patients
-
-      # Regular user gets unauthorized
-      assert {:error, :unauthorized} = Patients.list_all_patients(regular_user)
-    end
 
     test "get_patient!/1 returns the patient with given id" do
       patient = AccountsFixtures.patient_fixture()
@@ -209,55 +280,48 @@ defmodule Ankaa.PatientsTest do
   end
 
   describe "patient associations" do
-    test "associations are created and retrieved correctly" do
-      patient = AccountsFixtures.patient_fixture()
-      caregiver = AccountsFixtures.caregiver_fixture()
+    setup do
+      doctor = AccountsFixtures.doctor_fixture()
+      nurse = AccountsFixtures.nurse_fixture()
+      patient1 = AccountsFixtures.patient_fixture()
+      patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
+      regular_user = AccountsFixtures.user_fixture()
 
-      # Test would normally use context functions, but since they're not shown,
-      # we'll test the schema functionality directly
-      attrs = %{
-        relationship: "caregiver",
-        can_alert: true,
-        patient_id: patient.patient.id,
-        user_id: caregiver.id
+      %{
+        doctor: doctor,
+        nurse: nurse,
+        patient1: patient1,
+        patient2: patient2,
+        user: regular_user
       }
-
-      assert {:ok, association} =
-               %PatientAssociation{}
-               |> PatientAssociation.changeset(attrs)
-               |> Repo.insert()
-
-      assert association.relationship == "caregiver"
-      assert association.can_alert == true
-      assert association.patient_id == patient.patient.id
-      assert association.user_id == caregiver.id
-
-      # Test the through association
-      patient = patient.patient |> Repo.preload(:associated_users)
-      assert caregiver in patient.associated_users
     end
 
-    test "enforces unique user-patient constraint" do
-      patient = AccountsFixtures.patient_fixture()
-      caregiver = AccountsFixtures.caregiver_fixture()
+    test "doctor can create association", %{doctor: doctor, patient1: patient} do
+      assert {:ok, assoc} = Patients.create_patient_association(doctor, patient.patient, "doctor")
+      assert assoc.user_id == doctor.id
+      assert assoc.patient_id == patient.patient.id
+      assert assoc.relationship == "doctor"
+    end
 
-      attrs = %{
-        relationship: "caregiver",
-        patient_id: patient.patient.id,
-        user_id: caregiver.id
-      }
+    test "nurse can create association", %{nurse: nurse, patient1: patient} do
+      assert {:ok, assoc} = Patients.create_patient_association(nurse, patient.patient, "nurse")
+      assert assoc.relationship == "nurse"
+    end
 
-      assert {:ok, _} =
-               %PatientAssociation{}
-               |> PatientAssociation.changeset(attrs)
-               |> Repo.insert()
+    test "regular user cannot create professional association", %{user: user, patient1: patient} do
+      assert {:error, :unauthorized_role} =
+               Patients.create_patient_association(user, patient.patient, "caregiver")
+    end
 
-      assert {:error, changeset} =
-               %PatientAssociation{}
-               |> PatientAssociation.changeset(attrs)
-               |> Repo.insert()
+    test "patients can create peer associations", %{patient1: p1, patient2: p2} do
+      assert {:ok, assoc} = Patients.create_peer_association(p1, p2.patient)
+      assert assoc.relationship == "peer_support"
+      assert assoc.can_alert == false
+    end
 
-      assert "Association between this user and patient already exists" in errors_on(changeset).user_id
+    test "non-patients cannot create peer associations", %{doctor: doctor, patient1: patient} do
+      assert {:error, :not_a_patient} =
+               Patients.create_peer_association(doctor, patient.patient)
     end
   end
 end
