@@ -6,7 +6,7 @@ defmodule Ankaa.PatientsTest do
   alias Ankaa.Patients.{Patient, PatientAssociation, Device}
   alias Ankaa.AccountsFixtures
 
-  describe "list_patients/1" do
+  describe "list_patients_for_user/1" do
     setup do
       admin = AccountsFixtures.admin_fixture()
       doctor = AccountsFixtures.doctor_fixture()
@@ -29,22 +29,28 @@ defmodule Ankaa.PatientsTest do
       }
     end
 
+    test "list_patients/0 returns all patients" do
+      patient = AccountsFixtures.patient_fixture()
+      patients = Patients.list_patients()
+      assert patient.patient in patients
+    end
+
     test "admin sees all patients", %{admin: admin, patient1: p1, patient2: p2} do
-      assert {:ok, patients} = Patients.list_patients(admin)
+      assert {:ok, patients} = Patients.list_patients_for_user(admin)
       assert length(patients) >= 2
       assert p1.patient in patients
       assert p2.patient in patients
     end
 
     test "doctor sees only their patients", %{doctor: doctor, patient1: p1, patient2: p2} do
-      assert {:ok, patients} = Patients.list_patients(doctor)
+      assert {:ok, patients} = Patients.list_patients_for_user(doctor)
       assert length(patients) == 1
       assert p1.patient in patients
       refute p2.patient in patients, "Doctor should only see their assigned patients"
     end
 
     test "patient sees peer patients", %{patient1: p1, patient2: p2} do
-      assert {:ok, patients} = Patients.list_patients(p1)
+      assert {:ok, patients} = Patients.list_patients_for_user(p1)
       assert length(patients) == 1
       refute p1.patient in patients, "Patient shouldn't see themselves"
       assert p2.patient in patients, "Patient should see their peers"
@@ -52,7 +58,7 @@ defmodule Ankaa.PatientsTest do
 
     test "unauthorized user gets error" do
       user = AccountsFixtures.user_fixture()
-      assert {:error, :unauthorized} = Patients.list_patients(user)
+      assert {:error, :unauthorized} = Patients.list_patients_for_user(user)
     end
   end
 
@@ -91,6 +97,14 @@ defmodule Ankaa.PatientsTest do
       # Assuming patient1 shouldn't see patient2 based on your rules
       assert {:ok, results} = Patients.search_patients(p1, %{name: "Peer Patient"})
       refute p1.patient in results
+    end
+
+    test "handles empty search terms", %{admin: admin} do
+      assert {:ok, _results} = Patients.search_patients(admin, %{})
+    end
+
+    test "handles nil search values", %{admin: admin} do
+      assert {:ok, _results} = Patients.search_patients(admin, %{name: nil})
     end
   end
 
@@ -183,9 +197,12 @@ defmodule Ankaa.PatientsTest do
     }
     @invalid_device_attrs %{type: nil, model: nil, device_id: nil}
 
-    test "list_devices_for_patient/1 returns all devices for patient" do
+    setup do
       patient = AccountsFixtures.patient_fixture()
+      %{patient: patient}
+    end
 
+    test "list_devices_for_patient/1 returns all devices for patient", %{patient: patient} do
       device =
         %Device{patient_id: patient.patient.id}
         |> Map.merge(@valid_device_attrs)
@@ -194,9 +211,7 @@ defmodule Ankaa.PatientsTest do
       assert Patients.list_devices_for_patient(patient.patient.id) == [device]
     end
 
-    test "get_device!/1 returns the device with given id" do
-      patient = AccountsFixtures.patient_fixture()
-
+    test "get_device!/1 returns the device with given id", %{patient: patient} do
       device =
         %Device{patient_id: patient.patient.id}
         |> Map.merge(@valid_device_attrs)
@@ -205,8 +220,7 @@ defmodule Ankaa.PatientsTest do
       assert Patients.get_device!(device.id) == device
     end
 
-    test "create_device/1 with valid data creates a device" do
-      patient = AccountsFixtures.patient_fixture()
+    test "create_device/1 with valid data creates a device", %{patient: patient} do
       attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
       assert {:ok, %Device{} = device} = Patients.create_device(attrs)
       assert device.type == "mobile"
@@ -215,23 +229,19 @@ defmodule Ankaa.PatientsTest do
       assert device.patient_id == patient.patient.id
     end
 
-    test "create_device/1 with invalid data returns error changeset" do
-      patient = AccountsFixtures.patient_fixture()
+    test "create_device/1 with invalid data returns error changeset", %{patient: patient} do
       attrs = Map.put(@invalid_device_attrs, :patient_id, patient.patient.id)
       assert {:error, %Ecto.Changeset{}} = Patients.create_device(attrs)
     end
 
-    test "create_device/1 enforces unique device_id constraint" do
-      patient = AccountsFixtures.patient_fixture()
+    test "create_device/1 enforces unique device_id constraint", %{patient: patient} do
       attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
       assert {:ok, _} = Patients.create_device(attrs)
       assert {:error, changeset} = Patients.create_device(attrs)
       assert "has already been taken" in errors_on(changeset).device_id
     end
 
-    test "update_device/2 with valid data updates the device" do
-      patient = AccountsFixtures.patient_fixture()
-
+    test "update_device/2 with valid data updates the device", %{patient: patient} do
       device =
         %Device{patient_id: patient.patient.id}
         |> Map.merge(@valid_device_attrs)
@@ -243,9 +253,7 @@ defmodule Ankaa.PatientsTest do
       assert device.device_id == "device456"
     end
 
-    test "update_device/2 with invalid data returns error changeset" do
-      patient = AccountsFixtures.patient_fixture()
-
+    test "update_device/2 with invalid data returns error changeset", %{patient: patient} do
       device =
         %Device{patient_id: patient.patient.id}
         |> Map.merge(@valid_device_attrs)
@@ -255,9 +263,7 @@ defmodule Ankaa.PatientsTest do
       assert device == Patients.get_device!(device.id)
     end
 
-    test "delete_device/1 deletes the device" do
-      patient = AccountsFixtures.patient_fixture()
-
+    test "delete_device/1 deletes the device", %{patient: patient} do
       device =
         %Device{patient_id: patient.patient.id}
         |> Map.merge(@valid_device_attrs)
@@ -267,9 +273,7 @@ defmodule Ankaa.PatientsTest do
       assert_raise Ecto.NoResultsError, fn -> Patients.get_device!(device.id) end
     end
 
-    test "change_device/1 returns a device changeset" do
-      patient = AccountsFixtures.patient_fixture()
-
+    test "change_device/1 returns a device changeset", %{patient: patient} do
       device =
         %Device{patient_id: patient.patient.id}
         |> Map.merge(@valid_device_attrs)
@@ -301,11 +305,13 @@ defmodule Ankaa.PatientsTest do
       assert assoc.user_id == doctor.id
       assert assoc.patient_id == patient.patient.id
       assert assoc.relationship == "doctor"
+      assert assoc.can_alert == true
     end
 
     test "nurse can create association", %{nurse: nurse, patient1: patient} do
       assert {:ok, assoc} = Patients.create_patient_association(nurse, patient.patient, "nurse")
       assert assoc.relationship == "nurse"
+      assert assoc.can_alert == true
     end
 
     test "regular user cannot create professional association", %{user: user, patient1: patient} do
