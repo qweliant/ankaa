@@ -1,7 +1,8 @@
 #
 
 <!-- PROJECT SHIELDS -->
-[![Test](https://github.com/qweliant/ankaa/actions/workflows/ci.yml/badge.svg)](https://github.com/qweliant/ankaa/actions/workflows/ci.yml)
+[![Tests](https://github.com/qweliant/ankaa/actions/workflows/test.yml/badge.svg)](https://github.com/qweliant/ankaa/actions/workflows/test.yml)
+[![Deploy](https://github.com/qweliant/ankaa/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/qweliant/ankaa/actions/workflows/deploy.yml)
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
