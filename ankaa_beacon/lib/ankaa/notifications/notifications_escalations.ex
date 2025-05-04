@@ -21,7 +21,7 @@ defmodule Ankaa.Notifications.EscalationPolicy do
            max_level: 3,
            # minutes between escalations
            timeouts: [15, 30, 60],
-           roles: [:caregiver, :doctor, :emergency_contact]
+           roles: [:caresupport, :doctor, :emergency_contact]
          }}
 
       _ ->
@@ -56,6 +56,7 @@ defmodule Ankaa.Notifications.EscalationPolicy do
         escalation_level: next_level,
         next_escalation_at: next_time
       })
+
       # |> Ankaa.Repo.update() # this would update the escalation level and next escalation time in the database
     end
   end

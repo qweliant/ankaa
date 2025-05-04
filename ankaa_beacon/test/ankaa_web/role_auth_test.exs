@@ -118,9 +118,9 @@ defmodule AnkaaWeb.RoleAuthTest do
     end
   end
 
-  describe "on_mount :require_caregiver" do
-    test "allows access for caregiver roles", %{conn: conn, user: user} do
-      {:ok, updated_user} = Accounts.assign_role(user, "caregiver")
+  describe "on_mount :require_caresupport" do
+    test "allows access for caresupport roles", %{conn: conn, user: user} do
+      {:ok, updated_user} = Accounts.assign_role(user, "caresupport")
       user_token = Accounts.generate_user_session_token(updated_user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
@@ -129,9 +129,9 @@ defmodule AnkaaWeb.RoleAuthTest do
         assigns: %{__changed__: %{}, flash: %{}, session: session}
       }
 
-      {:cont, socket} = RoleAuth.on_mount(:require_caregiver, %{}, session, socket)
+      {:cont, socket} = RoleAuth.on_mount(:require_caresupport, %{}, session, socket)
       assert socket.assigns.current_user.id == user.id
-      assert socket.assigns.current_user.role == "caregiver"
+      assert socket.assigns.current_user.role == "caresupport"
     end
 
     test "redirects unauthorized users", %{conn: conn, user: user} do
@@ -143,7 +143,7 @@ defmodule AnkaaWeb.RoleAuthTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
-      {:halt, socket} = RoleAuth.on_mount(:require_caregiver, %{}, session, socket)
+      {:halt, socket} = RoleAuth.on_mount(:require_caresupport, %{}, session, socket)
       assert socket.redirected == {:redirect, %{to: "/", status: 302}}
 
       assert Phoenix.Flash.get(socket.assigns.flash, :error) ==

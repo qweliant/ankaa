@@ -14,7 +14,7 @@ defmodule Ankaa.Repo.Migrations.CreateUserRoles do
     VALUES
       ('doctor', 'Medical professional with full patient access', NOW(), NOW()),
       ('nurse', 'Nursing staff with patient care access', NOW(), NOW()),
-      ('caregiver', 'Family member or friend providing care', NOW(), NOW()),
+      ('caresupport', 'Family member or friend providing care', NOW(), NOW()),
       ('technical_support', 'Technical support staff for device issues', NOW(), NOW()),
       ('admin', 'System administrator', NOW(), NOW());
     """)

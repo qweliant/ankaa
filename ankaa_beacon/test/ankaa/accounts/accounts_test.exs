@@ -556,7 +556,7 @@ defmodule Ankaa.AccountsTest do
       assert Accounts.is_doctor?(user)
       refute Accounts.is_nurse?(user)
       refute Accounts.is_admin?(user)
-      refute Accounts.is_caregiver?(user)
+      refute Accounts.is_caresupport?(user)
       refute Accounts.is_technical_support?(user)
     end
   end

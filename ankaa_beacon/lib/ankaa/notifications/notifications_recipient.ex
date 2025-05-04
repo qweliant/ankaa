@@ -8,7 +8,7 @@ defmodule Ankaa.Notifications.Recipient do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "alert_recipients" do
-    field(:role, Ecto.Enum, values: [:caregiver, :doctor, :support_agent, :emergency_contact])
+    field(:role, Ecto.Enum, values: [:caresupport, :doctor, :support_agent, :emergency_contact])
     field(:channels, {:array, Ecto.Enum}, values: [:sms, :email, :app, :voice])
 
     belongs_to(:user, Ankaa.Accounts.User)

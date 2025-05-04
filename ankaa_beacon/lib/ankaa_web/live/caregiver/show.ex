@@ -50,7 +50,7 @@ defmodule AnkaaWeb.CaringForLive.Show do
       <div class="sm:flex sm:items-center sm:justify-between">
         <div class="sm:flex-auto flex items-center gap-2">
           <.link
-            navigate={~p"/caregiver/caringfor"}
+            navigate={~p"/caresupport/caringfor"}
             class="inline-flex items-center justify-center rounded-full bg-white p-2 text-gray-400 shadow-sm ring-1 ring-gray-900/10 hover:bg-gray-50 hover:text-gray-600 -ml-2"
           >
             <span class="sr-only">Go back</span>

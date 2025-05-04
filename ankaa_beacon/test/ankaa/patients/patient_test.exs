@@ -310,7 +310,7 @@ defmodule Ankaa.PatientsTest do
 
     test "regular user cannot create professional association", %{user: user, patient1: patient} do
       assert {:error, :unauthorized_role} =
-               Patients.create_patient_association(user, patient.patient, "caregiver")
+               Patients.create_patient_association(user, patient.patient, "caresupport")
     end
 
     test "patients can create peer associations", %{patient1: p1, patient2: p2} do

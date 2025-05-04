@@ -1,6 +1,7 @@
 #
 
 <!-- PROJECT SHIELDS -->
+
 [![Test](https://github.com/qweliant/ankaa/actions/workflows/ci.yml/badge.svg)](https://github.com/qweliant/ankaa/actions/workflows/ci.yml)
 
 [![Contributors][contributors-shield]][contributors-url]
@@ -55,7 +56,7 @@
 
 ## About The Project
 
-Ankaa is a proof-of-concept for a real-time monitoring and alert system designed specifically for home hemodialysis. The system focuses on detecting critical risks such as severe hypotension and blood loss, integrating with health monitoring setups to provide automated emergency detection, and caregiver alerts. This ensures patient safety even without immediate medical assistance.
+Ankaa is a proof-of-concept for a real-time monitoring and alert system designed specifically for home hemodialysis. The system focuses on detecting critical risks such as severe hypotension and blood loss, integrating with health monitoring setups to provide automated emergency detection, and caresupport alerts. This ensures patient safety even without immediate medical assistance.
 
 The project was born from a personal need to make home hemodialysis safer and more accessible. As someone who has experienced the challenges of home dialysis firsthand, I understand the importance of having a reliable safety net that can detect and respond to critical situations, especially when medical assistance isn't immediately available.
 
@@ -71,7 +72,7 @@ Key Features:
 The system aims to:
 
 - Reduce anxiety and stress during home dialysis sessions
-- Provide peace of mind for both patients and caregivers
+- Provide peace of mind for both patients and caresupports
 - Enable faster response to critical situations
 - Make home dialysis more accessible to those who might otherwise be hesitant
 - Create a safety net that works even without immediate medical assistance
@@ -160,7 +161,7 @@ This project addresses several critical barriers to home dialysis adoption:
 
 - **Accessibility**: Making home dialysis feel safer could increase adoption rates, potentially allowing more patients to benefit from the flexibility and quality of life improvements that home treatment offers.
 
-- **Care Network Support**: The system empowers family members and caregivers to be more confident in supporting home dialysis patients, creating a stronger support network.
+- **Care Network Support**: The system empowers family members and caresupports to be more confident in supporting home dialysis patients, creating a stronger support network.
 
 - **Healthcare Evolution**: This technology could influence healthcare policies and insurance coverage for home dialysis by demonstrating that remote monitoring systems can effectively enhance patient safety.
 

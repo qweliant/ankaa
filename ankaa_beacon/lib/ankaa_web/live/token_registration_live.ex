@@ -10,7 +10,7 @@ defmodule AnkaaWeb.TokenRegistrationLive do
     {"patient", "Patient", "I am receiving home hemodialysis treatment"},
     {"doctor", "Doctor", "I am a healthcare provider overseeing patients"},
     {"nurse", "Nurse", "I am a nurse supporting patients"},
-    {"caregiver", "Caregiver", "I help take care of a patient"}
+    {"caresupport", "Care support", "I help take care of a patient"}
   ]
 
   def mount(_params, _session, socket) do
@@ -55,7 +55,7 @@ defmodule AnkaaWeb.TokenRegistrationLive do
       "patient" when token == "patient" ->
         {:noreply, assign(socket, show_name_form: true)}
 
-      role when role in ["doctor", "nurse", "caregiver"] and token == role ->
+      role when role in ["doctor", "nurse", "caresupport"] and token == role ->
         case Accounts.assign_role(socket.assigns.current_user, role) do
           {:ok, _user} ->
             {:noreply,
@@ -179,7 +179,7 @@ defmodule AnkaaWeb.TokenRegistrationLive do
       "patient" -> "Patient Registration Code"
       "doctor" -> "Medical License Number"
       "nurse" -> "Nursing License Number"
-      "caregiver" -> "Invitation Code"
+      "caresupport" -> "Invitation Code"
       _ -> "Registration Code"
     end
   end

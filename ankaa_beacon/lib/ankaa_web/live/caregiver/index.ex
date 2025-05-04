@@ -69,7 +69,7 @@ defmodule AnkaaWeb.CaringForLive.Index do
                   <%= for patient <- @patients do %>
                     <tr
                       class={"cursor-pointer #{if patient.needs_attention, do: "bg-red-50 hover:bg-red-100", else: "hover:bg-gray-50"}"}
-                      phx-click={JS.navigate(~p"/caregiver/caringfor/#{patient.id}")}
+                      phx-click={JS.navigate(~p"/caresupport/caringfor/#{patient.id}")}
                     >
                       <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                         <div class="flex items-center">

@@ -48,7 +48,7 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
                     class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                   >
                     <option value="family_member">Family Member</option>
-                    <option value="caregiver">Caregiver</option>
+                    <option value="caresupport">Care support</option>
                     <option value="doctor">Doctor</option>
                     <option value="nurse">Nurse</option>
                     <option value="other">Other</option>

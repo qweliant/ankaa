@@ -242,7 +242,7 @@ defmodule AnkaaWeb.UserAuth do
         case user.role do
           "doctor" -> ~p"/careprovider/patients"
           "nurse" -> ~p"/careprovider/patients"
-          "caregiver" -> ~p"/caregiver/caringfor"
+          "caresupport" -> ~p"/caresupport/caringfor"
           # "technical_support" -> ~p"/support/home"
           # "admin" -> ~p"/admin/users"
           _ -> ~p"/register"

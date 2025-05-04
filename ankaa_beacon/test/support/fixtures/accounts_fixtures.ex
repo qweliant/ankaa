@@ -49,8 +49,8 @@ defmodule Ankaa.AccountsFixtures do
     user_fixture(Map.merge(%{role: "nurse"}, attrs))
   end
 
-  def caregiver_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "caregiver"}, attrs))
+  def caresupport_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "caresupport"}, attrs))
   end
 
   def technical_support_fixture(attrs \\ %{}) do

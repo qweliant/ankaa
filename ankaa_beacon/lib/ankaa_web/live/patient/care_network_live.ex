@@ -35,7 +35,7 @@ defmodule AnkaaWeb.CareNetworkLive do
       %{
         id: 4,
         name: "Mike Wilson",
-        role: "Caregiver",
+        role: "Care support",
         email: "mike.wilson@example.com",
         status: "inactive",
         last_contact: ~D[2024-03-15],

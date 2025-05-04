@@ -407,7 +407,7 @@ defmodule Ankaa.Accounts do
   def is_doctor?(user), do: has_role?(user, "doctor")
   def is_nurse?(user), do: has_role?(user, "nurse")
   def is_admin?(user), do: has_role?(user, "admin")
-  def is_caregiver?(user), do: has_role?(user, "caregiver")
+  def is_caresupport?(user), do: has_role?(user, "caresupport")
   def is_technical_support?(user), do: has_role?(user, "technical_support")
   def is_patient?(user), do: User.is_patient?(user)
 end

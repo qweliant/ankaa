@@ -123,14 +123,14 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # Caregiver routes
-  scope "/caregiver", AnkaaWeb do
+  # Care support routes
+  scope "/caresupport", AnkaaWeb do
     pipe_through([:browser, :require_authenticated_user])
 
-    live_session :caregiver,
+    live_session :caresupport,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_caregiver}
+        {AnkaaWeb.RoleAuth, :require_caresupport}
       ] do
       live("/caringfor", CaringForLive.Index, :index)
       live("/caringfor/:id", CaringForLive.Show, :show)
