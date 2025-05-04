@@ -1,6 +1,6 @@
 defmodule Ankaa.Patients do
   @moduledoc """
-  The patient context.
+  The patient context
   """
   import Ecto.Query
 
@@ -114,14 +114,14 @@ defmodule Ankaa.Patients do
       {:error, :unauthorized_role}
   """
   def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
-    if User.is_doctor?(user) || User.is_nurse?(user) do
+    if User.is_doctor?(user) || User.is_nurse?(user) || User.is_caresupport?(user) do
       %PatientAssociation{}
       |> PatientAssociation.changeset(%{
         user_id: user.id,
         patient_id: patient.id,
         relationship: relationship,
         # Example business rule
-        can_alert: relationship in ["doctor", "nurse"]
+        can_alert: relationship in ["doctor", "nurse", "caresupport"]
       })
       |> Repo.insert()
     else

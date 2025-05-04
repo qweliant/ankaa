@@ -1,5 +1,7 @@
 defmodule Ankaa.Notifications do
   @moduledoc """
+  Notification context
+
   Handles notification processing and alert creation for medical device readings.
   Focuses on core alert creation and threshold violation detection.
   """

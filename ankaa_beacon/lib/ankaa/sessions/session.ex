@@ -1,4 +1,7 @@
 defmodule Ankaa.Sessions.Session do
+  @moduledoc """
+  tracks info about patient sessions
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
