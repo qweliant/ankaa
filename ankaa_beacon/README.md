@@ -23,5 +23,5 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 - [x] push incoming IoT data to timescale or influxDB
 - [ ] build out notification service
 - [x] triggering alerts
-- [ ] adding people to care network
+- [x] adding people to care network
 - [ ] viewing care network realtime hemodialyis and bp. probably doesnt require a dashboard. letting users know the patient is online and providing notifications if something is wrong could be the only view
