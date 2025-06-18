@@ -3,8 +3,8 @@ defmodule Ankaa.Repo.Migrations.AddMessagesTable do
 
   def change do
     create table(:messages) do
-      add :sender_id, references(:users, on_delete: :delete_all)
-      add :patient_id, references(:users, on_delete: :delete_all)
+      add :sender_id, references(:users, type: :binary_id, on_delete: :delete_all)
+      add :patient_id, references(:users, type: :binary_id, on_delete: :delete_all)
       add :content, :text
       add :read, :boolean, default: false
       timestamps()
