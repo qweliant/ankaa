@@ -2,25 +2,25 @@ import Config
 
 # Configure your database
 config :ankaa, Ankaa.Repo,
-  username: System.get_env("POSTGRES_USER", "user"),
-  password: System.get_env("POSTGRES_PASSWORD", "password"),
-  hostname: System.get_env("POSTGRES_HOST", "localhost"),
-  database: System.get_env("POSTGRES_DB", "ankaa_dev"),
-  port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
+  username:  "user",
+  password:  "password",
+  hostname: "localhost",
+  database: "ankaa_dev",
+  port:  5432,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: String.to_integer(System.get_env("POSTGRES_POOL_SIZE", "10"))
+  pool_size: 10
 
 # TimescaleDB config
 config :ankaa, Ankaa.TimescaleRepo,
   migration_primary_key: [name: :id, type: :binary_id],
   migration_source: "timescale_schema_migrations",
-  database: System.get_env("TIMESCALE_DB", "ankaa_timescale_dev"),
-  username: System.get_env("TIMESCALE_USER", "user"),
-  password: System.get_env("TIMESCALE_PASSWORD", "password"),
-  hostname: System.get_env("TIMESCALE_HOST", "localhost"),
-  port: String.to_integer(System.get_env("TIMESCALE_PORT", "5433")),
-  pool_size: String.to_integer(System.get_env("TIMESCALE_POOL_SIZE", "10")),
+  database:  "ankaa_timescale_dev",
+  username: "user",
+  password:  "password",
+  hostname: "localhost",
+  port: 5433,
+  pool_size: 10,
   migrations_path: "priv/timescale_repo/migrations"
 
 # MQTT Configuration

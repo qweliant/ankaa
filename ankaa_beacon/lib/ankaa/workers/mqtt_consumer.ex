@@ -188,6 +188,13 @@ defmodule Ankaa.Workers.MQTTConsumer do
       └─ Message: #{violation.message}
       """)
 
+      # # Store alert in database
+      # Ankaa.Notifications.create_alert(%{
+      #   type: to_string(violation.parameter),
+      #   message: violation.message,
+      #   patient_id: get_patient_id_from_device(reading.device_id)
+      # })
+
       # Broadcast via PubSub
       Phoenix.PubSub.broadcast(
         Ankaa.PubSub,
@@ -196,6 +203,6 @@ defmodule Ankaa.Workers.MQTTConsumer do
       )
     end)
 
-    
+
   end
 end
