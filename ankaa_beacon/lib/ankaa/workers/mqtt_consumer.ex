@@ -17,17 +17,15 @@ defmodule Ankaa.Workers.MQTTConsumer do
     # MQTT connection configuration
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
     mqtt_config = Application.get_env(:ankaa, :mqtt)
-    IO.inspect(mqtt_config, label: "MQTT CONFIG")
-    IO.inspect(System.get_env("EMQX_CA_CERT_PATH"), label: "CERT PATH")
 
     # Start the MQTT client with options seen here: https://github.com/emqx/emqtt?tab=readme-ov-file#option
     {:ok, client} =
       :emqtt.start_link([
-        {:host, String.to_charlist(mqtt_config[:host])},
-        {:port, mqtt_config[:port]},
+        {:host,"localhost"},
+        {:port, 1883},
         {:clientid, String.to_charlist(client_id)},
-        {:username, String.to_charlist(mqtt_config[:username])},
-        {:password, String.to_charlist(mqtt_config[:password])},
+        {:username, ""},
+        {:password, ""},
         {:clean_start, true},
         {:keepalive, 60},
         {:proto_ver, :v5},

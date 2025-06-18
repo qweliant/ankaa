@@ -25,10 +25,10 @@ config :ankaa, Ankaa.TimescaleRepo,
 
 # MQTT Configuration
 config :ankaa, :mqtt,
-  host: System.get_env("MQTT_HOST", "localhost"),
-  port: String.to_integer(System.get_env("MQTT_PORT", "1883")),
-  username: System.get_env("MQTT_USERNAME"),
-  password: System.get_env("MQTT_PASSWORD")
+  host: "localhost",
+  port: "1883",
+  username: "",
+  password: ""
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
