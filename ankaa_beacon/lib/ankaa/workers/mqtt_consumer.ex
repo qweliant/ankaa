@@ -195,5 +195,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
         {:new_reading, reading, violations}
       )
     end)
+
+    
   end
 end
