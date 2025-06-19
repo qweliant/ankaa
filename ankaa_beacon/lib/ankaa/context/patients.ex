@@ -88,6 +88,26 @@ defmodule Ankaa.Patients do
   def get_patient_by_user_id(user_id), do: Repo.get_by(Patient, user_id: user_id)
 
   @doc """
+  Gets the patient associated with a device_id.
+
+  ## Examples
+
+      iex> get_patient_by_device_id("bp_001")
+      %Patient{}
+
+      iex> get_patient_by_device_id("unknown")
+      nil
+  """
+  def get_patient_by_device_id(device_id) do
+    from(d in Device,
+      join: p in assoc(d, :patient),
+      where: d.device_id == ^device_id,
+      select: p
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Creates a patient.
 
   ## Examples

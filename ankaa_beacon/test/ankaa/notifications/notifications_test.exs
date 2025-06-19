@@ -1,5 +1,7 @@
 defmodule Ankaa.NotificationTest do
-  use ExUnit.Case, async: true
+  use Ankaa.DataCase
 
+  alias Ankaa.Notifications.Alert
+  alias Ankaa.AccountsFixtures
 
 end

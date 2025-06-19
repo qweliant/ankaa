@@ -21,7 +21,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
     # Start the MQTT client with options seen here: https://github.com/emqx/emqtt?tab=readme-ov-file#option
     {:ok, client} =
       :emqtt.start_link([
-        {:host,"localhost"},
+        {:host, "localhost"},
         {:port, 1883},
         {:clientid, String.to_charlist(client_id)},
         {:username, ""},
@@ -185,22 +185,24 @@ defmodule Ankaa.Workers.MQTTConsumer do
       ├─ Severity: #{violation.severity}
       └─ Message: #{violation.message}
       """)
-
-      # # Store alert in database
-      # Ankaa.Notifications.create_alert(%{
-      #   type: to_string(violation.parameter),
-      #   message: violation.message,
-      #   patient_id: get_patient_id_from_device(reading.device_id)
-      # })
-
-      # Broadcast via PubSub
-      Phoenix.PubSub.broadcast(
-        Ankaa.PubSub,
-        "#{reading.__struct__ |> Module.split() |> List.last() |> String.downcase() |> String.replace(".", "_")}_readings",
-        {:new_reading, reading, violations}
-      )
     end)
 
+    Ankaa.Alerts.broadcast_alerts(reading, violations)
 
+    # Broadcast via PubSub (broadcasts once per reading, not per violation)
+    Phoenix.PubSub.broadcast(
+      Ankaa.PubSub,
+      pubsub_topic_for(reading),
+      {:new_reading, reading, violations}
+    )
   end
+
+  defp pubsub_topic_for(reading) do
+    reading.__struct__
+    |> Module.split()
+    |> List.last()
+    |> String.downcase()
+    |> Kernel.<>("_readings")
+  end
+
 end
