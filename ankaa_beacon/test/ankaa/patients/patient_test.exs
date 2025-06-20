@@ -2,7 +2,7 @@ defmodule Ankaa.PatientsTest do
   use Ankaa.DataCase
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.{Patient, PatientAssociation, Device}
+  alias Ankaa.Patients.{Patient, PatientAssociation}
   alias Ankaa.AccountsFixtures
 
   describe "list_patients_for_user/1" do
@@ -129,11 +129,6 @@ defmodule Ankaa.PatientsTest do
     test "get_patient_by_user_id/1 returns the patient for given user_id" do
       patient = AccountsFixtures.patient_fixture()
       assert Patients.get_patient_by_user_id(patient.id) == patient.patient
-    end
-
-    test "get_patient_by_device_id/1 returns the patient for given device_id" do
-      device = AccountsFixtures.device_fixture()
-      assert Patients.get_patient_by_device_id(device.device_id) == device.patient
     end
 
     test "create_patient/2 with valid data creates a patient" do

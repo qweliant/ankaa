@@ -5,13 +5,11 @@ defmodule Ankaa.Patients.Patient do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
   schema "patients" do
     field(:external_id, :string)
     field(:name, :string)
     field(:date_of_birth, :date)
     field(:timezone, :string)
-
 
     belongs_to(:user, User, foreign_key: :user_id)
     has_many(:patient_associations, Ankaa.Patients.PatientAssociation)

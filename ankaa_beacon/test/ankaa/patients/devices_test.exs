@@ -1,4 +1,4 @@
-defmodule Ankaa.PatientsTest do
+defmodule Ankaa.DevicesTest do
   use Ankaa.DataCase
 
   alias Ankaa.Patients
@@ -7,13 +7,13 @@ defmodule Ankaa.PatientsTest do
 
   describe "devices" do
     @valid_device_attrs %{
-      type: "mobile",
-      model: "iPhone 12",
+      type: "dialysis",
+      model: "mock-device",
       device_id: "device123"
     }
     @update_device_attrs %{
-      type: "tablet",
-      model: "iPad Pro",
+      type: "blood_pressure",
+      model: "mock-bp-device",
       device_id: "device456"
     }
     @invalid_device_attrs %{type: nil, model: nil, device_id: nil}
@@ -44,8 +44,8 @@ defmodule Ankaa.PatientsTest do
     test "create_device/1 with valid data creates a device", %{patient: patient} do
       attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
       assert {:ok, %Device{} = device} = Patients.create_device(attrs)
-      assert device.type == "mobile"
-      assert device.model == "iPhone 12"
+      assert device.type == "dialysis"
+      assert device.model == "mock-device"
       assert device.device_id == "device123"
       assert device.patient_id == patient.patient.id
     end
@@ -69,8 +69,8 @@ defmodule Ankaa.PatientsTest do
         |> Repo.insert!()
 
       assert {:ok, %Device{} = device} = Patients.update_device(device, @update_device_attrs)
-      assert device.type == "tablet"
-      assert device.model == "iPad Pro"
+      assert device.type == "blood_pressure"
+      assert device.model == "mock-bp-device"
       assert device.device_id == "device456"
     end
 
@@ -101,6 +101,14 @@ defmodule Ankaa.PatientsTest do
         |> Repo.insert!()
 
       assert %Ecto.Changeset{} = Patients.change_device(device)
+    end
+
+    test "get_patient_by_device_id/1 returns the patient for given device_id", %{patient: patient} do
+      attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
+      {:ok, device} = Patients.create_device(attrs)
+
+      result = Patients.get_patient_by_device_id(device.device_id)
+      assert result.id == patient.patient.id
     end
   end
 end

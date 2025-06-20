@@ -76,6 +76,18 @@ defmodule Ankaa.AccountsFixtures do
     Ankaa.Repo.preload(user, :patient)
   end
 
+  def device_fixture(%Ankaa.Patients.Patient{} = patient, attrs \\ %{}) do
+    valid_attrs = %{
+      type: "dialysis",
+      model: "mock-device",
+      device_id: "device#{System.unique_integer([:positive])}",
+      patient_id: patient.id
+    }
+
+    {:ok, device} = Ankaa.Patients.create_device(Map.merge(valid_attrs, attrs))
+    device
+  end
+
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
