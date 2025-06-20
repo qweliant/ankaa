@@ -10,8 +10,8 @@ defmodule Ankaa.Notifications.Alert do
     field(:message, :string)
     field(:acknowledged, :boolean, default: false)
 
-    belongs_to(:patient, Patient, foreign_key: :patient_id)
-    belongs_to(:resolved_by, User, foreign_key: :resolved_by_id)
+    belongs_to(:patient, Patient, foreign_key: :patient_id, type: :binary_id)
+    belongs_to(:resolved_by, User, foreign_key: :resolved_by_id, type: :binary_id)
 
     timestamps()
   end
