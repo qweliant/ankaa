@@ -8,7 +8,20 @@ defmodule AnkaaWeb.PatientNav do
         <div class="flex h-16 justify-between">
           <div class="flex">
             <div class="flex space-x-8">
-              <.link
+            <.link
+                navigate={~p"/patient/monitoring"}
+                class={[
+                  "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium",
+                  if(@current_path == "/patient/monitoring",
+                    do: "border-indigo-500 text-gray-900",
+                    else: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  )
+                ]}
+              >
+                Session Monitoring
+              </.link>
+
+              <%!-- <.link
                 navigate={~p"/patient/health"}
                 class={[
                   "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium",
@@ -19,18 +32,18 @@ defmodule AnkaaWeb.PatientNav do
                 ]}
               >
                 Health
-              </.link>
+              </.link> --%>
               <.link
-                navigate={~p"/patient/monitoring"}
+                navigate={~p"/patient/carenetwork"}
                 class={[
                   "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium",
-                  if(@current_path == "/patient/monitoring",
+                  if(@current_path == "/patient/carenetwork",
                     do: "border-indigo-500 text-gray-900",
                     else: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                   )
                 ]}
               >
-                Monitoring
+                Care Network
               </.link>
               <.link
                 navigate={~p"/patient/devices"}
@@ -43,18 +56,6 @@ defmodule AnkaaWeb.PatientNav do
                 ]}
               >
                 My Devices
-              </.link>
-              <.link
-                navigate={~p"/patient/carenetwork"}
-                class={[
-                  "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium",
-                  if(@current_path == "/patient/carenetwork",
-                    do: "border-indigo-500 text-gray-900",
-                    else: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                  )
-                ]}
-              >
-                Care Network
               </.link>
             </div>
           </div>

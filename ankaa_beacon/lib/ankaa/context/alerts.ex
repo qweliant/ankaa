@@ -3,6 +3,7 @@ defmodule Ankaa.Alerts do
   Handles alert logic and care network notifications.
   """
 
+  alias ElixirSense.Log
   alias Ankaa.Patients
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications
@@ -12,47 +13,38 @@ defmodule Ankaa.Alerts do
   alias Ankaa.Repo
 
   def create_alert(attrs) do
-    %Alert{}
-    |> Alert.changeset(attrs)
-    |> Repo.insert()
+    case %Alert{}
+         |> Alert.changeset(attrs)
+         |> Repo.insert() do
+      {:ok, alert} ->
+        broadcast_alert_created(alert)
+        {:ok, alert}
+
+      error ->
+        Log.error("Failed to create alert: #{inspect(error)}")
+        {:error, error}
+    end
   end
 
-  @doc """
-  Broadcasts alerts to the patient's care network if thresholds are violated.
-  """
-  def broadcast_alerts(device_id, reading, violations) do
+  def broadcast_device_alerts(device_id, reading, violations) do
     case Patients.get_patient_by_device_id(device_id) do
-      %Ankaa.Patients.Patient{} = patient ->
-        # Persist alerts
+      %Patients.Patient{} = patient ->
+        # Create alerts (which will auto-broadcast)
         Enum.each(violations, fn violation ->
-          create_alert(%{
-            type: "threshold_violation",
-            message: """
-            ⚠️ Parameter: #{violation.parameter}
-            Value: #{violation.value}
-            Threshold: #{violation.threshold}
-            Severity: #{violation.severity}
-            Message: #{violation.message}
-            """,
-            patient_id: patient.id
-          })
-        end)
-
-        # Broadcast to care network
-        CareNetwork
-        |> where([pa], pa.patient_id == ^patient.id && pa.can_alert == true)
-        |> Repo.all()
-        |> Enum.each(fn assoc ->
-          case Notifications.Alert.send_alert_to_user(assoc.user_id, reading, violations) do
-            :ok ->
+          case create_alert(%{
+                 type: "Monitoring alert",
+                 # Use the nice formatted message from ThresholdViolation
+                 message: violation.message,
+                 patient_id: patient.id,
+                 # Convert :critical -> "critical"
+                 severity: Atom.to_string(violation.severity)
+               }) do
+            {:ok, _alert} ->
               :ok
 
             {:error, reason} ->
               require Logger
-
-              Logger.error(
-                "Failed to send alert to user #{inspect(assoc.user_id)}: #{inspect(reason)}"
-              )
+              Logger.error("Failed to create alert for patient #{patient.id}: #{inspect(reason)}")
           end
         end)
 
@@ -72,5 +64,26 @@ defmodule Ankaa.Alerts do
 
         {:error, :unexpected_error}
     end
+  end
+
+  defp broadcast_alert_created(alert) do
+    # Get all care network members who can receive alerts
+    care_network = get_care_network_for_alerts(alert.patient_id)
+
+    # Broadcast to each care network member
+    Enum.each(care_network, fn user_id ->
+      Phoenix.PubSub.broadcast(
+        Ankaa.PubSub,
+        "user:#{user_id}:alerts",
+        {:new_alert, alert}
+      )
+    end)
+  end
+
+  defp get_care_network_for_alerts(patient_id) do
+    CareNetwork
+    |> where([pa], pa.patient_id == ^patient_id and pa.can_alert == true)
+    |> select([pa], pa.user_id)
+    |> Repo.all()
   end
 end

@@ -47,48 +47,12 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
                     name="role"
                     class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                   >
-                    <option value="family_member">Family Member</option>
                     <option value="caresupport">Care support</option>
                     <option value="doctor">Doctor</option>
                     <option value="nurse">Nurse</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
               </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Permissions</label>
-                <div class="mt-2 space-y-2">
-                  <div class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="permissions[]"
-                      value="view_health_data"
-                      class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label class="ml-2 block text-sm text-gray-900">View Health Data</label>
-                  </div>
-                  <div class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="permissions[]"
-                      value="update_medications"
-                      class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label class="ml-2 block text-sm text-gray-900">Update Medications</label>
-                  </div>
-                  <div class="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="permissions[]"
-                      value="schedule_appointments"
-                      class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label class="ml-2 block text-sm text-gray-900">Schedule Appointments</label>
-                  </div>
-                </div>
-              </div>
-
               <div class="flex justify-end">
                 <.link
                   navigate={~p"/patient/carenetwork"}

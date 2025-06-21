@@ -4,6 +4,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
   """
   use GenServer
   alias Ankaa.Monitoring.{DialysisDeviceReading, BPDeviceReading}
+  alias Ankaa.Alerts
   require Logger
 
   # Client API
@@ -122,7 +123,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
             reading = DialysisDeviceReading.from_mqtt(reading_data)
             save_reading(reading)
-            process_reading(reading)
+            process_reading(reading, device_id)
 
           String.starts_with?(device_id, "bp_") ->
             Logger.info("🫀 Processing blood pressure reading")
@@ -142,7 +143,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
             reading = BPDeviceReading.from_mqtt(reading_data)
             save_reading(reading)
-            process_reading(reading)
+            process_reading(reading, device_id)
 
           true ->
             Logger.warning("❓ Unknown device type: #{device_id}")
@@ -172,7 +173,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
     end
   end
 
-  defp process_reading(reading) do
+  defp process_reading(reading, device_id) do
     violations = reading.__struct__.check_thresholds(reading)
 
     # Log threshold violations to monitoring
@@ -180,7 +181,16 @@ defmodule Ankaa.Workers.MQTTConsumer do
       log_threshold_violation(reading, violation)
     end)
 
-    Ankaa.Alerts.broadcast_threshold_alerts(reading, violations)
+    # Create and broadcast alerts if there are violations
+    if length(violations) > 0 do
+      case Alerts.broadcast_device_alerts(device_id, reading, violations) do
+        :ok ->
+          Logger.info("✅ Alerts broadcasted for device #{device_id}")
+
+        {:error, reason} ->
+          Logger.error("❌ Failed to broadcast alerts for device #{device_id}: #{inspect(reason)}")
+      end
+    end
 
     # Broadcast via PubSub (broadcasts once per reading, not per violation)
     Phoenix.PubSub.broadcast(
@@ -209,5 +219,4 @@ defmodule Ankaa.Workers.MQTTConsumer do
     └─ Message: #{violation.message}
     """)
   end
-
 end

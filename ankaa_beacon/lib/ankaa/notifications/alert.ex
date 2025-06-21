@@ -9,7 +9,7 @@ defmodule Ankaa.Notifications.Alert do
     field(:type, :string)
     field(:message, :string)
     field(:acknowledged, :boolean, default: false)
-
+    field(:severity, :string)
     belongs_to(:patient, Patient, foreign_key: :patient_id, type: :binary_id)
     belongs_to(:resolved_by, User, foreign_key: :resolved_by_id, type: :binary_id)
 
@@ -18,8 +18,9 @@ defmodule Ankaa.Notifications.Alert do
 
   def changeset(alert, attrs) do
     alert
-    |> cast(attrs, [:type, :message, :patient_id, :acknowledged, :resolved_by_id])
+    |> cast(attrs, [:type, :message, :patient_id, :acknowledged, :resolved_by_id, :severity])
     |> validate_required([:type, :message, :patient_id])
+    |> validate_inclusion(:severity, ["low", "high", "critical"])
     |> foreign_key_constraint(:resolved_by_id)
     |> foreign_key_constraint(:patient_id)
   end
