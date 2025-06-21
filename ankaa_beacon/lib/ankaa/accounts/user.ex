@@ -13,8 +13,8 @@ defmodule Ankaa.Accounts.User do
     field(:role, :string)
 
     has_one(:patient, Ankaa.Patients.Patient)
-    has_many(:patient_associations, Ankaa.Patients.PatientAssociation)
-    has_many(:associated_patients, through: [:patient_associations, :patient])
+    has_many(:care_network, Ankaa.Patients.CareNetwork)
+    has_many(:associated_patients, through: [:care_network, :patient])
 
     timestamps(type: :utc_datetime)
   end

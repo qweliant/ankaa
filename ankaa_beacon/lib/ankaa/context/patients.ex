@@ -7,7 +7,7 @@ defmodule Ankaa.Patients do
   import Ecto.Query
 
   alias Ankaa.Repo
-  alias Ankaa.Patients.{Patient, Device, PatientAssociation}
+  alias Ankaa.Patients.{Patient, Device, CareNetwork}
   alias Ankaa.Accounts.User
 
   @doc """
@@ -314,15 +314,15 @@ defmodule Ankaa.Patients do
   ## Examples
 
       iex> create_patient_association(doctor, patient, "doctor")
-      {:ok, %PatientAssociation{}}
+      {:ok, %CareNetwork{}}
 
       iex> create_patient_association(patient_user, other_patient, "peer")
       {:error, :unauthorized_role}
   """
   def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
     if User.is_doctor?(user) || User.is_nurse?(user) || User.is_caresupport?(user) do
-      %PatientAssociation{}
-      |> PatientAssociation.changeset(%{
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
         user_id: user.id,
         patient_id: patient.id,
         relationship: relationship,
@@ -340,7 +340,7 @@ defmodule Ankaa.Patients do
   ## Examples
 
       iex> create_peer_association(patient_user, other_patient)
-      {:ok, %PatientAssociation{}}
+      {:ok, %CareNetwork{}}
 
       iex> create_peer_association(non_patient_user, other_patient)
       {:error, :not_a_patient}
@@ -348,8 +348,8 @@ defmodule Ankaa.Patients do
   def create_peer_association(%User{} = patient_user, %Patient{} = peer_patient) do
     if User.is_patient?(patient_user) do
       with %Patient{} = patient <- get_patient_by_user_id(patient_user.id) do
-        %PatientAssociation{}
-        |> PatientAssociation.changeset(%{
+        %CareNetwork{}
+        |> CareNetwork.changeset(%{
           user_id: patient_user.id,
           patient_id: peer_patient.id,
           relationship: "peer_support",
@@ -367,7 +367,7 @@ defmodule Ankaa.Patients do
   # Private helpers
 
   defp list_care_provider_patients(user) do
-    PatientAssociation
+    CareNetwork
     |> join(:inner, [pa], p in Patient, on: pa.patient_id == p.id)
     |> where([pa, _], pa.user_id == ^user.id)
     |> select([_, p], p)

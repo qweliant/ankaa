@@ -2,7 +2,7 @@ defmodule Ankaa.DevicesTest do
   use Ankaa.DataCase
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.{Patient, PatientAssociation, Device}
+  alias Ankaa.Patients.{Patient, CareNetwork, Device}
   alias Ankaa.AccountsFixtures
 
   describe "devices" do

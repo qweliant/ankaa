@@ -1,4 +1,4 @@
-defmodule Ankaa.Patients.PatientAssociation do
+defmodule Ankaa.Patients.CareNetwork do
   use Ecto.Schema
   import Ecto.Changeset
   alias Ankaa.{Accounts.User, Patients.Patient}
@@ -6,7 +6,7 @@ defmodule Ankaa.Patients.PatientAssociation do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "patient_associations" do
+  schema "care_network" do
     field(:relationship, :string)
     field(:can_alert, :boolean, default: false)
 

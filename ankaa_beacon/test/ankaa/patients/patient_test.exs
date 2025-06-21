@@ -2,7 +2,7 @@ defmodule Ankaa.PatientsTest do
   use Ankaa.DataCase
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.{Patient, PatientAssociation}
+  alias Ankaa.Patients.{Patient, CareNetwork}
   alias Ankaa.AccountsFixtures
 
   describe "list_patients_for_user/1" do
@@ -70,8 +70,8 @@ defmodule Ankaa.PatientsTest do
       patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
 
       # Create association between doctor and patient1
-      %PatientAssociation{}
-      |> PatientAssociation.changeset(%{
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
         user_id: doctor.id,
         patient_id: patient1.patient.id,
         relationship: "doctor"

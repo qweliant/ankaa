@@ -4,7 +4,7 @@ defmodule Ankaa.Alerts do
   """
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.PatientAssociation
+  alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications
   alias Ankaa.Notifications.Alert
 
@@ -39,15 +39,20 @@ defmodule Ankaa.Alerts do
         end)
 
         # Broadcast to care network
-        PatientAssociation
+        CareNetwork
         |> where([pa], pa.patient_id == ^patient.id && pa.can_alert == true)
         |> Repo.all()
         |> Enum.each(fn assoc ->
           case Notifications.Alert.send_alert_to_user(assoc.user_id, reading, violations) do
-            :ok -> :ok
+            :ok ->
+              :ok
+
             {:error, reason} ->
               require Logger
-              Logger.error("Failed to send alert to user #{inspect(assoc.user_id)}: #{inspect(reason)}")
+
+              Logger.error(
+                "Failed to send alert to user #{inspect(assoc.user_id)}: #{inspect(reason)}"
+              )
           end
         end)
 

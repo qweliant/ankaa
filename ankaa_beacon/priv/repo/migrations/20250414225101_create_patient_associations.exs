@@ -2,7 +2,7 @@ defmodule Ankaa.Repo.Migrations.CreatePatientAssociations do
   use Ecto.Migration
 
   def change do
-    create table(:patient_associations, primary_key: false) do
+    create table(:care_network, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:relationship, :string, null: false)
       add(:can_alert, :boolean, default: false, null: false)
@@ -15,11 +15,11 @@ defmodule Ankaa.Repo.Migrations.CreatePatientAssociations do
       timestamps()
     end
 
-    create(index(:patient_associations, [:user_id]))
-    create(index(:patient_associations, [:patient_id]))
+    create(index(:care_network, [:user_id]))
+    create(index(:care_network, [:patient_id]))
 
     create(
-      unique_index(:patient_associations, [:user_id, :patient_id],
+      unique_index(:care_network, [:user_id, :patient_id],
         name: :patient_associations_user_id_patient_id_index
       )
     )

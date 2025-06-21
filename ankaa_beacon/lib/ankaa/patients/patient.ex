@@ -12,8 +12,8 @@ defmodule Ankaa.Patients.Patient do
     field(:timezone, :string)
 
     belongs_to(:user, User, foreign_key: :user_id)
-    has_many(:patient_associations, Ankaa.Patients.PatientAssociation)
-    has_many(:associated_users, through: [:patient_associations, :user])
+    has_many(:care_network, Ankaa.Patients.CareNetwork)
+    has_many(:associated_users, through: [:care_network, :user])
     has_many(:devices, Ankaa.Patients.Device)
 
     timestamps()
