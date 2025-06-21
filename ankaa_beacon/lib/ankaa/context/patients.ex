@@ -2,7 +2,7 @@ defmodule Ankaa.Patients do
   @moduledoc """
   The Patients context.
 
-  This context handles all operations related to patients, devices, and patient associations.
+  This context handles all operations related to patients, devices, and care network.
   """
   import Ecto.Query
 

@@ -183,7 +183,7 @@ defmodule Ankaa.PatientsTest do
     end
   end
 
-  describe "patient associations" do
+  describe "care network" do
     setup do
       doctor = AccountsFixtures.doctor_fixture()
       nurse = AccountsFixtures.nurse_fixture()

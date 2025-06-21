@@ -61,6 +61,7 @@ defmodule Ankaa.Monitoring.BPDeviceReading do
     |> validate_number(:pulse_pressure, greater_than: 0)
   end
 
+  # may need to change this per BP device type
   @impl true
   def from_mqtt(data) do
     %__MODULE__{
