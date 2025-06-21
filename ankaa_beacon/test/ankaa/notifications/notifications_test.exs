@@ -33,36 +33,34 @@ defmodule Ankaa.NotificationsTest do
         patient_id: patient.id
       }
 
-      IO.inspect(patient.id, label: "Patient in test")
-
       assert {:ok, %Alert{} = alert} = Alerts.create_alert(attrs)
-      # assert alert.type == "threshold_violation"
-      # assert alert.message =~ "BP too low"
-      # assert alert.patient_id == patient.id
+      assert alert.type == "threshold_violation"
+      assert alert.message =~ "BP too low"
+      assert alert.patient_id == patient.id
     end
 
-    # test "broadcast_alerts/2 creates alerts and sends notifications", %{
-    #   device: device,
-    #   patient: patient
-    # } do
-    #   reading = %{device_id: device.device_id}
+    test "broadcast_alerts/2 creates alerts and sends notifications", %{
+      device: device,
+      patient: patient
+    } do
+      reading = %{device_id: device.device_id}
 
-    #   violations = [
-    #     %{
-    #       parameter: :systolic,
-    #       value: 60,
-    #       threshold: 80,
-    #       severity: :high,
-    #       message: "Systolic pressure is too low"
-    #     }
-    #   ]
+      violations = [
+        %{
+          parameter: :systolic,
+          value: 60,
+          threshold: 80,
+          severity: :high,
+          message: "Systolic pressure is too low"
+        }
+      ]
 
-    #   Alerts.broadcast_alerts(reading, violations)
+      Alerts.broadcast_alerts(reading, violations)
 
-    #   alerts = Repo.all(Alert)
-    #   assert length(alerts) == 1
-    #   assert hd(alerts).patient_id == patient.id
-    #   assert hd(alerts).message =~ "Systolic"
-    # end
+      alerts = Repo.all(Alert)
+      assert length(alerts) == 1
+      assert hd(alerts).patient_id == patient.id
+      assert hd(alerts).message =~ "Systolic"
+    end
   end
 end

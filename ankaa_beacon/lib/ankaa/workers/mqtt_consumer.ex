@@ -175,19 +175,12 @@ defmodule Ankaa.Workers.MQTTConsumer do
   defp process_reading(reading) do
     violations = reading.__struct__.check_thresholds(reading)
 
+    # Log threshold violations to monitoring
     Enum.each(violations, fn violation ->
-      Logger.warning("""
-      ⚠️ Threshold violation detected:
-      ├─ Device: #{reading.device_id}
-      ├─ Parameter: #{violation.parameter}
-      ├─ Value: #{violation.value}
-      ├─ Threshold: #{violation.threshold}
-      ├─ Severity: #{violation.severity}
-      └─ Message: #{violation.message}
-      """)
+      log_threshold_violation(reading, violation)
     end)
 
-    Ankaa.Alerts.broadcast_alerts(reading, violations)
+    Ankaa.Alerts.broadcast_threshold_alerts(reading, violations)
 
     # Broadcast via PubSub (broadcasts once per reading, not per violation)
     Phoenix.PubSub.broadcast(
@@ -203,6 +196,18 @@ defmodule Ankaa.Workers.MQTTConsumer do
     |> List.last()
     |> String.downcase()
     |> Kernel.<>("_readings")
+  end
+
+  defp log_threshold_violation(reading, violation) do
+    Logger.warning("""
+    ⚠️ Threshold violation detected:
+    ├─ Device: #{reading.device_id}
+    ├─ Parameter: #{violation.parameter}
+    ├─ Value: #{violation.value}
+    ├─ Threshold: #{violation.threshold}
+    ├─ Severity: #{violation.severity}
+    └─ Message: #{violation.message}
+    """)
   end
 
 end
