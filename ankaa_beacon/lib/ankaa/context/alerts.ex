@@ -86,4 +86,19 @@ defmodule Ankaa.Alerts do
     |> select([pa], pa.user_id)
     |> Repo.all()
   end
+
+  def get_active_alerts_for_user(user) do
+    # Query for active alerts based on user role and relationships
+    # This integrates with your existing alert/patient relationships
+  end
+
+  def dismiss_alert(alert_id, user_id, dismissal_reason) do
+    # Handle alert dismissal with audit trail
+    # Different logic based on alert severity
+  end
+
+  def acknowledge_critical_alert(alert_id, user_id) do
+    # Stop EMS timer and mark as acknowledged
+    # Full audit trail for critical alerts
+  end
 end

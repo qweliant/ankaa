@@ -4,6 +4,7 @@ defmodule AnkaaWeb.MonitoringLive do
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Device
+  alias Ankaa.Alerts
 
   @moduledoc """
   LiveView dashboard to display real-time BP and dialysis data.
@@ -14,6 +15,7 @@ defmodule AnkaaWeb.MonitoringLive do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "bpdevicereading_readings")
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "dialysisdevicereading_readings")
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{socket.assigns.current_user.id}:alerts")
     end
 
     # Get patient's registered devices
@@ -27,13 +29,46 @@ defmodule AnkaaWeb.MonitoringLive do
        bp_violations: [],
        dialysis_violations: [],
        current_path: "/patient/monitoring",
-       devices: devices
+       devices: devices,
+       # Add this line
+       session_started: false,
+       # Add this line for showing when session started
+       session_start_time: nil
      )}
   end
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
     {:noreply, assign(socket, active_tab: String.to_existing_atom(tab))}
+  end
+
+  @impl true
+  def handle_event("start_session", _params, socket) do
+    patient_name = socket.assigns.current_user.patient.name || "Your patient"
+    # Adjust timezone as needed
+    current_time = DateTime.now!("America/New_York")
+
+    # Create a warm, caring alert message
+    alert_message =
+      "💙 #{patient_name} just started their dialysis session and is being safely monitored. We've got this together! (Started at #{DateTime.to_time(current_time) |> Time.to_string(:time_only)})"
+
+    case Ankaa.Alerts.create_alert(%{
+           type: "Session",
+           message: alert_message,
+           patient_id: socket.assigns.current_user.patient.id,
+           severity: "info"
+         }) do
+      {:ok, _alert} ->
+        {:noreply,
+         assign(socket,
+           session_started: true,
+           session_start_time: current_time
+         )}
+
+      {:error, _reason} ->
+        # You might want to show an error message to the user
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -68,6 +103,15 @@ defmodule AnkaaWeb.MonitoringLive do
   end
 
   @impl true
+  def handle_info({:new_alert, alert}, socket) do
+    # This will receive the session start alert we just created
+    # For now, we'll just log it, but you could show additional UI feedback
+    require Logger
+    Logger.info("Patient received alert confirmation: #{alert.message}")
+    {:noreply, socket}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -89,42 +133,29 @@ defmodule AnkaaWeb.MonitoringLive do
         </div>
       </div>
 
-      <!-- Registered Devices -->
-      <div class="bg-white shadow rounded-lg p-6 mb-8">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-medium text-gray-900">My Devices</h2>
-          <.link
-            navigate={~p"/patient/devices"}
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Manage Devices
-          </.link>
-        </div>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <%= if Enum.empty?(@devices) do %>
-            <div class="col-span-2 text-center py-8">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p class="mt-2 text-slate-500">No devices registered</p>
-              <p class="mt-1 text-sm text-slate-400">Add devices to start monitoring</p>
-            </div>
-          <% else %>
-            <%= for device <- @devices do %>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h3 class="text-sm font-medium text-gray-900"><%= device.type %></h3>
-                    <p class="text-sm text-gray-500">ID: <%= device.device_id %></p>
-                  </div>
-                  <div class={"px-2 py-1 rounded-full text-xs font-medium #{if device.type == "blood_pressure", do: "bg-blue-100 text-blue-800", else: "bg-purple-100 text-purple-800"}"}>
-                    <%= String.replace(device.type, "_", " ") |> String.capitalize() %>
-                  </div>
-                </div>
-              </div>
-            <% end %>
-          <% end %>
-        </div>
+      <!-- Start Dialysis Session Button -->
+      <div class="bg-white shadow rounded-lg p-6 mb-8 flex flex-col items-center justify-center">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Ready to Start Your Dialysis Session?</h2>
+        <p class="text-sm text-gray-500 mb-6 text-center">
+          Notify your care team that you are beginning a new dialysis session. This helps your care network monitor your safety and respond quickly if needed.
+        </p>
+        <button
+          phx-click="start_session"
+          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition"
+        >
+          <svg class="h-5 w-5 mr-2 -ml-1 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          Start Session & Notify Care Team
+        </button>
+        <%= if @session_started do %>
+          <div class="mt-4 flex items-center text-emerald-700">
+        <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Session started and care team notified!
+          </div>
+        <% end %>
       </div>
 
       <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">

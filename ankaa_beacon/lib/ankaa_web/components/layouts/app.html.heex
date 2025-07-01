@@ -1,4 +1,16 @@
 <header class="px-4 sm:px-6 lg:px-8"></header>
+
+<!-- Alert Banner Portal - Renders at top of page -->
+<div id="alert-portal">
+  <%= if assigns[:active_alerts] && length(@active_alerts) > 0 do %>
+    <.live_component 
+      module={AnkaaWeb.AlertBanner} 
+      id="alert-banner"
+      active_alerts={@active_alerts}
+      current_user={@current_user} />
+  <% end %>
+</div>
+
 <main class="px-4 py-20 sm:px-6 lg:px-8">
   <div class="mx-auto"><.flash_group flash={@flash} /> {@inner_content}</div>
 </main>
