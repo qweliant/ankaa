@@ -3,7 +3,6 @@ defmodule Ankaa.Alerts do
   Handles alert logic and care network notifications.
   """
 
-  alias ElixirSense.Log
   alias Ankaa.Patients
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications
@@ -21,7 +20,7 @@ defmodule Ankaa.Alerts do
         {:ok, alert}
 
       error ->
-        Log.error("Failed to create alert: #{inspect(error)}")
+        Logger.error("Failed to create alert: #{inspect(error)}")
         {:error, error}
     end
   end

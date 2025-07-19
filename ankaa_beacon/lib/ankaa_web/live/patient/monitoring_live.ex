@@ -50,7 +50,7 @@ defmodule AnkaaWeb.MonitoringLive do
 
     # Create a warm, caring alert message
     alert_message =
-      "💙 #{patient_name} just started their dialysis session and is being safely monitored. We've got this together! (Started at #{DateTime.to_time(current_time) |> Time.to_string(:time_only)})"
+      "💙 #{patient_name} just started their dialysis session and is being safely monitored. We've got this together! (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
 
     case Ankaa.Alerts.create_alert(%{
            type: "Session",

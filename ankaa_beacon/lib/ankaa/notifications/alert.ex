@@ -20,7 +20,7 @@ defmodule Ankaa.Notifications.Alert do
     alert
     |> cast(attrs, [:type, :message, :patient_id, :acknowledged, :resolved_by_id, :severity])
     |> validate_required([:type, :message, :patient_id])
-    |> validate_inclusion(:severity, ["low", "high", "critical"])
+    |> validate_inclusion(:severity, ["info", "low", "medium", "high", "critical"])
     |> foreign_key_constraint(:resolved_by_id)
     |> foreign_key_constraint(:patient_id)
   end
