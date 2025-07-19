@@ -232,11 +232,8 @@ defmodule AnkaaWeb.UserAuth do
       !user ->
         ~p"/"
 
-      !user.role ->
-        ~p"/register"
-
       Ankaa.Accounts.User.is_patient?(user) ->
-        ~p"/patient/health"
+        ~p"/patient/monitoring"
 
       user.role ->
         case user.role do
@@ -247,6 +244,9 @@ defmodule AnkaaWeb.UserAuth do
           # "admin" -> ~p"/admin/users"
           _ -> ~p"/register"
         end
+
+      true ->
+        ~p"/register"
     end
   end
 end
