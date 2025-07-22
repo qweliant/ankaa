@@ -1,6 +1,6 @@
 defmodule AnkaaWeb.MonitoringLive do
   use AnkaaWeb, :live_view
-  # use AnkaaWeb, :patient_layout
+  use AnkaaWeb, :patient_layout
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Device
@@ -53,14 +53,11 @@ defmodule AnkaaWeb.MonitoringLive do
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    socket = put_flash(socket, :info, "Test: Start Session button was clicked.")
     {:noreply, assign(socket, active_tab: String.to_existing_atom(tab))}
   end
 
   @impl true
   def handle_event("start_session", _params, socket) do
-    socket = put_flash(socket, :info, "Test: Start Session button was clicked.")
-    {:noreply, socket}
     patient_name = socket.assigns.current_user.patient.name || "Your patient"
     patient_id = socket.assigns.current_user.patient.id
     current_time = DateTime.utc_now()

@@ -1,10 +1,9 @@
 defmodule AnkaaWeb.AcceptInviteLive do
   use AnkaaWeb, :live_view
 
-  import Phoenix.Controller, only: [put_session: 3]
-
   alias Ankaa.Accounts
   alias Ankaa.Invites
+  # import Phoenix.Controller, only: [put_session: 3]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -39,7 +38,7 @@ defmodule AnkaaWeb.AcceptInviteLive do
     if invited_user do
       # A user with this email exists. Redirect to login.
       socket
-      |> put_session(:invite_token, invite.token)
+      |> Phoenix.LiveView.put_session(:invite_token, invite.token)
       |> put_flash(:info, "Please log in to accept your invitation.")
       |> push_navigate(to: ~p"/users/login")
     else

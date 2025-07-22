@@ -23,9 +23,6 @@ defmodule AnkaaWeb.UserRegistrationLive do
         id="registration_form"
         phx-submit="save"
         phx-change="validate"
-        phx-trigger-action={@trigger_submit}
-        action={~p"/users/login?_action=registered"}
-        method="post"
       >
         <.error :if={@check_errors}>
           Oops, something went wrong! Please check the errors below.

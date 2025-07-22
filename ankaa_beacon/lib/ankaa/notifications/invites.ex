@@ -3,21 +3,19 @@ defmodule Ankaa.Invites.Invite do
   import Ecto.Changeset
 
   @statuses ["pending", "accepted", "expired"]
-  @roles ["care_support", "nurse", "doctor"]
+  @roles ["caresupport", "nurse", "doctor"]
 
   schema "invites" do
     field(:invitee_email, :string)
-    # The role being offered to the new user
     field(:invitee_role, :string)
     field(:token, :string)
     field(:status, :string, default: "pending")
     field(:expires_at, :utc_datetime)
 
-    # The user who sent the invite
     belongs_to(:inviter, Ankaa.Accounts.User)
 
     # The patient this invite is for (can be null if it's a general invite)
-    belongs_to(:patient, Ankaa.Patients.Patient)
+    belongs_to(:patient, Ankaa.Patients.Patient, foreign_key: :patient_id, type: :binary_id)
 
     timestamps()
   end
