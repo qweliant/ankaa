@@ -19,15 +19,71 @@
 import "phoenix_html";
 // Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "phoenix";
-import { LiveSocket } from "phoenix_live_view";
+import { LiveSocket, Hook } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
+
+const AlertsHook: Partial<Hook> = {
+  mounted() {
+    const DISMISSED_ALERTS_KEY = "dismissed_info_alerts";
+
+    // 1. On page load, read session storage and push to the server.
+    const dismissedIds: string[] = JSON.parse(
+      sessionStorage.getItem(DISMISSED_ALERTS_KEY) || "[]"
+    );
+    if (dismissedIds.length > 0) {
+      this.pushEvent("load_dismissed_alerts", { ids: dismissedIds });
+    }
+
+    // 2. Listen for an event from the server to save a new dismissal.
+    this.handleEvent("dismiss_info_alert", ({ id }: { id: string }) => {
+      console.log(`Persisting dismissal of INFO alert ${id} to session storage.`);
+      const currentDismissed: string[] = JSON.parse(
+        sessionStorage.getItem(DISMISSED_ALERTS_KEY) || "[]"
+      );
+      if (!currentDismissed.includes(id)) {
+        const newDismissed = [...currentDismissed, id];
+        sessionStorage.setItem(DISMISSED_ALERTS_KEY, JSON.stringify(newDismissed));
+      }
+    });
+  },
+};
+
+const SessionTimer: Partial<Hook> = {
+  mounted() {
+    const startTime = new Date(this.el.dataset.startTime!).getTime();
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsed = Math.max(0, now - startTime);
+
+      const hours = String(Math.floor(elapsed / 3600000)).padStart(2, "0");
+      const minutes = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, "0");
+      const seconds = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, "0");
+
+      this.el.innerText = `${hours}:${minutes}:${seconds}`;
+    };
+    
+    // Use `as any` to attach our custom property. This tells TypeScript
+    // to trust us that we're adding this property at runtime.
+    (this as any).timerInterval = window.setInterval(updateTimer, 1000);
+    updateTimer();
+  },
+
+  destroyed() {
+    // Use `as any` again to access the property and clear the interval.
+    clearInterval((this as any).timerInterval);
+  },
+};
 
 const csrfToken = (
   document.querySelector("meta[name='csrf-token']") as HTMLElement
 ).getAttribute("content");
 
 // Register our hooks
-const hooks = {};
+const hooks: { [key: string]: Partial<Hook> } = {
+  AlertsHook: AlertsHook,
+  SessionTimer: SessionTimer, 
+};
 
 // Custom loading animation setup
 topbar.config({

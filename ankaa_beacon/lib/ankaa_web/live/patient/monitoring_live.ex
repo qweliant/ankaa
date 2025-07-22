@@ -1,10 +1,11 @@
 defmodule AnkaaWeb.MonitoringLive do
   use AnkaaWeb, :live_view
-  use AnkaaWeb, :patient_layout
+  # use AnkaaWeb, :patient_layout
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Device
   alias Ankaa.Alerts
+  alias Ankaa.Sessions
 
   @moduledoc """
   LiveView dashboard to display real-time BP and dialysis data.
@@ -21,53 +22,134 @@ defmodule AnkaaWeb.MonitoringLive do
     # Get patient's registered devices
     devices = Patients.list_devices_for_patient(socket.assigns.current_user.patient.id)
 
-    {:ok,
-     assign(socket,
-       active_tab: :blood_pressure,
-       bp_readings: [],
-       dialysis_readings: [],
-       bp_violations: [],
-       dialysis_violations: [],
-       current_path: "/patient/monitoring",
-       devices: devices,
-       # Add this line
-       session_started: false,
-       # Add this line for showing when session started
-       session_start_time: nil
-     )}
+    case Sessions.get_active_session_for_patient(socket.assigns.current_user.patient.id) do
+      nil ->
+        {:ok,
+         assign(socket,
+           active_tab: :blood_pressure,
+           bp_readings: [],
+           dialysis_readings: [],
+           devices: devices,
+           current_path: "/patient/monitoring",
+           session_started: false,
+           session_start_time: nil,
+           active_session: nil
+         )}
+
+      session ->
+        {:ok,
+         assign(socket,
+           active_tab: :blood_pressure,
+           bp_readings: [],
+           dialysis_readings: [],
+           devices: devices,
+           current_path: "/patient/monitoring",
+           session_started: true,
+           session_start_time: session.start_time,
+           active_session: session
+         )}
+    end
   end
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
+    socket = put_flash(socket, :info, "Test: Start Session button was clicked.")
     {:noreply, assign(socket, active_tab: String.to_existing_atom(tab))}
   end
 
   @impl true
   def handle_event("start_session", _params, socket) do
+    socket = put_flash(socket, :info, "Test: Start Session button was clicked.")
+    {:noreply, socket}
     patient_name = socket.assigns.current_user.patient.name || "Your patient"
-    # Adjust timezone as needed
-    current_time = DateTime.now!("America/New_York")
+    patient_id = socket.assigns.current_user.patient.id
+    current_time = DateTime.utc_now()
 
-    # Create a warm, caring alert message
-    alert_message =
-      "💙 #{patient_name} just started their dialysis session and is being safely monitored. We've got this together! (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
-
-    case Ankaa.Alerts.create_alert(%{
-           type: "Session",
-           message: alert_message,
-           patient_id: socket.assigns.current_user.patient.id,
-           severity: "info"
+    case Sessions.create_session(%{
+           start_time: current_time,
+           patient_id: patient_id,
+           status: "ongoing"
          }) do
-      {:ok, _alert} ->
+      {:ok, session} ->
+        alert_message =
+          "💙 #{patient_name} just started their dialysis session. (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
+
+        {:ok, alert} =
+          Ankaa.Alerts.create_alert(%{
+            type: "Session",
+            message: alert_message,
+            patient_id: patient_id,
+            severity: "info"
+          })
+
+        Phoenix.PubSub.broadcast(
+          Ankaa.PubSub,
+          "patient:#{patient_id}:alerts",
+          {:new_alert, alert}
+        )
+
+        socket =
+          put_flash(
+            socket,
+            :info,
+            "Session started successfully."
+          )
+
         {:noreply,
          assign(socket,
            session_started: true,
-           session_start_time: current_time
+           session_start_time: current_time,
+           active_session: session
          )}
 
-      {:error, _reason} ->
-        # You might want to show an error message to the user
-        {:noreply, socket}
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to start session.")}
+    end
+  end
+
+  @impl true
+  def handle_event("end_session", _params, socket) do
+    patient_name = socket.assigns.current_user.patient.name || "Your patient"
+    patient_id = socket.assigns.current_user.patient.id
+
+    case Sessions.end_session(socket.assigns.active_session) do
+      {:ok, ended_session} ->
+        duration_in_minutes =
+          Timex.diff(ended_session.end_time, ended_session.start_time, :minutes)
+
+        alert_message =
+          "✅ #{patient_name}'s session ended successfully after #{duration_in_minutes} minutes."
+
+        {:ok, alert} =
+          Ankaa.Alerts.create_alert(%{
+            type: "Session",
+            message: alert_message,
+            patient_id: patient_id,
+            severity: "info"
+          })
+
+        Phoenix.PubSub.broadcast(
+          Ankaa.PubSub,
+          "patient:#{patient_id}:alerts",
+          {:new_alert, alert}
+        )
+
+        socket =
+          put_flash(
+            socket,
+            :info,
+            "Session ended successfully."
+          )
+
+        {:noreply,
+         assign(socket,
+           session_started: false,
+           session_start_time: nil,
+           active_session: nil
+         )}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to end session.")}
     end
   end
 
@@ -134,29 +216,41 @@ defmodule AnkaaWeb.MonitoringLive do
       </div>
 
       <!-- Start Dialysis Session Button -->
-      <div class="bg-white shadow rounded-lg p-6 mb-8 flex flex-col items-center justify-center">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Ready to Start Your Dialysis Session?</h2>
-        <p class="text-sm text-gray-500 mb-6 text-center">
-          Notify your care team that you are beginning a new dialysis session. This helps your care network monitor your safety and respond quickly if needed.
-        </p>
-        <button
-          phx-click="start_session"
-          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition"
-        >
-          <svg class="h-5 w-5 mr-2 -ml-1 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-          Start Session & Notify Care Team
-        </button>
-        <%= if @session_started do %>
-          <div class="mt-4 flex items-center text-emerald-700">
-        <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-        Session started and care team notified!
+    <%= if @session_started do %>
+        <div class="bg-white shadow rounded-lg p-6 mb-8 flex flex-col items-center justify-center text-center">
+          <h2 class="text-lg font-medium text-gray-900 mb-2">Session in Progress</h2>
+          <p class="text-sm text-gray-500 mb-4">
+            Your care team has been notified and is monitoring your session.
+          </p>
+          <div
+            id="session-timer"
+            class="text-4xl font-bold text-indigo-600 tabular-nums"
+            phx-hook="SessionTimer"
+            data-start-time={DateTime.to_iso8601(@session_start_time)}
+          >
+            00:00:00
           </div>
-        <% end %>
-      </div>
+        <button
+          phx-click="end_session"
+          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-md shadow-sm text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition"
+        >
+          End Session
+        </button>
+        </div>
+      <% else %>
+        <div class="bg-white shadow rounded-lg p-6 mb-8 flex flex-col items-center justify-center">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">Ready to Start Your Dialysis Session?</h2>
+          <p class="text-sm text-gray-500 mb-6 text-center">
+            Notify your care team that you are beginning a new dialysis session.
+          </p>
+          <button
+            phx-click="start_session"
+            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition"
+          >
+            Start Session & Notify Care Team
+          </button>
+        </div>
+      <% end %>
 
       <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div class="border-b border-slate-200">

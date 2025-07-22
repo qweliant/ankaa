@@ -27,14 +27,14 @@ defmodule AnkaaWeb.AlertHook do
 
       # Get and filter alerts
       active_alerts = Alerts.get_active_alerts_for_user(user)
-      dismissed_info_alerts = get_dismissed_info_alerts_from_session(socket)
+      # dismissed_info_alerts = get_dismissed_info_alerts_from_session(socket)
 
-      filtered_alerts = filter_dismissed_alerts(active_alerts, dismissed_info_alerts)
+      # filtered_alerts = filter_dismissed_alerts(active_alerts, dismissed_info_alerts)
 
       {:cont,
        assign(socket,
-         active_alerts: filtered_alerts,
-         dismissed_info_alerts: dismissed_info_alerts
+         active_alerts: active_alerts,
+         dismissed_info_alerts: []
        )}
     else
       {:cont, assign(socket, active_alerts: [], dismissed_info_alerts: [])}
@@ -72,6 +72,25 @@ defmodule AnkaaWeb.AlertHook do
          end
        end)
      end)}
+  end
+
+  def handle_event("load_dismissed_alerts", %{"ids" => ids}, socket) do
+    # For efficient lookups, convert the list of IDs into a MapSet
+    dismissed_alerts = Enum.into(ids, MapSet.new())
+
+    # Remove any alerts that the user has already dismissed in this session
+    filtered_alerts =
+      Enum.reject(socket.assigns.active_alerts, fn alert ->
+        alert.id in dismissed_alerts
+      end)
+
+    {:noreply,
+     assign(socket,
+       # Update the visible alerts
+       active_alerts: filtered_alerts,
+       # Store the set of dismissed IDs for later checks
+       dismissed_info_alerts: dismissed_alerts
+     )}
   end
 
   defp get_patient_ids_for_care_provider(user) do

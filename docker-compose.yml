@@ -91,7 +91,18 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
+  inbucket:
+    image: inbucket/inbucket
+    container_name: inbucket
+    ports:
+      - "9000:9000" # Web UI
+      - "2500:2500" # SMTP Port
+    networks:
+      - ankaa_network
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 networks:
   ankaa_network:
     driver: bridge

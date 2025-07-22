@@ -2,6 +2,8 @@
 current_path={@current_path} current_user={@current_user} />
 <div class="py-10">
   <main>
-    <div class="mx-auto max-w-7xl sm:px-6 lg:px-8"><%= @inner_content %></div>
+      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <.flash_group flash={@flash} /> <%= @inner_content %>
+    </div>
   </main>
 </div>

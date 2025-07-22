@@ -2,6 +2,8 @@ defmodule AnkaaWeb.Router do
   use AnkaaWeb, :router
 
   import AnkaaWeb.UserAuth
+  import AnkaaWeb.RoleAuth
+  import AnkaaWeb.AlertHook
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -95,7 +97,8 @@ defmodule AnkaaWeb.Router do
     live_session :patient,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_patient}
+        {AnkaaWeb.RoleAuth, :require_patient},
+        {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/health", HealthLive, :index)
       live("/monitoring", MonitoringLive, :index)
@@ -114,7 +117,8 @@ defmodule AnkaaWeb.Router do
     live_session :care_provider,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse}
+        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse},
+        # {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/patients", CareProvider.PatientsLive.Index, :index)
       live("/patient/:id", CareProvider.PatientDetailsLive.Index, :index)
@@ -130,7 +134,8 @@ defmodule AnkaaWeb.Router do
     live_session :caresupport,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_caresupport}
+        {AnkaaWeb.RoleAuth, :require_caresupport},
+        {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/caringfor", CaringForLive.Index, :index)
       live("/caringfor/:id", CaringForLive.Show, :show)
