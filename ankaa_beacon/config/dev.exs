@@ -2,11 +2,11 @@ import Config
 
 # Configure your database
 config :ankaa, Ankaa.Repo,
-  username:  "user",
-  password:  "password",
+  username: "user",
+  password: "password",
   hostname: "localhost",
   database: "ankaa_dev",
-  port:  5432,
+  port: 5432,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -15,9 +15,9 @@ config :ankaa, Ankaa.Repo,
 config :ankaa, Ankaa.TimescaleRepo,
   migration_primary_key: [name: :id, type: :binary_id],
   migration_source: "timescale_schema_migrations",
-  database:  "ankaa_timescale_dev",
+  database: "ankaa_timescale_dev",
   username: "user",
-  password:  "password",
+  password: "password",
   hostname: "localhost",
   port: 5433,
   pool_size: 10,
@@ -118,3 +118,8 @@ config :ankaa, AnkaaBeaconWeb.Endpoint,
       cd: Path.expand("../assets", __DIR__)
     ]
   ]
+
+config :ankaa, Ankaa.Mailer,
+  adapter: Swoosh.Adapters.SMTP,
+  hostname: "localhost",
+  port: 2500

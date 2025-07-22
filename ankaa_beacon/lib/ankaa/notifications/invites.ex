@@ -1,0 +1,52 @@
+defmodule Ankaa.Invites.Invite do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @statuses ["pending", "accepted", "expired"]
+  @roles ["care_support", "nurse", "doctor"]
+
+  schema "invites" do
+    field(:invitee_email, :string)
+    # The role being offered to the new user
+    field(:invitee_role, :string)
+    field(:token, :string)
+    field(:status, :string, default: "pending")
+    field(:expires_at, :utc_datetime)
+
+    # The user who sent the invite
+    belongs_to(:inviter, Ankaa.Accounts.User)
+
+    # The patient this invite is for (can be null if it's a general invite)
+    belongs_to(:patient, Ankaa.Patients.Patient)
+
+    timestamps()
+  end
+
+  @doc false
+  def changeset(invite, attrs) do
+    invite
+    |> cast(attrs, [
+      :invitee_email,
+      :invitee_role,
+      :token,
+      :status,
+      :expires_at,
+      :inviter_id,
+      :patient_id
+    ])
+    |> validate_required([
+      :invitee_email,
+      :invitee_role,
+      :token,
+      :status,
+      :expires_at,
+      :inviter_id
+    ])
+    |> validate_format(:invitee_email, ~r/^[^\s]+@[^\s]+$/)
+    |> validate_inclusion(:status, @statuses)
+    |> validate_inclusion(:invitee_role, @roles)
+    |> unique_constraint(:token)
+    |> foreign_key_constraint(:inviter_id)
+    |> foreign_key_constraint(:patient_id)
+  end
+end

@@ -24,6 +24,11 @@ defmodule AnkaaWeb.Router do
     pipe_through(:browser)
 
     get("/", PageController, :home)
+
+    # Add this new live_session for handling invites
+    live_session :invites, on_mount: [] do
+      live("/invites/accept", AcceptInviteLive, :new)
+    end
   end
 
   # Other scopes may use custom stacks.
@@ -117,7 +122,7 @@ defmodule AnkaaWeb.Router do
     live_session :care_provider,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse},
+        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse}
         # {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/patients", CareProvider.PatientsLive.Index, :index)

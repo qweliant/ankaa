@@ -42,11 +42,26 @@ defmodule AnkaaWeb.UserRegistrationLive do
     """
   end
 
+  def mount(%{"invite_token" => token}, _session, socket) do
+    changeset = Accounts.change_user_registration(%User{})
+
+    socket =
+      socket
+      # Store the token for later
+      |> assign(invite_token: token)
+      |> assign(trigger_submit: false, check_errors: false)
+      |> assign_form(changeset)
+
+    {:ok, socket, temporary_assigns: [form: nil]}
+  end
+
   def mount(_params, _session, socket) do
     changeset = Accounts.change_user_registration(%User{})
 
     socket =
       socket
+      # Ensure invite_token is nil
+      |> assign(invite_token: nil)
       |> assign(trigger_submit: false, check_errors: false)
       |> assign_form(changeset)
 
@@ -62,8 +77,25 @@ defmodule AnkaaWeb.UserRegistrationLive do
             &url(~p"/users/confirm/#{&1}")
           )
 
-        changeset = Accounts.change_user_registration(user)
-        {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
+        # Log the new user in by putting their token in the session
+        token = Accounts.generate_user_session_token(user)
+        socket = Phoenix.LiveView.put_session(socket, :user_token, token)
+        # Check if we have an invite token waiting
+        case socket.assigns.invite_token do
+          nil ->
+            # No invite token, normal registration flow
+            {:noreply,
+             socket
+             |> put_flash(:info, "Account created. Please check your email to confirm.")
+             |> push_navigate(to: ~p"/")}
+
+          invite_token ->
+            # Found an invite token, redirect to the accept page
+            {:noreply,
+             socket
+             |> put_flash(:info, "Account created. Now accepting your invitation...")
+             |> push_navigate(to: ~p"/invites/accept?token=#{invite_token}")}
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}

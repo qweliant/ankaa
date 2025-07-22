@@ -27,13 +27,31 @@ defmodule AnkaaWeb.UserAuth do
   """
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
-    user_return_to = get_session(conn, :user_return_to)
 
-    conn
-    |> renew_session()
-    |> put_token_in_session(token)
-    |> maybe_write_remember_me_cookie(token, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    case get_session(conn, :invite_token) do
+      nil ->
+        # No invite token, proceed with normal login redirect
+        token = Accounts.generate_user_session_token(user)
+        user_return_to = get_session(conn, :user_return_to)
+
+        conn
+        |> renew_session()
+        |> put_token_in_session(token)
+        |> maybe_write_remember_me_cookie(token, params)
+        |> redirect(to: user_return_to || signed_in_path(conn))
+
+      token ->
+        # Found an invite token! Log the user in, but redirect to the invite page.
+        session_token = Accounts.generate_user_session_token(user)
+
+        conn
+        |> renew_session()
+        # Clear the token so this doesn't loop
+        |> delete_session(:invite_token)
+        |> put_token_in_session(session_token)
+        |> maybe_write_remember_me_cookie(session_token, params)
+        |> redirect(to: ~p"/invites/accept?token=#{token}")
+    end
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
