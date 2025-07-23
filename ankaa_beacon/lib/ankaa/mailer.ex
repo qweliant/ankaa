@@ -3,15 +3,17 @@ defmodule Ankaa.Mailer do
   import Swoosh.Email
 
   alias Ankaa.Invites.Invite
-  alias AnkaaWeb.Router.Helpers, as: Routes
 
   @doc """
   Builds and delivers the care network invitation email.
   """
   def deliver_invite_email(%Invite{} = invite) do
-    # The URL the user will click to accept the invite.
-    # We'll build the page for this URL later.
-    accept_url = Routes.url(AnkaaWeb.Endpoint) <> "/invites/accept?token=#{invite.token}"
+    base_url = Application.fetch_env!(:ankaa, :base_url)
+    accept_url = "#{base_url}/invites/accept?token=#{invite.token}"
+
+    IO.inspect("Building email to: #{invite.invitee_email} with URL: #{accept_url}",
+      label: "[MAILER MODULE]"
+    )
 
     email =
       new()

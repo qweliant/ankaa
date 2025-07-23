@@ -12,7 +12,7 @@ defmodule Ankaa.Invites.Invite do
     field(:status, :string, default: "pending")
     field(:expires_at, :utc_datetime)
 
-    belongs_to(:inviter, Ankaa.Accounts.User)
+    belongs_to(:inviter, Ankaa.Accounts.User, foreign_key: :inviter_id, type: :binary_id)
 
     # The patient this invite is for (can be null if it's a general invite)
     belongs_to(:patient, Ankaa.Patients.Patient, foreign_key: :patient_id, type: :binary_id)

@@ -66,31 +66,31 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  phoenix:
-    build:
-      context: ./ankaa_beacon
-      dockerfile: Dockerfile.dev
-    container_name: ankaa_phoenix
-    depends_on:
-      - postgres
-      - timescale
-      - mqtt
-    env_file:
-      - ./ankaa_beacon/.env
-    environment:
-      - MIX_ENV=dev
-    ports:
-      - "4000:4000"
-    networks:
-      - ankaa_network
-    volumes:
-      - ./ankaa_beacon:/app
-      - phoenix_deps:/app/deps
-      - phoenix_build:/app/_build
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
+  # phoenix:
+  #   build:
+  #     context: ./ankaa_beacon
+  #     dockerfile: Dockerfile.dev
+  #   container_name: ankaa_phoenix
+  #   depends_on:
+  #     - postgres
+  #     - timescale
+  #     - mqtt
+  #   env_file:
+  #     - ./ankaa_beacon/.env
+  #   environment:
+  #     - MIX_ENV=dev
+  #   ports:
+  #     - "4000:4000"
+  #   networks:
+  #     - ankaa_network
+  #   volumes:
+  #     - ./ankaa_beacon:/app
+  #     - phoenix_deps:/app/deps
+  #     - phoenix_build:/app/_build
+  #   logging:
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
   inbucket:
     image: inbucket/inbucket
     container_name: inbucket

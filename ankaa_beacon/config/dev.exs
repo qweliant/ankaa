@@ -121,5 +121,7 @@ config :ankaa, AnkaaBeaconWeb.Endpoint,
 
 config :ankaa, Ankaa.Mailer,
   adapter: Swoosh.Adapters.SMTP,
-  hostname: "localhost",
+  relay: "localhost",
   port: 2500
+
+config :ankaa, :base_url, "http://localhost:4000"
