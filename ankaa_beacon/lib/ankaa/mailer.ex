@@ -7,9 +7,9 @@ defmodule Ankaa.Mailer do
   @doc """
   Builds and delivers the care network invitation email.
   """
-  def deliver_invite_email(%Invite{} = invite) do
+  def deliver_invite_email(%Invite{} = invite, token) do
     base_url = Application.fetch_env!(:ankaa, :base_url)
-    accept_url = "#{base_url}/invites/accept?token=#{invite.token}"
+    accept_url = "#{base_url}/invites/accept?token=#{token}"
 
     IO.inspect("Building email to: #{invite.invitee_email} with URL: #{accept_url}",
       label: "[MAILER MODULE]"

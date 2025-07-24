@@ -32,7 +32,7 @@ defmodule Ankaa.Invites do
         {:ok, invite} ->
           email_token = Base.url_encode64(token, padding: false)
 
-          case Mailer.deliver_invite_email(invite) do
+          case Mailer.deliver_invite_email(invite, email_token) do
             {:ok, _delivery_details} ->
               invite
 

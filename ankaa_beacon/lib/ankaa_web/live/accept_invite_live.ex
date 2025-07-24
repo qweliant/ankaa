@@ -24,33 +24,17 @@ defmodule AnkaaWeb.AcceptInviteLive do
   # Do nothing if no token
   defp apply_action(socket, _, _), do: socket
 
+  # Case 1: The token is invalid or expired. This is the first check.
   defp handle_invite_logic(%{assigns: %{invite: nil}} = socket) do
-    # Case 1: The token is invalid or expired.
     socket
     |> put_flash(:error, "This invitation is invalid or has expired.")
     |> push_navigate(to: ~p"/")
   end
 
-  defp handle_invite_logic(%{assigns: %{current_user: nil, invite: invite}} = socket) do
-    # Case 2: User is NOT logged in.
-    invited_user = Accounts.get_user_by_email(invite.invitee_email)
-
-    if invited_user do
-      # A user with this email exists. Redirect to login.
-      socket
-      |> Phoenix.LiveView.put_session(:invite_token, invite.token)
-      |> put_flash(:info, "Please log in to accept your invitation.")
-      |> push_navigate(to: ~p"/users/login")
-    else
-      # No user exists. Redirect to registration.
-      socket
-      |> put_flash(:info, "Please create an account to accept your invitation.")
-      |> push_navigate(to: ~p"/users/register?invite_token=#{invite.token}")
-    end
-  end
-
-  defp handle_invite_logic(%{assigns: %{current_user: user, invite: invite}} = socket) do
-    # Case 3: User IS logged in.
+  # Case 2: User IS logged in. This is the most specific case for a valid invite.
+  # The `when not is_nil(user)` guard makes sure this only matches for logged-in users.
+  defp handle_invite_logic(%{assigns: %{current_user: user, invite: invite}} = socket)
+       when not is_nil(user) do
     cond do
       user.email != invite.invitee_email ->
         socket
@@ -64,14 +48,30 @@ defmodule AnkaaWeb.AcceptInviteLive do
 
       true ->
         # Success! The right user is logged in.
-        # Here we would add them to the care network.
-        # For now, we'll just accept the invite and redirect.
         {:ok, _} = Invites.accept_invite(invite)
 
         socket
         |> put_flash(:info, "Invitation accepted! You've been added to the care network.")
-        # Or wherever they should go
         |> push_navigate(to: ~p"/patient/monitoring")
+    end
+  end
+
+  # Case 3: User is NOT logged in. This now acts as a catch-all for any valid invite
+  # that didn't match the logged-in case above.
+  defp handle_invite_logic(%{assigns: %{invite: invite}} = socket) do
+    invited_user = Accounts.get_user_by_email(invite.invitee_email)
+
+    if invited_user do
+      # A user with this email exists. Redirect to login.
+      socket
+      |> Phoenix.LiveView.put_session(:invite_token, invite.token)
+      |> put_flash(:info, "Please log in to accept your invitation.")
+      |> push_navigate(to: ~p"/users/login")
+    else
+      # No user exists. Redirect to registration.
+      socket
+      |> put_flash(:info, "Please create an account to accept your invitation.")
+      |> push_navigate(to: ~p"/users/register?invite_token=#{invite.token}")
     end
   end
 
