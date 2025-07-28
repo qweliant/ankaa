@@ -6,21 +6,22 @@ defmodule Ankaa.Invites do
   alias Ankaa.Invites.Invite
 
   @rand_size 32
-  @hash_algorithm :sha256
+  # @hash_algorithm :sha256
 
   @doc """
   Creates a new invite, saves its hash, and delivers the invite email in a single transaction.
   """
   def create_invite(inviter_user, invite_attrs) do
-    token = :crypto.strong_rand_bytes(@rand_size)
-    hashed_token = :crypto.hash(@hash_algorithm, token)
-    encoded_token = Base.encode16(hashed_token, case: :lower)
+    # token = :crypto.strong_rand_bytes(@rand_size)
+    # hashed_token = :crypto.hash(@hash_algorithm, token)
+    # encoded_token = Base.encode16(hashed_token, case: :lower)
+    token = :crypto.strong_rand_bytes(@rand_size) |> Base.url_encode64(padding: false)
     expires_at = DateTime.add(DateTime.utc_now(), 7, :day)
 
     final_attrs =
       invite_attrs
       |> Map.put("inviter_id", inviter_user.id)
-      |> Map.put("token", encoded_token)
+      |> Map.put("token", token)
       |> Map.put("expires_at", expires_at)
       |> Map.put("status", "pending")
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
@@ -30,9 +31,7 @@ defmodule Ankaa.Invites do
     Repo.transaction(fn ->
       case Repo.insert(Invite.changeset(%Invite{}, final_attrs)) do
         {:ok, invite} ->
-          email_token = Base.url_encode64(token, padding: false)
-
-          case Mailer.deliver_invite_email(invite, email_token) do
+          case Mailer.deliver_invite_email(invite, token) do
             {:ok, _delivery_details} ->
               invite
 
@@ -51,22 +50,14 @@ defmodule Ankaa.Invites do
   It now hashes the incoming token to match what's in the database.
   """
   def get_pending_invite_by_token(token) do
-    case Base.url_decode64(token, padding: false) do
-      {:ok, decoded_token} ->
-        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
-        encoded_hashed_token = Base.encode16(hashed_token, case: :lower)
-
-        from(i in Invite,
-          where:
-            i.token == ^encoded_hashed_token and
-              i.status == "pending" and
-              i.expires_at > ^DateTime.utc_now()
-        )
-        |> Repo.one()
-
-      :error ->
-        nil
-    end
+    # No more decoding or hashing needed!
+    from(i in Invite,
+      where:
+        i.token == ^token and
+          i.status == "pending" and
+          i.expires_at > ^DateTime.utc_now()
+    )
+    |> Repo.one()
   end
 
   @doc """

@@ -43,7 +43,6 @@ defmodule Ankaa.Invites.Invite do
     |> validate_format(:invitee_email, ~r/^[^\s]+@[^\s]+$/)
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:invitee_role, @roles)
-    |> unique_constraint(:token)
     |> foreign_key_constraint(:inviter_id)
     |> foreign_key_constraint(:patient_id)
   end
