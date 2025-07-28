@@ -364,6 +364,22 @@ defmodule Ankaa.Patients do
     end
   end
 
+  @doc """
+  Gets all patient IDs associated with a given care provider user ID.
+
+  ## Examples
+
+      iex> get_patient_ids_for_care_provider("user_id_123")
+      ["patient_id_abc", "patient_id_def"]
+  """
+  def get_patient_ids_for_care_provider(care_provider_id) do
+    from(cn in CareNetwork,
+      where: cn.user_id == ^care_provider_id,
+      select: cn.patient_id
+    )
+    |> Repo.all()
+  end
+
   # Private helpers
 
   defp list_care_provider_patients(user) do

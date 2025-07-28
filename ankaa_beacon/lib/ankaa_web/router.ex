@@ -24,11 +24,6 @@ defmodule AnkaaWeb.Router do
     pipe_through(:browser)
 
     get("/", PageController, :home)
-
-    # Add this new live_session for handling invites
-    live_session :invites, on_mount: [] do
-      live("/invites/accept", AcceptInviteLive, :new)
-    end
   end
 
   # Other scopes may use custom stacks.
@@ -90,6 +85,7 @@ defmodule AnkaaWeb.Router do
 
     live_session :current_user,
       on_mount: [{AnkaaWeb.UserAuth, :mount_current_user}] do
+      live("/invites/accept", AcceptInviteLive, :new)
       live("/users/confirm/:token", UserConfirmationLive, :edit)
       live("/users/confirm", UserConfirmationInstructionsLive, :new)
     end

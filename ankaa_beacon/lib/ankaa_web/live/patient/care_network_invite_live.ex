@@ -3,12 +3,11 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
   use AnkaaWeb, :patient_layout
 
   alias Ankaa.Invites
-  # Alias the Invite schema
+  alias Ankaa.Accounts
   alias Ankaa.Invites.Invite
 
   @impl true
   def mount(_params, _session, socket) do
-    # Initialize the form with a proper changeset for a new Invite
     changeset = Invite.changeset(%Invite{}, %{})
 
     {:ok,
@@ -22,7 +21,11 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
   def handle_event("invite", %{"invite" => invite_params}, socket) do
     current_user = socket.assigns.current_user
     invitee_email = invite_params["invitee_email"]
+    invitee_role = invite_params["invitee_role"]
     patient_id = current_user.patient.id
+
+    # Check if a user with this email already exists
+    existing_user = Accounts.get_user_by_email(invitee_email)
 
     cond do
       # Case 1: User is inviting themselves
@@ -31,7 +34,16 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
          socket
          |> put_flash(:error, "You cannot invite yourself to your own care network.")}
 
-      # Case 2: A pending invite already exists for this person
+      # Case 2: A user exists, but their role does not match the invited role.
+      existing_user && existing_user.role != invitee_role ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."
+         )}
+
+      # Case 3: A pending invite already exists for this person
       Invites.get_pending_invite_for_email_and_patient(invitee_email, patient_id) ->
         {:noreply,
          socket
@@ -40,7 +52,7 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
            "An invitation has already been sent to #{invitee_email} and is still pending."
          )}
 
-      # Case 3: All checks pass, create the invite
+      # Case 4: All checks pass, create the invite
       true ->
         attrs = Map.put(invite_params, "patient_id", patient_id)
 
