@@ -15,6 +15,7 @@ defmodule Ankaa.Accounts.UserToken do
   @confirm_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 60
+  @login_token_validity_in_seconds 60
 
   schema "users_tokens" do
     field(:token, :binary)
@@ -115,12 +116,14 @@ defmodule Ankaa.Accounts.UserToken do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
-        days = days_for_context(context)
+        validity_in_seconds = validity_for_context(context)
 
         query =
           from(token in by_token_and_context_query(hashed_token, context),
             join: user in assoc(token, :user),
-            where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
+            where:
+              token.inserted_at > ago(^validity_in_seconds, "second") and
+                token.sent_to == user.email,
             select: user
           )
 
@@ -131,8 +134,18 @@ defmodule Ankaa.Accounts.UserToken do
     end
   end
 
-  defp days_for_context("confirm"), do: @confirm_validity_in_days
-  defp days_for_context("reset_password"), do: @reset_password_validity_in_days
+  defp validity_for_context("confirm") do
+    @confirm_validity_in_days * 24 * 60 * 60
+  end
+
+  defp validity_for_context("reset_password") do
+    @reset_password_validity_in_days * 24 * 60 * 60
+  end
+
+  defp validity_for_context("login") do
+    # Add our new login context with a 60-second validity
+    @login_token_validity_in_seconds
+  end
 
   @doc """
   Checks if the token is valid and returns its underlying lookup query.

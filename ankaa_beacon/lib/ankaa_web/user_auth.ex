@@ -26,16 +26,15 @@ defmodule AnkaaWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
+    # No invite token, proceed with normal login redirect
+    token = Accounts.generate_user_session_token(user)
+    user_return_to = params["return_to"] || get_session(conn, :user_return_to)
 
-        # No invite token, proceed with normal login redirect
-        token = Accounts.generate_user_session_token(user)
-        user_return_to = get_session(conn, :user_return_to)
-
-        conn
-        |> renew_session()
-        |> put_token_in_session(token)
-        |> maybe_write_remember_me_cookie(token, params)
-        |> redirect(to: user_return_to || signed_in_path(conn))
+    conn
+    |> renew_session()
+    |> put_token_in_session(token)
+    |> maybe_write_remember_me_cookie(token, params)
+    |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -244,11 +243,11 @@ defmodule AnkaaWeb.UserAuth do
           "caresupport" -> ~p"/caresupport/caringfor"
           # "technical_support" -> ~p"/support/home"
           # "admin" -> ~p"/admin/users"
-          _ -> ~p"/register"
+          _ -> ~p"/"
         end
 
       true ->
-        ~p"/register"
+        ~p"/"
     end
   end
 end

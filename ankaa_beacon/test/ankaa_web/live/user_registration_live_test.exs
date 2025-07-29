@@ -3,6 +3,16 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
 
   import Phoenix.LiveViewTest
   import Ankaa.AccountsFixtures
+  alias Ankaa.AccountsFixtures
+  alias Ankaa.Accounts
+  alias Ankaa.Invites
+
+  setup do
+    # A doctor who can send an invitation in the "with a token" test.
+    doctor_user = AccountsFixtures.doctor_fixture()
+
+    %{doctor_user: doctor_user}
+  end
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -17,7 +27,7 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/users/register")
-        |> follow_redirect(conn, ~p"/register")
+        |> follow_redirect(conn, ~p"/")
 
       assert {:ok, _conn} = result
     end
@@ -37,22 +47,41 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
   end
 
   describe "register user" do
-    test "creates account and logs the user in", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/register")
+    test "without an invite token, creates account and redirects to homepage", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/users/register")
 
       email = unique_user_email()
-      form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
-      render_submit(form)
-      conn = follow_trigger_action(form, conn)
+      render_submit(form(view, "#registration_form", user: valid_user_attributes(email: email)))
+
+      user = Accounts.get_user_by_email(email)
+      login_token = Accounts.generate_temporary_login_token(user)
+      conn = get(conn, ~p"/users/log_in_from_token?token=#{login_token}&return_to=/")
 
       assert redirected_to(conn) == ~p"/"
 
-      # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/register")
-      response = html_response(conn, 200)
-      assert response =~ email
-      assert response =~ "Settings"
-      assert response =~ "Log out"
+      conn = get(conn, ~p"/users/settings")
+      assert html_response(conn, 200) =~ "Settings"
+    end
+
+    test "with an invite token, registers and navigates to accept the invite", %{conn: conn} do
+      doctor_inviter = AccountsFixtures.doctor_fixture()
+      invitee_email = unique_user_email()
+      invite_attrs = %{"invitee_email" => invitee_email, "invitee_role" => "patient"}
+      {:ok, invite} = Invites.create_invite(doctor_inviter, invite_attrs)
+
+      {:ok, view, _html} = live(conn, ~p"/users/register?invite_token=#{invite.token}")
+
+      render_submit(
+        form(view, "#registration_form", user: valid_user_attributes(email: invitee_email))
+      )
+
+      user = Accounts.get_user_by_email(invitee_email)
+      login_token = Accounts.generate_temporary_login_token(user)
+
+      return_to = ~p"/invites/accept?token=#{invite.token}"
+      conn = get(conn, ~p"/users/log_in_from_token?token=#{login_token}&return_to=#{return_to}")
+
+      assert redirected_to(conn) == ~p"/invites/accept?token=#{invite.token}"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

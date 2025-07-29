@@ -82,6 +82,7 @@ defmodule AnkaaWeb.Router do
     pipe_through([:browser])
 
     delete("/users/logout", UserSessionController, :delete)
+    get("/users/log_in_from_token", UserSessionController, :log_in_from_token)
 
     live_session :current_user,
       on_mount: [{AnkaaWeb.UserAuth, :mount_current_user}] do

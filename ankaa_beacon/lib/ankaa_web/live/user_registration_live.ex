@@ -74,28 +74,24 @@ defmodule AnkaaWeb.UserRegistrationLive do
             &url(~p"/users/confirm/#{&1}")
           )
 
-        # Log the new user in by putting their token in the session
-        token = Accounts.generate_user_session_token(user)
-        socket = Phoenix.LiveView.put_session(socket, :user_token, token)
-        # Check if we have an invite token waiting
-        case socket.assigns.invite_token do
-          nil ->
-            # No invite token, normal registration flow
-            {:noreply,
-             socket
-             |> put_flash(:info, "Account created. Please check your email to confirm.")
-             |> push_navigate(to: ~p"/")}
+        # 1. Generate the temporary login token
+        login_token = Accounts.generate_temporary_login_token(user)
 
-          invite_token ->
-            # Found an invite token, redirect to the accept page
-            {:noreply,
-             socket
-             |> put_flash(:info, "Account created. Now accepting your invitation...")
-             |> push_navigate(to: ~p"/invites/accept?token=#{invite_token}")}
-        end
+        # 2. Determine the final destination after login
+        return_to =
+          case socket.assigns.invite_token do
+            nil -> ~p"/"
+            invite_token -> ~p"/invites/accept?token=#{invite_token}"
+          end
+
+        # 3. Navigate to the controller action to perform the login
+        {:noreply,
+         push_navigate(socket,
+           to: ~p"/users/log_in_from_token?token=#{login_token}&return_to=#{return_to}"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 

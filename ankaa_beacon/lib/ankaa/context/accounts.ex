@@ -403,11 +403,41 @@ defmodule Ankaa.Accounts do
     User.has_role?(user, role)
   end
 
-  # Role checking convenience functions
+  # Roles
   def is_doctor?(user), do: has_role?(user, "doctor")
   def is_nurse?(user), do: has_role?(user, "nurse")
   def is_admin?(user), do: has_role?(user, "admin")
   def is_caresupport?(user), do: has_role?(user, "caresupport")
   def is_technical_support?(user), do: has_role?(user, "technical_support")
   def is_patient?(user), do: User.is_patient?(user)
+
+  @doc """
+  Generates a short-lived, single-use token to log a user in.
+  This uses the existing hashed token system.
+  """
+  def generate_temporary_login_token(%User{} = user) do
+    IO.inspect(user, label: "1. User passed to generate_temporary_login_token")
+
+    {raw_token, user_token} = UserToken.build_email_token(user, "login")
+    IO.inspect({raw_token, user_token}, label: "2. Token built by UserToken")
+
+    Repo.insert!(user_token)
+    IO.inspect(raw_token, label: "3. Token inserted successfully! Returning raw token.")
+
+    raw_token
+  end
+
+  @doc """
+  Verifies the temporary login token and consumes it.
+  """
+  def get_user_by_temporary_login_token(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "login"),
+         %User{} = user <- Repo.one(query) do
+      # For security, delete all "login" tokens for this user after one is used.
+      Repo.delete_all(UserToken.by_user_and_contexts_query(user, ["login"]))
+      {:ok, user}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
 end

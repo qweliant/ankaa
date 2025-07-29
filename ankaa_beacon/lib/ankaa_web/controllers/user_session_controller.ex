@@ -39,4 +39,20 @@ defmodule AnkaaWeb.UserSessionController do
     |> put_flash(:info, "Logged out successfully.")
     |> UserAuth.log_out_user()
   end
+
+  def log_in_from_token(conn, %{"token" => token, "return_to" => return_to}) do
+    case Accounts.get_user_by_temporary_login_token(token) do
+      {:ok, user} ->
+        # On success, we pass ONLY the `user` struct to log_in_user
+        conn
+        |> put_flash(:info, "Welcome!")
+        |> UserAuth.log_in_user(user, %{"return_to" => return_to})
+
+      {:error, _} ->
+        # On failure, we redirect to the login page
+        conn
+        |> put_flash(:error, "Login link is invalid or has expired.")
+        |> redirect(to: ~p"/users/login")
+    end
+  end
 end
