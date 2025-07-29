@@ -4,6 +4,7 @@ defmodule Ankaa.Invites do
 
   alias Ankaa.Mailer
   alias Ankaa.Invites.Invite
+  alias Ankaa.Patients
 
   @rand_size 32
   # @hash_algorithm :sha256
@@ -73,9 +74,33 @@ defmodule Ankaa.Invites do
     |> Repo.one()
   end
 
-  def accept_invite(%Invite{} = invite) do
+  @doc """
+  Accepts an invitation, creates the patient association, and updates the
+  invite status within a single transaction.
+  """
+  def accept_invite(user, %Invite{} = invite) do
+    Repo.transaction(fn ->
+      # We use a `with` block to chain the operations.
+      # If any step returns an error, the whole transaction is rolled back.
+      with patient <- Patients.get_patient!(invite.patient_id),
+           {:ok, _relationship} <-
+             Patients.create_patient_association(user, patient, invite.invitee_role),
+           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
+        # If everything succeeds, return {:ok, ...} to commit the transaction.
+        {:ok, updated_invite}
+      else
+        # This catches errors like {:error, :unauthorized_role} from your function.
+        {:error, reason} ->
+          Repo.rollback({:error, reason})
+      end
+    end)
+  end
+
+  @doc false
+  # A helper to update the invite status.
+  defp update_invite_status(invite, status) do
     invite
-    |> Invite.changeset(%{status: "accepted"})
+    |> Invite.changeset(%{status: status})
     |> Repo.update()
   end
 end

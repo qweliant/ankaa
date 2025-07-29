@@ -4,9 +4,10 @@ defmodule AnkaaWeb.AcceptInviteLive do
   alias Ankaa.Accounts
   alias Ankaa.Invites
   alias AnkaaWeb.UserAuth
+
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, page_title: "Accepting Invitation...", invite: nil)}
+    {:ok, assign(socket, page_title: "Accepting Invitation...")}
   end
 
   @impl true
@@ -18,6 +19,7 @@ defmodule AnkaaWeb.AcceptInviteLive do
     IO.inspect(token, label: "INVITE TOKEN")
 
     socket
+    # only assign if not already set
     |> assign_new(:invite, fn -> Invites.get_pending_invite_by_token(token) end)
     |> handle_invite_logic(token)
   end
@@ -52,11 +54,11 @@ defmodule AnkaaWeb.AcceptInviteLive do
 
       true ->
         # Success! The right user is logged in.
-        {:ok, _} = Invites.accept_invite(invite)
+        {:ok, _} = Invites.accept_invite(user, invite)
 
         socket
         |> put_flash(:info, "Invitation accepted! You've been added to the care network.")
-        |> push_navigate(to: ~p"/patient/monitoring")
+        |> push_navigate(to: ~p"/")
     end
   end
 

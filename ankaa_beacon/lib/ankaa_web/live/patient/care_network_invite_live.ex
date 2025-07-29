@@ -52,7 +52,9 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
            "An invitation has already been sent to #{invitee_email} and is still pending."
          )}
 
-      # Case 4: All checks pass, create the invite
+      # Case 4: The user the patient is trying to invite does not exist
+      # Case 5: The user the patient wants to invite is already in the care network
+      # Case 6: All checks pass, create the invite
       true ->
         attrs = Map.put(invite_params, "patient_id", patient_id)
 
