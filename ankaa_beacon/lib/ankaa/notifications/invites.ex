@@ -3,7 +3,7 @@ defmodule Ankaa.Invites.Invite do
   import Ecto.Changeset
 
   @statuses ["pending", "accepted", "expired"]
-  @roles ["caresupport", "nurse", "doctor"]
+  @roles ["caresupport", "nurse", "doctor", "patient"]
 
   schema "invites" do
     field(:invitee_email, :string)

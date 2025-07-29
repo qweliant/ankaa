@@ -5,6 +5,7 @@ defmodule Ankaa.Invites do
   alias Ankaa.Mailer
   alias Ankaa.Invites.Invite
   alias Ankaa.Patients
+  alias Ankaa.Accounts
 
   @rand_size 32
   # @hash_algorithm :sha256
@@ -96,13 +97,15 @@ defmodule Ankaa.Invites do
 
   defp accept_as_new_patient(user, invite) do
     Repo.transaction(fn ->
-      # Creates a patient record for the user
-      with {:ok, _patient_record} <- Patients.create_patient(%{}, user),
+      default_name = user.email |> String.split("@") |> List.first() |> String.capitalize()
+      patient_attrs = %{"name" => default_name}
+
+      with {:ok, patient_record} <- Patients.create_patient(patient_attrs, user),
            inviter <- Accounts.get_user!(invite.inviter_id),
-           {:ok, _relationship} <-
-             Patients.create_patient_association(inviter, _patient_record, inviter.role),
+           {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        {:ok, updated_invite}
+        # Return the invite directly, not in a tuple.
+        updated_invite
       else
         {:error, reason} -> Repo.rollback({:error, reason})
       end
@@ -110,13 +113,13 @@ defmodule Ankaa.Invites do
   end
 
   defp accept_as_care_provider(user, invite) do
-    # This is the logic we wrote previously
     Repo.transaction(fn ->
       with patient <- Patients.get_patient!(invite.patient_id),
            {:ok, _relationship} <-
              Patients.create_patient_association(user, patient, invite.invitee_role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        {:ok, updated_invite}
+        # Return the invite directly, not in a tuple.
+        updated_invite
       else
         {:error, reason} -> Repo.rollback({:error, reason})
       end
