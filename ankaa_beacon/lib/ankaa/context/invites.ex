@@ -79,21 +79,11 @@ defmodule Ankaa.Invites do
   invite status within a single transaction.
   """
   def accept_invite(user, %Invite{} = invite) do
-    Repo.transaction(fn ->
-      # We use a `with` block to chain the operations.
-      # If any step returns an error, the whole transaction is rolled back.
-      with patient <- Patients.get_patient!(invite.patient_id),
-           {:ok, _relationship} <-
-             Patients.create_patient_association(user, patient, invite.invitee_role),
-           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        # If everything succeeds, return {:ok, ...} to commit the transaction.
-        {:ok, updated_invite}
-      else
-        # This catches errors like {:error, :unauthorized_role} from your function.
-        {:error, reason} ->
-          Repo.rollback({:error, reason})
-      end
-    end)
+    if invite.invitee_role == "patient" do
+      accept_as_new_patient(user, invite)
+    else
+      accept_as_care_provider(user, invite)
+    end
   end
 
   @doc false
@@ -102,5 +92,34 @@ defmodule Ankaa.Invites do
     invite
     |> Invite.changeset(%{status: status})
     |> Repo.update()
+  end
+
+  defp accept_as_new_patient(user, invite) do
+    Repo.transaction(fn ->
+      # Creates a patient record for the user
+      with {:ok, _patient_record} <- Patients.create_patient(%{}, user),
+           inviter <- Accounts.get_user!(invite.inviter_id),
+           {:ok, _relationship} <-
+             Patients.create_patient_association(inviter, _patient_record, inviter.role),
+           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
+        {:ok, updated_invite}
+      else
+        {:error, reason} -> Repo.rollback({:error, reason})
+      end
+    end)
+  end
+
+  defp accept_as_care_provider(user, invite) do
+    # This is the logic we wrote previously
+    Repo.transaction(fn ->
+      with patient <- Patients.get_patient!(invite.patient_id),
+           {:ok, _relationship} <-
+             Patients.create_patient_association(user, patient, invite.invitee_role),
+           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
+        {:ok, updated_invite}
+      else
+        {:error, reason} -> Repo.rollback({:error, reason})
+      end
+    end)
   end
 end

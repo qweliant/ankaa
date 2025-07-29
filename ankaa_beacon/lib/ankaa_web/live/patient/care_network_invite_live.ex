@@ -24,55 +24,65 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
     invitee_role = invite_params["invitee_role"]
     patient_id = current_user.patient.id
 
-    # Check if a user with this email already exists
+    allowed_invites = %{
+      "patient" => ["caresupport", "doctor", "nurse"],
+      "doctor" => ["patient"],
+      "nurse" => ["patient"],
+      "caresupport" => []
+    }
+
     existing_user = Accounts.get_user_by_email(invitee_email)
 
-    cond do
-      # Case 1: User is inviting themselves
-      current_user.email == invitee_email ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You cannot invite yourself to your own care network.")}
+    if invitee_role in allowed_invites[current_user.role] do
+      cond do
+        current_user.email == invitee_email ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "You cannot invite yourself to your own care network.")}
 
-      # Case 2: A user exists, but their role does not match the invited role.
-      existing_user && existing_user.role != invitee_role ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."
-         )}
+        existing_user && existing_user.role != invitee_role ->
+          {:noreply,
+           socket
+           |> put_flash(
+             :error,
+             "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."
+           )}
 
-      # Case 3: A pending invite already exists for this person
-      Invites.get_pending_invite_for_email_and_patient(invitee_email, patient_id) ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "An invitation has already been sent to #{invitee_email} and is still pending."
-         )}
+        Invites.get_pending_invite_for_email_and_patient(invitee_email, patient_id) ->
+          {:noreply,
+           socket
+           |> put_flash(
+             :error,
+             "An invitation has already been sent to #{invitee_email} and is still pending."
+           )}
 
-      # Case 4: The user the patient is trying to invite does not exist
-      # Case 5: The user the patient wants to invite is already in the care network
-      # Case 6: All checks pass, create the invite
-      true ->
-        attrs = Map.put(invite_params, "patient_id", patient_id)
+        true ->
+          attrs = Map.put(invite_params, "patient_id", patient_id)
 
-        case Invites.create_invite(current_user, attrs) do
-          {:ok, _invite} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Invitation sent successfully to #{attrs["invitee_email"]}.")
-             |> push_navigate(to: ~p"/patient/carenetwork")}
+          case Invites.create_invite(current_user, attrs) do
+            {:ok, _invite} ->
+              {:noreply,
+               socket
+               |> put_flash(:info, "Invitation sent successfully to #{attrs["invitee_email"]}.")
+               |> push_navigate(to: ~p"/patient/carenetwork")}
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign(socket, form: to_form(changeset))}
+            {:error, %Ecto.Changeset{} = changeset} ->
+              {:noreply, assign(socket, form: to_form(changeset))}
 
-          {:error, {:error, _reason}} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Could not send invitation email. Please try again later.")}
-        end
+            {:error, {:error, _reason}} ->
+              {:noreply,
+               socket
+               |> put_flash(:error, "Could not send invitation email. Please try again later.")}
+          end
+      end
+    else
+      # The user is trying to make an unauthorized invitation
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         "A #{current_user.role} is not authorized to invite a #{invitee_role}."
+       )}
     end
   end
 
