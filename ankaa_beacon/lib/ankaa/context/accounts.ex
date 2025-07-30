@@ -398,29 +398,6 @@ defmodule Ankaa.Accounts do
   end
 
   @doc """
-  Checks if a user has a specific role.
-
-  ## Examples
-
-      iex> has_role?(user, "doctor")
-      true
-
-      iex> has_role?(user, "nurse")
-      false
-  """
-  def has_role?(%User{} = user, role) when is_binary(role) do
-    User.has_role?(user, role)
-  end
-
-  # Roles
-  def is_doctor?(user), do: has_role?(user, "doctor")
-  def is_nurse?(user), do: has_role?(user, "nurse")
-  def is_admin?(user), do: has_role?(user, "admin")
-  def is_caresupport?(user), do: has_role?(user, "caresupport")
-  def is_technical_support?(user), do: has_role?(user, "technical_support")
-  def is_patient?(user), do: User.is_patient?(user)
-
-  @doc """
   Generates a short-lived, single-use token to log a user in.
   This uses the existing hashed token system.
   """

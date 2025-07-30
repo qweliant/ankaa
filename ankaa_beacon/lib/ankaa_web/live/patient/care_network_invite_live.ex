@@ -33,7 +33,16 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
 
     existing_user = Accounts.get_user_by_email(invitee_email)
 
-    if invitee_role in allowed_invites[current_user.role] do
+    inviter_role =
+      if Accounts.User.is_patient?(current_user) do
+        "patient"
+      else
+        current_user.role
+      end
+
+    allowed_roles_for_inviter = Map.get(allowed_invites, inviter_role, [])
+
+    if invitee_role in allowed_roles_for_inviter do
       cond do
         current_user.email == invitee_email ->
           {:noreply,
@@ -76,7 +85,6 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
           end
       end
     else
-      # The user is trying to make an unauthorized invitation
       {:noreply,
        put_flash(
          socket,

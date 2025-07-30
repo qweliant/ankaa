@@ -249,7 +249,7 @@ defmodule AnkaaWeb.MonitoringLive do
         </div>
       <% end %>
 
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <%!-- <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div class="border-b border-slate-200">
           <nav class="flex -mb-px">
             <button
@@ -522,7 +522,7 @@ defmodule AnkaaWeb.MonitoringLive do
               </div>
           <% end %>
         </div>
-      </div>
+      </div> --%>
     </div>
     """
   end
