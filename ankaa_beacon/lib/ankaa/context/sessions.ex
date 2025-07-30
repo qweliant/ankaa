@@ -29,6 +29,19 @@ defmodule Ankaa.Sessions do
   def get_session!(id), do: Repo.get!(Session, id)
 
   @doc """
+  Gets the most recent session for a patient, regardless of status.
+  Returns a single session or nil.
+  """
+  def get_latest_session_for_patient(%Ankaa.Patients.Patient{} = patient) do
+    from(s in Session,
+      where: s.patient_id == ^patient.id,
+      order_by: [desc: s.start_time],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Creates a new session. This is used when a patient clicks "Start Session".
   """
   def create_session(attrs \\ %{}) do

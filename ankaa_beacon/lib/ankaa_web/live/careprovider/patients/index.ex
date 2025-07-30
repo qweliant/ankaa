@@ -1,28 +1,11 @@
 defmodule AnkaaWeb.CareProvider.PatientsLive.Index do
   use AnkaaWeb, :live_view
 
+  alias Ankaa.Patients
+
   @impl true
   def mount(_params, _session, socket) do
-    # TODO: Replace with actual patient data from database
-    patients = [
-      %{
-        id: 1,
-        name: "John Doe",
-        status: "In Treatment",
-        last_session: ~D[2024-04-15],
-        next_session: ~D[2024-04-17],
-        alerts: 0
-      },
-      %{
-        id: 2,
-        name: "Jane Smith",
-        status: "Stable",
-        last_session: ~D[2024-04-14],
-        next_session: ~D[2024-04-16],
-        alerts: 2
-      }
-    ]
-
+    patients = Patients.list_patients_for_any_role(socket.assigns.current_user)
     {:ok, assign(socket, patients: patients)}
   end
 

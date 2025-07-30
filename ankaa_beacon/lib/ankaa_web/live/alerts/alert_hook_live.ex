@@ -19,9 +19,9 @@ defmodule AnkaaWeb.AlertHook do
       role_topic = get_role_topic(user)
       if role_topic, do: Phoenix.PubSub.subscribe(Ankaa.PubSub, role_topic)
 
-      # For care providers, also subscribe to their patients' alerts
+      # For care network, also subscribe to their patients' alerts
       if user.role in ["doctor", "nurse", "caresupport"] do
-        patient_ids = get_patient_ids_for_care_provider(user)
+        patient_ids = Ankaa.Patients.get_patient_ids_for_care_network(user.id)
         Enum.each(patient_ids, &subscribe_to_patient_alerts/1)
       end
 
@@ -91,12 +91,6 @@ defmodule AnkaaWeb.AlertHook do
        # Store the set of dismissed IDs for later checks
        dismissed_info_alerts: dismissed_alerts
      )}
-  end
-
-  defp get_patient_ids_for_care_provider(user) do
-    # This would integrate with your existing care network relationships
-    # Assuming you have a function like this in your Patients context
-    Ankaa.Patients.get_patient_ids_for_care_provider(user.id)
   end
 
   defp get_dismissed_info_alerts_from_session(socket) do

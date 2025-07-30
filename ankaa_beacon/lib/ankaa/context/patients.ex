@@ -10,6 +10,7 @@ defmodule Ankaa.Patients do
   alias Ankaa.Patients.{Patient, Device, CareNetwork}
   alias Ankaa.Accounts.User
   alias Ankaa.Invites.Invite
+  alias Ankaa.Sessions
 
   @doc """
   Returns the list of patients.
@@ -373,9 +374,9 @@ defmodule Ankaa.Patients do
       iex> get_patient_ids_for_care_provider("user_id_123")
       ["patient_id_abc", "patient_id_def"]
   """
-  def get_patient_ids_for_care_provider(care_provider_id) do
+  def get_patient_ids_for_care_network(user_id) do
     from(cn in CareNetwork,
-      where: cn.user_id == ^care_provider_id,
+      where: cn.user_id == ^user_id,
       select: cn.patient_id
     )
     |> Repo.all()
@@ -389,6 +390,51 @@ defmodule Ankaa.Patients do
     pending_members = list_pending_members(patient)
 
     accepted_members ++ pending_members
+  end
+
+  @doc """
+  Gets all Patient records associated with a given user, formatted for display.
+  """
+  def list_patients_for_any_role(%User{} = user) do
+    query =
+      from(cn in CareNetwork,
+        where: cn.user_id == ^user.id,
+        join: p in Patient,
+        on: cn.patient_id == p.id,
+        select: %{patient: p, care_link: cn}
+      )
+
+    Repo.all(query)
+    |> Enum.map(fn %{patient: p, care_link: cn} ->
+      latest_session = Sessions.get_latest_session_for_patient(p)
+
+      {status, last_session_start} =
+        case latest_session do
+          %Ankaa.Sessions.Session{status: s, start_time: st} -> {String.capitalize(s), st}
+          nil -> {"No Sessions", nil}
+        end
+
+      %{
+        id: p.id,
+        name: p.name,
+        relationship: cn.relationship |> String.capitalize(),
+        status: status,
+        last_session: last_session_start,
+        # Adding placeholders for data that doesn't exist in the DB yet
+        # Placeholder: in 2 days
+        next_session: Date.add(Date.utc_today(), 2),
+        # Placeholder
+        alerts: 0
+      }
+    end)
+  end
+
+  @doc """
+  Gets the relationship between a provider/supporter and a patient.
+  """
+  def get_relationship(%User{} = provider_user, %Patient{} = patient) do
+    care_link = Repo.get_by(CareNetwork, user_id: provider_user.id, patient_id: patient.id)
+    (care_link && care_link.relationship) || "Unknown"
   end
 
   # Private helpers
