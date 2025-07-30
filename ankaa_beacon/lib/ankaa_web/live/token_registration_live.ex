@@ -20,6 +20,9 @@ defmodule AnkaaWeb.TokenRegistrationLive do
          to: signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
        )}
     else
+      user = socket.assigns.current_user
+      name_changeset = Accounts.User.name_changeset(user, %{})
+
       {:ok,
        assign(socket,
          step: :role_selection,
@@ -27,7 +30,7 @@ defmodule AnkaaWeb.TokenRegistrationLive do
          roles: @roles,
          form: to_form(%{"token" => ""}, as: :user),
          show_name_form: false,
-         name_form: to_form(%{"name" => ""}, as: :patient)
+         name_form: to_form(name_changeset)
        )}
     end
   end
@@ -40,8 +43,14 @@ defmodule AnkaaWeb.TokenRegistrationLive do
     {:noreply, assign(socket, form: to_form(user_params, as: :user))}
   end
 
-  def handle_event("validate_name", %{"patient" => patient_params}, socket) do
-    {:noreply, assign(socket, name_form: to_form(patient_params, as: :patient))}
+  def handle_event("validate_name", %{"user" => user_params}, socket) do
+    changeset =
+      Ecto.Changeset.cast(socket.assigns.name_form.source, user_params, [
+        :first_name,
+        :last_name
+      ])
+
+    {:noreply, assign(socket, name_form: to_form(changeset))}
   end
 
   def handle_event("back_to_roles", _params, socket) do
@@ -49,54 +58,48 @@ defmodule AnkaaWeb.TokenRegistrationLive do
   end
 
   def handle_event("save", %{"user" => %{"token" => token}}, socket) do
+    user = socket.assigns.current_user
     role = socket.assigns.selected_role
+    is_valid_token = token == role || (role == "patient" && token == "patient")
 
-    case role do
-      "patient" when token == "patient" ->
-        {:noreply, assign(socket, show_name_form: true)}
+    if is_valid_token do
+      case Accounts.assign_role(user, role) do
+        {:ok, _updated_user} ->
+          {:noreply, assign(socket, show_name_form: true)}
 
-      role when role in ["doctor", "nurse", "caresupport"] and token == role ->
-        case Accounts.assign_role(socket.assigns.current_user, role) do
-          {:ok, _user} ->
-            {:noreply,
-             push_navigate(socket,
-               to:
-                 signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
-             )}
-
-          {:error, _changeset} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to assign role. Please try again.")
-             |> assign(form: to_form(%{"token" => ""}, as: :user))}
-        end
-
-      _ ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Invalid token for selected role. Please try again.")
-         |> assign(form: to_form(%{"token" => ""}, as: :user))}
+        {:error, _changeset} ->
+          {:noreply, put_flash(socket, :error, "Failed to assign role. Please try again.")}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "Invalid token for selected role. Please try again.")
+       |> assign(form: to_form(%{"token" => ""}, as: :user))}
     end
   end
 
-  def handle_event("save_name", %{"patient" => %{"name" => name}}, socket) do
+  def handle_event("save_name", %{"user" => name_params}, socket) do
     user = socket.assigns.current_user
 
-    if user.patient do
-      {:noreply, push_navigate(socket, to: ~p"/patient/devices/new")}
-    else
-      attrs = %{name: name, user_id: user.id}
+    case Accounts.update_user_name(user, name_params) do
+      {:ok, updated_user} ->
+        if updated_user.role == "patient" do
+          patient_attrs = %{name: "#{updated_user.first_name} #{updated_user.last_name}"}
 
-      case Patients.create_patient(attrs, user) do
-        {:ok, _patient} ->
-          {:noreply, push_navigate(socket, to: ~p"/patient/devices/new")}
+          case Patients.create_patient(patient_attrs, updated_user) do
+            {:ok, _patient} ->
+              redirect_to_dashboard(socket, updated_user)
 
-        {:error, _changeset} ->
-          {:noreply,
-           socket
-           |> put_flash(:error, "Failed to create patient profile. Please try again.")
-           |> assign(name_form: to_form(%{"name" => ""}, as: :patient))}
-      end
+            {:error, _changeset} ->
+              {:noreply,
+               put_flash(socket, :error, "Failed to create patient profile. Please try again.")}
+          end
+        else
+          redirect_to_dashboard(socket, updated_user)
+        end
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, name_form: to_form(changeset))}
     end
   end
 
@@ -155,12 +158,13 @@ defmodule AnkaaWeb.TokenRegistrationLive do
             <% else %>
               <.header class="text-center mt-8">Enter Your Name</.header>
               <.simple_form
-                for={@name_form}
-                id="name_form"
-                phx-submit="save_name"
-                phx-change="validate_name"
+              for={@name_form}
+              id="name_form"
+              phx-submit="save_name"
+              phx-change="validate_name"
               >
-                <.input field={@name_form[:name]} type="text" label="Full Name" required />
+                <.input field={@name_form[:first_name]} type="text" label="First Name" required />
+                <.input field={@name_form[:last_name]} type="text" label="Last Name" required />
                 <:actions>
                   <.button phx-disable-with="Registering..." class="w-full">
                     Complete Registration
@@ -182,5 +186,10 @@ defmodule AnkaaWeb.TokenRegistrationLive do
       "caresupport" -> "Invitation Code"
       _ -> "Registration Code"
     end
+  end
+
+  defp redirect_to_dashboard(socket, user) do
+    conn = %Plug.Conn{assigns: %{current_user: user}}
+    {:noreply, push_navigate(socket, to: signed_in_path(conn))}
   end
 end

@@ -1,51 +1,24 @@
 defmodule AnkaaWeb.CareNetworkLive do
   use AnkaaWeb, :live_view
   use AnkaaWeb, :patient_layout
+  alias Ankaa.Patients
 
   @impl true
   def mount(_params, _session, socket) do
-    dummy_network = [
-      %{
-        id: 1,
-        name: "Dr. Sarah Johnson",
-        role: "Primary Care Physician",
-        email: "sarah.johnson@example.com",
-        status: "active",
-        last_contact: ~D[2024-04-10],
-        permissions: ["view_health_data", "schedule_appointments"]
-      },
-      %{
-        id: 2,
-        name: "Nurse Emily Chen",
-        role: "Registered Nurse",
-        email: "emily.chen@example.com",
-        status: "active",
-        last_contact: ~D[2024-04-12],
-        permissions: ["view_health_data", "update_medications"]
-      },
-      %{
-        id: 3,
-        name: "Jane Smith",
-        role: "Family Member",
-        email: "jane.smith@example.com",
-        status: "pending",
-        last_contact: nil,
-        permissions: ["view_health_data"]
-      },
-      %{
-        id: 4,
-        name: "Mike Wilson",
-        role: "Care support",
-        email: "mike.wilson@example.com",
-        status: "inactive",
-        last_contact: ~D[2024-03-15],
-        permissions: ["view_health_data", "update_daily_logs"]
-      }
-    ]
+    patient = socket.assigns.current_user.patient
+
+    network =
+      if patient do
+        Patients.get_care_network_for_patient(patient)
+      else
+        []
+      end
+
+    IO.inspect(network, label: "Care Network")
 
     {:ok,
      assign(socket,
-       network: dummy_network,
+       network: network,
        current_path: "/patient/carenetwork",
        show_modal: false,
        selected_member_id: nil
@@ -99,22 +72,7 @@ defmodule AnkaaWeb.CareNetworkLive do
                   </div>
                 </div>
                 <div class="mt-2">
-                  <div class="flex items-center text-sm text-gray-500">
-                    <p>Email: <%= member.email %></p>
-                    <%= if member.last_contact do %>
-                      <p class="ml-4">Last Contact: <%= member.last_contact %></p>
-                    <% end %>
-                  </div>
-                  <div class="mt-2">
-                    <span class="text-xs font-medium text-gray-500">Permissions:</span>
-                    <div class="mt-1 flex flex-wrap gap-2">
-                      <%= for permission <- member.permissions do %>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                          <%= permission %>
-                        </span>
-                      <% end %>
-                    </div>
-                  </div>
+
                 </div>
               </div>
             </li>

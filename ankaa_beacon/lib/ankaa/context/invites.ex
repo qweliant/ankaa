@@ -104,7 +104,6 @@ defmodule Ankaa.Invites do
            inviter <- Accounts.get_user!(invite.inviter_id),
            {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        # Return the invite directly, not in a tuple.
         updated_invite
       else
         {:error, reason} -> Repo.rollback({:error, reason})
@@ -118,7 +117,19 @@ defmodule Ankaa.Invites do
            {:ok, _relationship} <-
              Patients.create_patient_association(user, patient, invite.invitee_role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        # Return the invite directly, not in a tuple.
+        updated_invite
+      else
+        {:error, reason} -> Repo.rollback({:error, reason})
+      end
+    end)
+  end
+
+  defp accept_as_care_support(user, invite) do
+    Repo.transaction(fn ->
+      with patient <- Patients.get_patient!(invite.patient_id),
+           {:ok, _relationship} <-
+             Patients.create_patient_association(user, patient, "caresupport"),
+           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
         {:error, reason} -> Repo.rollback({:error, reason})

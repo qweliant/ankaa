@@ -9,6 +9,7 @@ defmodule Ankaa.Patients do
   alias Ankaa.Repo
   alias Ankaa.Patients.{Patient, Device, CareNetwork}
   alias Ankaa.Accounts.User
+  alias Ankaa.Invites.Invite
 
   @doc """
   Returns the list of patients.
@@ -380,6 +381,16 @@ defmodule Ankaa.Patients do
     |> Repo.all()
   end
 
+  @doc """
+  Gets the full care network for a patient, including active and pending members.
+  """
+  def get_care_network_for_patient(%Patient{} = patient) do
+    accepted_members = list_accepted_members(patient)
+    pending_members = list_pending_members(patient)
+
+    accepted_members ++ pending_members
+  end
+
   # Private helpers
 
   defp list_care_provider_patients(user) do
@@ -394,5 +405,41 @@ defmodule Ankaa.Patients do
     Patient
     |> where([p], p.id != ^patient.id)
     |> Repo.all()
+  end
+
+  defp list_accepted_members(%Patient{} = patient) do
+    query =
+      from(cn in CareNetwork,
+        where: cn.patient_id == ^patient.id,
+        join: u in User,
+        on: cn.user_id == u.id,
+        # Select the fields we need to build the map
+        select: %{
+          id: u.id,
+          # You can change this to `u.name` if you have a name field on your User schema
+          name: u.email,
+          role: cn.relationship,
+          email: u.email,
+          status: "active"
+        }
+      )
+
+    Repo.all(query)
+  end
+
+  defp list_pending_members(%Patient{} = patient) do
+    query =
+      from(i in Invite,
+        where: i.patient_id == ^patient.id and i.status == "pending",
+        select: %{
+          id: i.id,
+          name: "Pending Invitation",
+          role: i.invitee_role,
+          email: i.invitee_email,
+          status: "pending"
+        }
+      )
+
+    Repo.all(query)
   end
 end
