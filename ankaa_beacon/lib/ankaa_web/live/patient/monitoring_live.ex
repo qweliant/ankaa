@@ -58,50 +58,31 @@ defmodule AnkaaWeb.MonitoringLive do
 
   @impl true
   def handle_event("start_session", _params, socket) do
-    patient_name = socket.assigns.current_user.patient.name || "Your patient"
-    patient_id = socket.assigns.current_user.patient.id
+    patient = socket.assigns.current_user.patient
     current_time = DateTime.utc_now()
 
-    case Sessions.create_session(%{
-           start_time: current_time,
-           patient_id: patient_id,
-           status: "ongoing"
-         }) do
-      {:ok, session} ->
-        alert_message =
-          "💙 #{patient_name} just started their dialysis session. (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
+    {:ok, _session} =
+      Sessions.create_session(%{
+        start_time: current_time,
+        patient_id: patient.id,
+        status: "ongoing"
+      })
 
-        {:ok, alert} =
-          Ankaa.Alerts.create_alert(%{
-            type: "Session",
-            message: alert_message,
-            patient_id: patient_id,
-            severity: "info"
-          })
+    alert_attrs = %{
+      patient_id: patient.id,
+      type: "session_start",
+      severity: "info",
+      message:
+        "💙 #{patient.name} just started their dialysis session. (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
+    }
 
-        Phoenix.PubSub.broadcast(
-          Ankaa.PubSub,
-          "patient:#{patient_id}:alerts",
-          {:new_alert, alert}
-        )
+    Alerts.create_alert(alert_attrs)
 
-        socket =
-          put_flash(
-            socket,
-            :info,
-            "Session started successfully."
-          )
-
-        {:noreply,
-         assign(socket,
-           session_started: true,
-           session_start_time: current_time,
-           active_session: session
-         )}
-
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Failed to start session.")}
-    end
+    {:noreply,
+     assign(socket,
+       session_started: true,
+       session_start_time: DateTime.utc_now()
+     )}
   end
 
   @impl true

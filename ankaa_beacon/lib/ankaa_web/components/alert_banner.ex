@@ -10,7 +10,7 @@ defmodule AnkaaWeb.AlertBanner do
 
   @impl true
   def handle_event("dismiss_alert", %{"alert_id" => alert_id}, socket) do
-    alert = Enum.find(socket.assigns.active_alerts, &(&1.id == String.to_integer(alert_id)))
+    alert = Enum.find(socket.assigns.active_alerts, &(&1.id == alert_id))
     user = socket.assigns.current_user
 
     case alert do
@@ -27,6 +27,7 @@ defmodule AnkaaWeb.AlertBanner do
             # INFO alerts: Store dismissal in session storage (handled by client-side)
             # Also remove from server state
             send(self(), {:alert_dismissed, alert.id})
+            socket = push_event(socket, "dismiss_info_alert", %{id: found_alert.id})
             {:noreply, socket}
 
           "high" ->

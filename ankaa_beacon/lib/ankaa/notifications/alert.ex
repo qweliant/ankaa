@@ -10,6 +10,16 @@ defmodule Ankaa.Notifications.Alert do
     field(:message, :string)
     field(:acknowledged, :boolean, default: false)
     field(:severity, :string)
+    field(:status, :string, default: "active")
+
+    field(:dismissed_at, :utc_datetime)
+    field(:dismissal_reason, :string)
+
+    belongs_to(:dismissed_by, Ankaa.Accounts.User,
+      foreign_key: :dismissed_by_user_id,
+      type: :binary_id
+    )
+
     belongs_to(:patient, Patient, foreign_key: :patient_id, type: :binary_id)
     belongs_to(:resolved_by, User, foreign_key: :resolved_by_id, type: :binary_id)
 
@@ -18,8 +28,19 @@ defmodule Ankaa.Notifications.Alert do
 
   def changeset(alert, attrs) do
     alert
-    |> cast(attrs, [:type, :message, :patient_id, :acknowledged, :resolved_by_id, :severity])
-    |> validate_required([:type, :message, :patient_id])
+    |> cast(attrs, [
+      :type,
+      :message,
+      :patient_id,
+      :acknowledged,
+      :resolved_by_id,
+      :severity,
+      :status,
+      :dismissed_at,
+      :dismissal_reason,
+      :dismissed_by_user_id
+    ])
+    |> validate_required([:type, :message, :patient_id, :severity])
     |> validate_inclusion(:severity, ["info", "low", "medium", "high", "critical"])
     |> foreign_key_constraint(:resolved_by_id)
     |> foreign_key_constraint(:patient_id)

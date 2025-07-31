@@ -4,9 +4,7 @@ defmodule AnkaaWeb.CaringForLive.Index do
   alias Ankaa.Patients
   @impl true
   def mount(_params, _session, socket) do
-    # TODO: Replace with actual data from database
     patients = Patients.list_patients_for_any_role(socket.assigns.current_user)
-
     {:ok, assign(socket, patients: patients)}
   end
 

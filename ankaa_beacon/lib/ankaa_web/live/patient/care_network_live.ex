@@ -14,8 +14,6 @@ defmodule AnkaaWeb.CareNetworkLive do
         []
       end
 
-    IO.inspect(network, label: "Care Network")
-
     {:ok,
      assign(socket,
        network: network,

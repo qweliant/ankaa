@@ -2,7 +2,7 @@
 
 <!-- Alert Banner Portal - Renders at top of page -->
 <div id="alert-portal">
-  <%= if assigns[:active_alerts] && length(@active_alerts) > 0 do %>
+  <%= if assigns[:active_alerts] && not Enum.empty?(@active_alerts) do %>
     <.live_component 
       module={AnkaaWeb.AlertBanner} 
       id="alert-banner"
@@ -10,7 +10,6 @@
       current_user={@current_user} />
   <% end %>
 </div>
-
 <main class="px-4 py-20 sm:px-6 lg:px-8">
   <div class="mx-auto"><.flash_group flash={@flash} /> {@inner_content}</div>
 </main>

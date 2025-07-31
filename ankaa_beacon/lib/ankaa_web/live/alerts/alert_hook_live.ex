@@ -16,20 +16,11 @@ defmodule AnkaaWeb.AlertHook do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:alerts")
 
       # Subscribe to role-based alerts
-      role_topic = get_role_topic(user)
-      if role_topic, do: Phoenix.PubSub.subscribe(Ankaa.PubSub, role_topic)
+      # role_topic = get_role_topic(user)
+      # if role_topic, do: Phoenix.PubSub.subscribe(Ankaa.PubSub, role_topic)
 
-      # For care network, also subscribe to their patients' alerts
-      if user.role in ["doctor", "nurse", "caresupport"] do
-        patient_ids = Ankaa.Patients.get_patient_ids_for_care_network(user.id)
-        Enum.each(patient_ids, &subscribe_to_patient_alerts/1)
-      end
-
-      # Get and filter alerts
+      # Fetch any alerts that are already active for this provider's patients.
       active_alerts = Alerts.get_active_alerts_for_user(user)
-      # dismissed_info_alerts = get_dismissed_info_alerts_from_session(socket)
-
-      # filtered_alerts = filter_dismissed_alerts(active_alerts, dismissed_info_alerts)
 
       {:cont,
        assign(socket,
@@ -37,18 +28,14 @@ defmodule AnkaaWeb.AlertHook do
          dismissed_info_alerts: []
        )}
     else
+      # If not connected or no user, assign empty lists.
       {:cont, assign(socket, active_alerts: [], dismissed_info_alerts: [])}
     end
   end
 
   # Handle new alert broadcasts
   def handle_info({:new_alert, alert}, socket) do
-    # Skip if INFO alert was already dismissed in this session
-    if alert.severity == "info" && alert.id in socket.assigns.dismissed_info_alerts do
-      {:noreply, socket}
-    else
-      {:noreply, update(socket, :active_alerts, fn alerts -> [alert | alerts] end)}
-    end
+    {:noreply, update(socket, :active_alerts, fn alerts -> [alert | alerts] end)}
   end
 
   # Handle alert dismissals

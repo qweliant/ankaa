@@ -99,8 +99,8 @@ defmodule AnkaaWeb.Router do
     live_session :patient,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_patient},
-        {AnkaaWeb.AlertHook, :subscribe_alerts}
+        {AnkaaWeb.RoleAuth, :require_patient}
+        # {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/health", HealthLive, :index)
       live("/monitoring", MonitoringLive, :index)
@@ -119,8 +119,8 @@ defmodule AnkaaWeb.Router do
     live_session :care_provider,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse}
-        # {AnkaaWeb.AlertHook, :subscribe_alerts}
+        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse},
+        {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/patients", CareProvider.PatientsLive.Index, :index)
       live("/patient/:id", CareProvider.PatientDetailsLive.Index, :index)
