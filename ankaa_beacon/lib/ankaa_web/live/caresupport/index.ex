@@ -45,6 +45,9 @@ defmodule AnkaaWeb.CaringForLive.Index do
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                       Last Session Start
                     </th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                      Next Session
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
@@ -76,8 +79,15 @@ defmodule AnkaaWeb.CaringForLive.Index do
                         </span>
                       </td>
                       <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <%= if patient.last_check do %>
-                          <%= Calendar.strftime(patient.last_check, "%Y-%m-%d %H:%M") %>
+                        <%= if patient.last_session do %>
+                          <%= Calendar.strftime(patient.last_session, "%Y-%m-%d %H:%M") %>
+                        <% else %>
+                          N/A
+                        <% end %>
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        <%= if patient.next_session do %>
+                          <%= Calendar.strftime(patient.next_session, "%Y-%m-%d") %>
                         <% else %>
                           N/A
                         <% end %>
