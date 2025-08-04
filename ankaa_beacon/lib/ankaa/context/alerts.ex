@@ -2,12 +2,12 @@ defmodule Ankaa.Alerts do
   @moduledoc """
   Handles alert logic and care network notifications.
   """
+  import Ecto.Query
 
   alias Ankaa.Patients
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications.Alert
-
-  import Ecto.Query
+  alias Ankaa.Notifications.AlertTimer
   alias Ankaa.Repo
 
   def create_alert(attrs) do
@@ -15,6 +15,10 @@ defmodule Ankaa.Alerts do
          |> Alert.changeset(attrs)
          |> Repo.insert() do
       {:ok, alert} ->
+        if alert.severity == "critical" do
+          AlertTimer.start_link(alert)
+        end
+
         broadcast_alert_created(alert)
         {:ok, alert}
 
@@ -107,9 +111,42 @@ defmodule Ankaa.Alerts do
     end
   end
 
-  def acknowledge_critical_alert(_alert_id, _user_id) do
-    # Stop EMS timer and mark as acknowledged
-    # Full audit trail for critical alerts
+  @doc """
+  Acknowledges a critical alert, creating an audit trail and stopping the EMS timer.
+  """
+  def acknowledge_critical_alert(%Alert{} = alert, user_id) do
+    # 1. Cancel the countdown timer process
+    AlertTimer.cancel(alert.id)
+
+    # 2. Update the alert in the database
+    attrs = %{
+      acknowledged: true,
+      dismissed_at: DateTime.utc_now(),
+      dismissed_by_user_id: user_id,
+      dismissal_reason: "critical_acknowledged"
+    }
+
+    case alert |> Alert.changeset(attrs) |> Repo.update() do
+      {:ok, ack_alert} ->
+        # 3. Broadcast that the alert was updated
+        broadcast_alert_updated(ack_alert)
+        {:ok, ack_alert}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp broadcast_alert_updated(alert) do
+    care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
+
+    Enum.each(care_network_user_ids, fn user_id ->
+      Phoenix.PubSub.broadcast(
+        Ankaa.PubSub,
+        "user:#{user_id}:alerts",
+        {:alert_updated, alert}
+      )
+    end)
   end
 
   defp broadcast_alert_created(alert) do

@@ -21,15 +21,12 @@ defmodule AnkaaWeb.AlertBanner do
       found_alert ->
         case alert.severity do
           "info" ->
-            # INFO alerts: Store dismissal in session storage (handled by client-side)
-            # Also remove from server state
             send(self(), {:alert_dismissed, alert.id})
             socket = push_event(socket, "dismiss_info_alert", %{id: found_alert.id})
             {:noreply, socket}
 
           "high" ->
             if User.is_patient?(user) do
-              # Logic for when the user is a patient
               case Alerts.dismiss_alert(found_alert.id, user.id, "patient_self_dismissal") do
                 {:ok, _} ->
                   send(self(), {:alert_dismissed, found_alert.id})
@@ -88,18 +85,16 @@ defmodule AnkaaWeb.AlertBanner do
 
   @impl true
   def handle_event("acknowledge_critical", %{"alert_id" => alert_id}, socket) do
-    alert = Enum.find(socket.assigns.active_alerts, &(&1.id == String.to_integer(alert_id)))
+    alert = Enum.find(socket.assigns.active_alerts, &(&1.id == alert_id))
 
     case alert do
       nil ->
-        # Alert wasn't found, do nothing.
         {:noreply, socket}
 
       found_alert ->
         # Stop the 15-minute EMS timer
-        case Alerts.acknowledge_critical_alert(alert.id, socket.assigns.current_user.id) do
+        case Alerts.acknowledge_critical_alert(found_alert, socket.assigns.current_user.id) do
           {:ok, _} ->
-            send(self(), {:critical_acknowledged, alert.id})
             {:noreply, socket}
 
           {:error, _} ->

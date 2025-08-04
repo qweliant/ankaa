@@ -19,7 +19,9 @@ defmodule Ankaa.Application do
       # Start Finch
       {Finch, name: Ankaa.Finch},
       # Start the Endpoint (http/https)
-      AnkaaWeb.Endpoint
+      AnkaaWeb.Endpoint,
+      # Start the Registry for alerts
+      {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry}
     ]
 
     # Only start MQTT consumer in non-test environment

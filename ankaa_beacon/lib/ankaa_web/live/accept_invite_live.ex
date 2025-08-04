@@ -3,7 +3,6 @@ defmodule AnkaaWeb.AcceptInviteLive do
 
   alias Ankaa.Accounts
   alias Ankaa.Invites
-  alias AnkaaWeb.UserAuth
 
   @impl true
   def mount(_params, _session, socket) do
