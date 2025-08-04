@@ -1,5 +1,4 @@
 defmodule AnkaaWeb.HealthLive do
-  use AnkaaWeb, :live_view
   use AnkaaWeb, :patient_layout
 
   @impl true

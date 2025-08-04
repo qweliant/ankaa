@@ -1,5 +1,4 @@
 defmodule AnkaaWeb.DeviceEntryLive do
-  use AnkaaWeb, :live_view
   use AnkaaWeb, :patient_layout
 
   alias Ankaa.Patients

@@ -2,8 +2,6 @@ defmodule AnkaaWeb.Router do
   use AnkaaWeb, :router
 
   import AnkaaWeb.UserAuth
-  import AnkaaWeb.RoleAuth
-  import AnkaaWeb.AlertHook
 
   pipeline :browser do
     plug(:accepts, ["html"])
