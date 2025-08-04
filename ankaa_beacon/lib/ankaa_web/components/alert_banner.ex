@@ -19,9 +19,6 @@ defmodule AnkaaWeb.AlertBanner do
         {:noreply, socket}
 
       found_alert ->
-        # Alert was found, proceed with your original logic
-        user = socket.assigns.current_user
-
         case alert.severity do
           "info" ->
             # INFO alerts: Store dismissal in session storage (handled by client-side)
@@ -32,7 +29,7 @@ defmodule AnkaaWeb.AlertBanner do
 
           "high" ->
             if User.is_patient?(user) do
-              # Logic for when the user IS a patient
+              # Logic for when the user is a patient
               case Alerts.dismiss_alert(found_alert.id, user.id, "patient_self_dismissal") do
                 {:ok, _} ->
                   send(self(), {:alert_dismissed, found_alert.id})
