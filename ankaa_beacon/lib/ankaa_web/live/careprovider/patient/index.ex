@@ -207,7 +207,7 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
     today = Date.utc_today()
     age = today.year - date_of_birth.year
 
-    if Date.compare(Date.drop(today, [:year]), Date.drop(date_of_birth, [:year])) == :lt do
+    if {today.month, today.day} < {date_of_birth.month, date_of_birth.day} do
       age - 1
     else
       age

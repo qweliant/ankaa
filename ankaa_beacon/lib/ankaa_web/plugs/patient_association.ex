@@ -1,7 +1,6 @@
 defmodule AnkaaWeb.Plugs.AuthorizeRole do
   import Plug.Conn
   import Phoenix.Controller
-  alias AnkaaWeb.Router.Helpers, as: Routes
 
   def init(roles) when is_list(roles), do: roles
   def init(role) when is_binary(role), do: [role]

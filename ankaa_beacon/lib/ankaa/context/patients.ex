@@ -349,7 +349,7 @@ defmodule Ankaa.Patients do
   """
   def create_peer_association(%User{} = patient_user, %Patient{} = peer_patient) do
     if User.is_patient?(patient_user) do
-      with %Patient{} = patient <- get_patient_by_user_id(patient_user.id) do
+      with %Patient{} = _patient <- get_patient_by_user_id(patient_user.id) do
         %CareNetwork{}
         |> CareNetwork.changeset(%{
           user_id: patient_user.id,

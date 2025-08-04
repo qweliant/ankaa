@@ -5,7 +5,6 @@ defmodule Ankaa.Alerts do
 
   alias Ankaa.Patients
   alias Ankaa.Patients.CareNetwork
-  alias Ankaa.Notifications
   alias Ankaa.Notifications.Alert
 
   import Ecto.Query
@@ -20,12 +19,13 @@ defmodule Ankaa.Alerts do
         {:ok, alert}
 
       error ->
+        require Logger
         Logger.error("Failed to create alert: #{inspect(error)}")
         {:error, error}
     end
   end
 
-  def broadcast_device_alerts(device_id, reading, violations) do
+  def broadcast_device_alerts(device_id, _reading, violations) do
     case Patients.get_patient_by_device_id(device_id) do
       %Patients.Patient{} = patient ->
         # Create alerts (which will auto-broadcast)
@@ -51,7 +51,7 @@ defmodule Ankaa.Alerts do
 
       nil ->
         require Logger
-        Logger.warn("No patient found for device_id: #{inspect(device_id)}")
+        Logger.warning("No patient found for device_id: #{inspect(device_id)}")
         {:error, :patient_not_found}
 
       error ->
@@ -107,7 +107,7 @@ defmodule Ankaa.Alerts do
     end
   end
 
-  def acknowledge_critical_alert(alert_id, user_id) do
+  def acknowledge_critical_alert(_alert_id, _user_id) do
     # Stop EMS timer and mark as acknowledged
     # Full audit trail for critical alerts
   end

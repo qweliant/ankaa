@@ -3,7 +3,6 @@ defmodule AnkaaWeb.MonitoringLive do
   use AnkaaWeb, :patient_layout
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.Device
   alias Ankaa.Alerts
   alias Ankaa.Sessions
 
@@ -156,10 +155,6 @@ defmodule AnkaaWeb.MonitoringLive do
     else
       {:noreply, socket}
     end
-  end
-
-  defp format_time(datetime) do
-    Timex.format!(datetime, "%H:%M:%S", :strftime)
   end
 
   @impl true

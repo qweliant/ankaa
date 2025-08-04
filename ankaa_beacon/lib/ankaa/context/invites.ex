@@ -8,7 +8,6 @@ defmodule Ankaa.Invites do
   alias Ankaa.Accounts
 
   @rand_size 32
-  # @hash_algorithm :sha256
 
   @doc """
   Creates a new invite, saves its hash, and delivers the invite email in a single transaction.
@@ -80,10 +79,18 @@ defmodule Ankaa.Invites do
   invite status within a single transaction.
   """
   def accept_invite(user, %Invite{} = invite) do
-    if invite.invitee_role == "patient" do
-      accept_as_new_patient(user, invite)
-    else
-      accept_as_care_provider(user, invite)
+    cond do
+      invite.invitee_role not in ["patient", "caresupport", "nurse", "doctor"] ->
+        {:error, "Invalid invite role: #{invite.invitee_role}"}
+
+      invite.invitee_role == "patient" ->
+        accept_as_patient(user, invite)
+
+      invite.invitee_role == "caresupport" ->
+        accept_as_care_support(user, invite)
+
+      invite.invitee_role == "careprovider" ->
+        accept_as_care_provider(user, invite)
     end
   end
 
@@ -95,17 +102,16 @@ defmodule Ankaa.Invites do
     |> Repo.update()
   end
 
-  defp accept_as_new_patient(user, invite) do
+  defp accept_as_patient(user, invite) do
     Repo.transaction(fn ->
-      default_name = user.email |> String.split("@") |> List.first() |> String.capitalize()
-      patient_attrs = %{"name" => default_name}
-
-      with {:ok, patient_record} <- Patients.create_patient(patient_attrs, user),
+      # This `with` block now handles both new and existing patients.
+      with {:ok, patient_record} <- find_or_create_patient_for_user(user),
            inviter <- Accounts.get_user!(invite.inviter_id),
            {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
+        # This will catch any errors and roll back the transaction.
         {:error, reason} -> Repo.rollback({:error, reason})
       end
     end)
@@ -135,5 +141,26 @@ defmodule Ankaa.Invites do
         {:error, reason} -> Repo.rollback({:error, reason})
       end
     end)
+  end
+
+  defp find_or_create_patient_for_user(user) do
+    case Patients.get_patient_by_user_id(user.id) do
+      nil ->
+        # No patient record exists, so we create one.
+        default_name =
+          (user.first_name <> " " <> user.last_name)
+          |> String.trim()
+          |> case do
+            "" -> user.email |> String.split("@") |> List.first() |> String.capitalize()
+            full_name -> full_name
+          end
+
+        patient_attrs = %{"name" => default_name}
+        Patients.create_patient(patient_attrs, user)
+
+      existing_patient ->
+        # A patient record already exists, so we just return it.
+        {:ok, existing_patient}
+    end
   end
 end

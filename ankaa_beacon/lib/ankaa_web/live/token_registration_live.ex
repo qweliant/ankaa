@@ -3,7 +3,6 @@ defmodule AnkaaWeb.TokenRegistrationLive do
   import AnkaaWeb.UserAuth
 
   alias Ankaa.Accounts
-  alias Ankaa.UserAuth
   alias Ankaa.Patients
 
   @roles [
