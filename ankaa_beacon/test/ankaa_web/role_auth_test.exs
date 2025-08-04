@@ -5,10 +5,7 @@ defmodule AnkaaWeb.RoleAuthTest do
   alias Phoenix.LiveView
   alias Ankaa.Accounts
   alias AnkaaWeb.RoleAuth
-  alias AnkaaWeb.UserAuth
   alias Ankaa.Patients
-
-  @remember_me_cookie "_ankaa_web_user_remember_me"
 
   setup %{conn: conn} do
     conn =

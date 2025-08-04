@@ -80,17 +80,19 @@ defmodule Ankaa.Invites do
   """
   def accept_invite(user, %Invite{} = invite) do
     cond do
-      invite.invitee_role not in ["patient", "caresupport", "nurse", "doctor"] ->
-        {:error, "Invalid invite role: #{invite.invitee_role}"}
-
       invite.invitee_role == "patient" ->
         accept_as_patient(user, invite)
 
       invite.invitee_role == "caresupport" ->
         accept_as_care_support(user, invite)
 
-      invite.invitee_role == "careprovider" ->
+      # Check if the role is either "doctor" OR "nurse"
+      invite.invitee_role in ["doctor", "nurse"] ->
         accept_as_care_provider(user, invite)
+
+      # It's good practice to have a final "else" clause to catch anything unexpected.
+      true ->
+        {:error, "Invalid or unhandled invite role: #{invite.invitee_role}"}
     end
   end
 
@@ -148,11 +150,12 @@ defmodule Ankaa.Invites do
       nil ->
         # No patient record exists, so we create one.
         default_name =
-          (user.first_name <> " " <> user.last_name)
-          |> String.trim()
-          |> case do
-            "" -> user.email |> String.split("@") |> List.first() |> String.capitalize()
-            full_name -> full_name
+          if user.first_name && user.last_name do
+            # If we have both names, use them.
+            "#{user.first_name} #{user.last_name}"
+          else
+            # Otherwise, fall back to the email address.
+            user.email |> String.split("@") |> List.first() |> String.capitalize()
           end
 
         patient_attrs = %{"name" => default_name}

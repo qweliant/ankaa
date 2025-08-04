@@ -1,13 +1,17 @@
 defmodule Ankaa.NotificationsTest do
   use Ankaa.DataCase
 
-  alias Ankaa.Notifications
   alias Ankaa.Alerts
   alias Ankaa.AccountsFixtures
   alias Ankaa.Patients
   alias Ankaa.Notifications.Alert
 
   describe "alerts" do
+    setup do
+      start_supervised!({Registry, keys: :unique, name: Ankaa.Alerts.AlertRegistry})
+      :ok
+    end
+
     setup do
       user = AccountsFixtures.patient_fixture()
       patient = user.patient
@@ -41,7 +45,10 @@ defmodule Ankaa.NotificationsTest do
       assert alert.patient_id == patient.id
     end
 
-    test "broadcast_device_alerts/3 creates alerts for violations", %{patient: patient, device: device} do
+    test "broadcast_device_alerts/3 creates alerts for violations", %{
+      patient: patient,
+      device: device
+    } do
       # Mock violations (like what would come from ThresholdViolation)
       violations = [
         %{
@@ -80,7 +87,7 @@ defmodule Ankaa.NotificationsTest do
       violations = [%{severity: :high, message: "Test"}]
 
       assert {:error, :patient_not_found} =
-        Alerts.broadcast_device_alerts("unknown_device", %{}, violations)
+               Alerts.broadcast_device_alerts("unknown_device", %{}, violations)
     end
   end
 end

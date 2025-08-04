@@ -545,19 +545,19 @@ defmodule Ankaa.AccountsTest do
   describe "has_role?/2" do
     test "has_role?/2 checks if a user has a specific role" do
       user = user_fixture(%{role: "doctor"})
-      assert Accounts.has_role?(user, "doctor")
-      refute Accounts.has_role?(user, "nurse")
+      assert User.has_role?(user, "doctor")
+      refute User.has_role?(user, "nurse")
     end
   end
 
   describe "is_<role>/1" do
     test "role convenience functions work correctly" do
       user = user_fixture(%{role: "doctor"})
-      assert Accounts.is_doctor?(user)
-      refute Accounts.is_nurse?(user)
-      refute Accounts.is_admin?(user)
-      refute Accounts.is_caresupport?(user)
-      refute Accounts.is_technical_support?(user)
+      assert User.is_doctor?(user)
+      refute User.is_nurse?(user)
+      refute User.is_admin?(user)
+      refute User.is_caresupport?(user)
+      refute User.is_technical_support?(user)
     end
   end
 end

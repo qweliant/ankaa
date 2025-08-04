@@ -3,9 +3,7 @@ defmodule Ankaa.InvitesTest do
 
   alias Ankaa.Invites
   alias Ankaa.Invites.Invite
-  alias Ankaa.Patients
   alias Ankaa.Patients.{CareNetwork, Patient}
-  alias Ankaa.Accounts.User
   alias Ankaa.AccountsFixtures
 
   setup do
