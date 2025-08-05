@@ -37,7 +37,6 @@ defmodule Ankaa.Alerts do
         Enum.each(violations, fn violation ->
           case create_alert(%{
                  type: "Monitoring alert",
-                 # Use the nice formatted message from ThresholdViolation
                  message: violation.message,
                  patient_id: patient.id,
                  # Convert :critical -> "critical"
