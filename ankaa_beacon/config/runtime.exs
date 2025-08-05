@@ -21,35 +21,30 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  # Configure PostgreSQL
   database_url =
-    "ecto://#{System.get_env("PROD_POSTGRES_USER")}:#{System.get_env("PROD_POSTGRES_PASSWORD")}@#{System.get_env("PROD_POSTGRES_HOST")}/#{System.get_env("PROD_POSTGRES_DB")}"
-
-  # Configure TimescaleDB
-  timescale_url =
-    "ecto://#{System.get_env("PROD_TIMESCALE_USER")}:#{System.get_env("PROD_TIMESCALE_PASSWORD")}@#{System.get_env("PROD_TIMESCALE_HOST")}/#{System.get_env("PROD_TIMESCALE_DB")}"
+    System.get_env("DATABASE_URL") ||
+      raise """
+      environment variable DATABASE_URL is missing.
+      For example: ecto://USER:PASS@HOST/DATABASE
+      """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :ankaa, Ankaa.Repo,
+    # ssl: true, # Often required for production databases. Handled by URL params.
     url: database_url,
-    socket_options: maybe_ipv6,
-    ssl: [
-      verify: :verify_none
-    ]
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    socket_options: maybe_ipv6
 
-  config :ankaa, Ankaa.TimescaleRepo,
-    url: timescale_url,
-    ssl: [
-      verify: :verify_none
-    ]
-
-  # Configure MQTT
   config :ankaa, :mqtt,
-    host: System.get_env("PROD_MQTT_HOST", "localhost"),
-    port: String.to_integer(System.get_env("PROD_MQTT_PORT", "1883")),
-    username: System.get_env("PROD_MQTT_USERNAME"),
-    password: System.get_env("PROD_MQTT_PASSWORD")
+    host: System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set"),
+    port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
+    username: System.get_env("MQTT_USER"),
+    password: System.get_env("MQTT_PASSWORD"),
+    ssl_options: [
+      verify: :verify_peer,
+      cacertfile: "priv/certs/ca.pem"
+    ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   secret_key_base =
@@ -110,15 +105,15 @@ if config_env() == :prod do
   # Also, you may need to configure the Swoosh API client of your choice if you
   # are not using SMTP. Here is an example of the configuration:
   #
-  #     config :ankaa, Ankaa.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
+  config :ankaa, Ankaa.Mailer,
+    adapter: Swoosh.Adapters.Mailgun,
+    api_key: System.get_env("MAILGUN_API_KEY"),
+    domain: System.get_env("MAILGUN_DOMAIN")
   #
   # For this example you need include a HTTP client required by Swoosh API client.
   # Swoosh supports Hackney and Finch out of the box:
   #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
+  # config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
