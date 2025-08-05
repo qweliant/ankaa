@@ -11,10 +11,6 @@ defmodule Ankaa.Mailer do
     base_url = Application.fetch_env!(:ankaa, :base_url)
     accept_url = "#{base_url}/invites/accept?token=#{token}"
 
-    IO.inspect("Building email to: #{invite.invitee_email} with URL: #{accept_url}",
-      label: "[MAILER MODULE]"
-    )
-
     email =
       new()
       |> to(invite.invitee_email)

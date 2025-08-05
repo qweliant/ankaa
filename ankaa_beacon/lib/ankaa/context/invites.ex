@@ -27,8 +27,6 @@ defmodule Ankaa.Invites do
       |> Map.put("status", "pending")
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
-    IO.inspect(final_attrs, label: "[INVITES CONTEXT] Attributes for new invite:")
-
     Repo.transaction(fn ->
       case Repo.insert(Invite.changeset(%Invite{}, final_attrs)) do
         {:ok, invite} ->

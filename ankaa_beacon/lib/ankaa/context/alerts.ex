@@ -10,6 +10,8 @@ defmodule Ankaa.Alerts do
   alias Ankaa.Notifications.AlertTimer
   alias Ankaa.Repo
 
+  require Logger
+
   def create_alert(attrs) do
     case %Alert{}
          |> Alert.changeset(attrs)
@@ -23,7 +25,6 @@ defmodule Ankaa.Alerts do
         {:ok, alert}
 
       error ->
-        require Logger
         Logger.error("Failed to create alert: #{inspect(error)}")
         {:error, error}
     end
@@ -46,7 +47,6 @@ defmodule Ankaa.Alerts do
               :ok
 
             {:error, reason} ->
-              require Logger
               Logger.error("Failed to create alert for patient #{patient.id}: #{inspect(reason)}")
           end
         end)
@@ -54,13 +54,10 @@ defmodule Ankaa.Alerts do
         :ok
 
       nil ->
-        require Logger
         Logger.warning("No patient found for device_id: #{inspect(device_id)}")
         {:error, :patient_not_found}
 
       error ->
-        require Logger
-
         Logger.error(
           "Error fetching patient by device_id #{inspect(device_id)}: #{inspect(error)}"
         )

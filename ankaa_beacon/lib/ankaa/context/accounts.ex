@@ -402,13 +402,10 @@ defmodule Ankaa.Accounts do
   This uses the existing hashed token system.
   """
   def generate_temporary_login_token(%User{} = user) do
-    IO.inspect(user, label: "1. User passed to generate_temporary_login_token")
 
     {raw_token, user_token} = UserToken.build_email_token(user, "login")
-    IO.inspect({raw_token, user_token}, label: "2. Token built by UserToken")
 
     Repo.insert!(user_token)
-    IO.inspect(raw_token, label: "3. Token inserted successfully! Returning raw token.")
 
     raw_token
   end
