@@ -13,7 +13,7 @@ defmodule Ankaa.Application do
       # Start the Ecto repository
       Ankaa.Repo,
       # Start the TimescaleDB repository
-      Ankaa.TimescaleRepo,
+      # Ankaa.TimescaleRepo,
       # Start the PubSub system
       {Phoenix.PubSub, name: Ankaa.PubSub},
       # Start Finch

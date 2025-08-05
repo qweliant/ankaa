@@ -34,7 +34,15 @@ if config_env() == :prod do
     # ssl: true, # Often required for production databases. Handled by URL params.
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
+    socket_options: maybe_ipv6,
+    ssl: true,
+    ssl_opts: [
+      cacertfile: "priv/cert/cockroach.crt",
+      verify: :verify_peer,
+      # This part is often necessary for cloud databases
+      server_name_indication: "shard-hacker-5530.g8z.gcp-us-east1.cockroachlabs.cloud"
+    ]
+
 
   config :ankaa, :mqtt,
     host: System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set"),
@@ -43,7 +51,7 @@ if config_env() == :prod do
     password: System.get_env("MQTT_PASSWORD"),
     ssl_options: [
       verify: :verify_peer,
-      cacertfile: "priv/certs/ca.pem"
+      cacertfile: "priv/cert/emqxsl-ca.crt"
     ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
