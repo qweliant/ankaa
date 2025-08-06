@@ -31,17 +31,16 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :ankaa, Ankaa.Repo,
-    # ssl: true, # Often required for production databases. Handled by URL params.
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6,
-    ssl: true,
-    ssl_opts: [
-      cacertfile: "priv/cert/cockroach.crt",
-      verify: :verify_peer,
-      # This part is often necessary for cloud databases
-      server_name_indication: "shard-hacker-5530.g8z.gcp-us-east1.cockroachlabs.cloud"
-    ]
+    socket_options: maybe_ipv6
+    # ssl: true,
+    # ssl_opts: [
+    #   cacertfile: "priv/cert/cockroach.crt",
+    #   verify: :verify_peer,
+    #   # This part is often necessary for cloud databases
+    #   server_name_indication: "shard-hacker-5530.g8z.gcp-us-east1.cockroachlabs.cloud"
+    # ]
 
 
   config :ankaa, :mqtt,
@@ -80,13 +79,13 @@ if config_env() == :prod do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  config :ankaa, AnkaaWeb.Endpoint,
-    https: [
-      port: 443,
-      cipher_suite: :strong,
-      keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
-      certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
-    ]
+  # config :ankaa, AnkaaWeb.Endpoint,
+  #   https: [
+  #     port: 443,
+  #     cipher_suite: :strong,
+  #     keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
+  #     certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
+  #   ]
 
   #
   # The `cipher_suite` is set to `:strong` to support only the

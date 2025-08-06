@@ -24,9 +24,9 @@ defmodule Ankaa.Application do
       {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry}
     ]
 
-    # Only start MQTT consumer in non-test environment
+    # Only start MQTT consumer in dev environment
     children =
-      if Mix.env() == :test do
+      if Application.get_env(:ankaa, :env) in [:test, :prod] do
         children
       else
         children ++

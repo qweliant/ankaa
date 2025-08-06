@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for ankaa-beacon on 2025-04-27T07:58:58-04:00
+# fly.toml app configuration file generated for ankaa-beacon on 2025-08-05T20:44:50-04:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -15,6 +15,7 @@ kill_signal = 'SIGTERM'
 [env]
   PHX_HOST = 'ankaa-beacon.fly.dev'
   PORT = '8080'
+  PHX_SERVER="true bin/ankaa start"
 
 [http_service]
   internal_port = 8080
