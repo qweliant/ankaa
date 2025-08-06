@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .parse::<f32>()
             .unwrap_or(10.0),
         message_interval_ms: env::var("MESSAGE_INTERVAL_MS")
-            .unwrap_or_else(|_| "100".to_string())
+            .unwrap_or_else(|_| "2000".to_string())
             .parse::<u64>()
             .unwrap_or(100),
         batch_size: env::var("BATCH_SIZE")
