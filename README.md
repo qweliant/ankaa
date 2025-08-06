@@ -8,7 +8,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![Unlicense License][license-shield]][license-url]
+[![License][license-shield]][license-url]
 
 <!-- PROJECT LOGO -->
 <br />
@@ -214,10 +214,6 @@ For full license terms, see the [LICENSE](LICENSE) file.
 [Phoenix-url]: https://www.phoenixframework.org/
 [Rust-badge]: https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white
 [Rust-url]: https://www.rust-lang.org/
-[TimescaleDB-badge]: https://img.shields.io/badge/TimescaleDB-000000?style=for-the-badge&logo=timescaledb&logoColor=white
-[TimescaleDB-url]: https://www.timescale.com/
-[Mosquitto-badge]: https://img.shields.io/badge/Mosquitto-3C5280?style=for-the-badge&logo=eclipsemosquitto&logoColor=white
-[Mosquitto-url]: https://mosquitto.org/
 [Docker-badge]: https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
 [PostgreSQL-badge]: https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white
