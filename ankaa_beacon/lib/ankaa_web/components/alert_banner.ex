@@ -21,45 +21,41 @@ defmodule AnkaaWeb.AlertBanner do
       found_alert ->
         case alert.severity do
           "info" ->
-            send(self(), {:alert_dismissed, alert.id})
-            socket = push_event(socket, "dismiss_info_alert", %{id: found_alert.id})
-            {:noreply, socket}
+            case Alerts.dismiss_alert(found_alert, user, "info_dismissed") do
+              {:ok, dismissed_alert} ->
+                socket = push_event(socket, "dismiss_info_alert", %{id: dismissed_alert.id})
+                {:noreply, socket}
+
+              {:error, _} ->
+                {:noreply, put_flash(socket, :error, "Failed to dismiss alert")}
+            end
 
           "high" ->
-            if User.is_patient?(user) do
-              case Alerts.dismiss_alert(found_alert.id, user.id, "patient_self_dismissal") do
-                {:ok, _} ->
-                  send(self(), {:alert_dismissed, found_alert.id})
-                  {:noreply, socket}
+            dismissal_reason =
+              if User.is_patient?(user),
+                do: "patient_self_dismissal",
+                else: "care_provider_dismissal"
 
-                {:error, _} ->
-                  {:noreply, put_flash(socket, :error, "Failed to dismiss alert")}
-              end
-            else
-              case Alerts.dismiss_alert(found_alert.id, user.id, "care_provider_dismissal") do
-                {:ok, _} ->
-                  send(self(), {:alert_dismissed, found_alert.id})
-                  {:noreply, socket}
+            case Alerts.dismiss_alert(found_alert, user, dismissal_reason) do
+              {:ok, _} ->
+                {:noreply, socket}
 
-                {:error, _} ->
-                  {:noreply, put_flash(socket, :error, "Failed to dismiss alert")}
-              end
+              {:error, reason} ->
+                {:noreply, put_flash(socket, :error, reason)}
             end
 
           "critical" ->
-            # CRITICAL alerts: Only doctors/nurses can dismiss with acknowledgment
             if user.role in ["doctor", "nurse"] do
-              case Alerts.dismiss_alert(alert.id, user.id, "clinical_dismissal") do
+              case Alerts.dismiss_alert(found_alert, user, "clinical_dismissal") do
                 {:ok, _} ->
-                  send(self(), {:alert_dismissed, alert.id})
                   {:noreply, socket}
 
-                {:error, _} ->
-                  {:noreply, put_flash(socket, :error, "Failed to dismiss alert")}
+                {:error, reason} ->
+                  {:noreply, put_flash(socket, :error, reason)}
               end
             else
               {:noreply,
-               put_flash(socket, :error, "Only doctors and nurses can dismiss critical alerts")}
+               put_flash(socket, :error, "Only doctors and nurses can dismiss critical alerts.")}
             end
         end
     end

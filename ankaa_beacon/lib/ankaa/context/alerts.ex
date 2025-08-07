@@ -75,7 +75,11 @@ defmodule Ankaa.Alerts do
     if patient_ids == [] do
       []
     else
-      from(a in Alert, where: a.patient_id in ^patient_ids, order_by: [desc: a.inserted_at])
+      from(a in Alert,
+        where: a.patient_id in ^patient_ids and a.status == "active",
+        order_by: [desc: a.inserted_at],
+        preload: [:patient]
+      )
       |> Repo.all()
     end
   end
@@ -83,27 +87,25 @@ defmodule Ankaa.Alerts do
   @doc """
   Dismisses an alert, creating an audit trail and broadcasting the change.
   """
-  def dismiss_alert(alert_id, user_id, dismissal_reason) do
-    case Repo.get(Alert, alert_id) do
-      nil ->
-        {:error, :not_found}
+  def dismiss_alert(%Alert{} = alert, %Ankaa.Accounts.User{} = user, dismissal_reason) do
+    if can_dismiss_alert?(alert, user) do
+      attrs = %{
+        status: "dismissed",
+        dismissed_at: DateTime.utc_now(),
+        dismissed_by_user_id: user.id,
+        dismissal_reason: dismissal_reason
+      }
 
-      alert ->
-        attrs = %{
-          status: "dismissed",
-          dismissed_at: DateTime.utc_now(),
-          dismissed_by_user_id: user_id,
-          dismissal_reason: dismissal_reason
-        }
+      case alert |> Alert.changeset(attrs) |> Repo.update() do
+        {:ok, dismissed_alert} ->
+          broadcast_alert_dismissed(dismissed_alert)
+          {:ok, dismissed_alert}
 
-        case alert |> Alert.changeset(attrs) |> Repo.update() do
-          {:ok, dismissed_alert} ->
-            broadcast_alert_dismissed(dismissed_alert)
-            {:ok, dismissed_alert}
-
-          {:error, changeset} ->
-            {:error, changeset}
-        end
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      {:error, "You are not authorized to dismiss this alert."}
     end
   end
 
@@ -179,5 +181,13 @@ defmodule Ankaa.Alerts do
         {:alert_dismissed, alert.id}
       )
     end)
+  end
+
+  defp can_dismiss_alert?(alert, user) do
+    case alert.severity do
+      "info" -> true
+      "high" -> true
+      "critical" -> user.role in ["doctor", "nurse"]
+    end
   end
 end
