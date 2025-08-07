@@ -169,9 +169,7 @@ defmodule Ankaa.Alerts do
   end
 
   defp broadcast_alert_dismissed(alert) do
-    # Get all care network members
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
-    IO.inspect({:broadcasting_dismissal_to, care_network_user_ids}, label: "PubSub")
     # Broadcast the dismissal to each member
     Enum.each(care_network_user_ids, fn user_id ->
       Phoenix.PubSub.broadcast(

@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.CareProvider.PatientsLive.Index do
   use AnkaaWeb, :live_view
+  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
 

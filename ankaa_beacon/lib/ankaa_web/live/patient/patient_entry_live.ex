@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.PatientEntryLive do
   use AnkaaWeb, :live_view
+
   import AnkaaWeb.UserAuth
 
   alias Ankaa.Patients

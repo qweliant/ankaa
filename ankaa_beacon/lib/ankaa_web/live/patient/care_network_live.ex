@@ -1,5 +1,7 @@
 defmodule AnkaaWeb.CareNetworkLive do
   use AnkaaWeb, :patient_layout
+  use AnkaaWeb, :alert_handling
+
   alias Ankaa.Patients
 
   @impl true

@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.MonitoringLive do
   use AnkaaWeb, :patient_layout
+  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
   alias Ankaa.Alerts

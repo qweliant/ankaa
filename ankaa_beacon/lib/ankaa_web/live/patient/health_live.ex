@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.HealthLive do
   use AnkaaWeb, :patient_layout
+  use AnkaaWeb, :alert_handling
 
   @impl true
   def mount(_params, _session, socket) do

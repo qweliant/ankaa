@@ -32,43 +32,7 @@ defmodule AnkaaWeb.AlertHook do
     end
   end
 
-  # Handle new alert broadcasts
-  def handle_info({:new_alert, alert}, socket) do
-    {:noreply, update(socket, :active_alerts, fn alerts -> [alert | alerts] end)}
-  end
 
-  # Handle alert dismissals
-  def handle_info({:alert_dismissed, alert_id}, socket) do
-    {:noreply,
-     update(socket, :active_alerts, fn alerts ->
-       Enum.reject(alerts, &(&1.id == alert_id))
-     end)}
-  end
-
-  # Handle EMS escalations
-  def handle_info({:ems_escalation, alert_id}, socket) do
-    # Update alert to show EMS has been contacted
-    {:noreply,
-     update(socket, :active_alerts, fn alerts ->
-       Enum.map(alerts, fn alert ->
-         if alert.id == alert_id do
-           %{alert | ems_contacted: true, ems_contact_time: DateTime.utc_now()}
-         else
-           alert
-         end
-       end)
-     end)}
-  end
-
-  def handle_info({:alert_updated, updated_alert}, socket) do
-    # Find the old alert in the list and replace it with the updated version
-    updated_alerts =
-      Enum.map(socket.assigns.active_alerts, fn alert ->
-        if alert.id == updated_alert.id, do: updated_alert, else: alert
-      end)
-
-    {:noreply, assign(socket, active_alerts: updated_alerts)}
-  end
 
   def handle_event("load_dismissed_alerts", %{"ids" => ids}, socket) do
     # For efficient lookups, convert the list of IDs into a MapSet

@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.CaringForLive.Show do
   use AnkaaWeb, :live_view
+  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
   alias Ankaa.Sessions
