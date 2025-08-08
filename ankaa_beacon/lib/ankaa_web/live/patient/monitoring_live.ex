@@ -98,7 +98,7 @@ defmodule AnkaaWeb.MonitoringLive do
         {:noreply, put_flash(socket, :error, "No active session to end.")}
 
       session ->
-        case Sessions.end_session(socket.assigns.active_session) do
+        case Sessions.end_session(session) do
           {:ok, ended_session} ->
             duration_in_minutes =
               Timex.diff(ended_session.end_time, ended_session.start_time, :minutes)
