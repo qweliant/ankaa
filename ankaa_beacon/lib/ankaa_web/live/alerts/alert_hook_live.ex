@@ -33,7 +33,6 @@ defmodule AnkaaWeb.AlertHook do
   end
 
 
-
   def handle_event("load_dismissed_alerts", %{"ids" => ids}, socket) do
     # For efficient lookups, convert the list of IDs into a MapSet
     dismissed_alerts = Enum.into(ids, MapSet.new())
@@ -53,28 +52,4 @@ defmodule AnkaaWeb.AlertHook do
      )}
   end
 
-  # defp get_dismissed_info_alerts_from_session(_socket) do
-  #   # Get from session storage on client side - we'll handle this in the component
-  #   []
-  # end
-
-  # defp get_role_topic(user) do
-  #   case user.role do
-  #     "doctor" -> "role:doctors:alerts"
-  #     "nurse" -> "role:nurses:alerts"
-  #     "caresupport" -> "role:caresupport:alerts"
-  #     "patient" -> "role:patients:alerts"
-  #     _ -> nil
-  #   end
-  # end
-
-  # defp subscribe_to_patient_alerts(patient_id) do
-  #   Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient:#{patient_id}:alerts")
-  # end
-
-  # defp filter_dismissed_alerts(alerts, dismissed_ids) do
-  #   Enum.reject(alerts, fn alert ->
-  #     alert.severity == "info" && alert.id in dismissed_ids
-  #   end)
-  # end
 end

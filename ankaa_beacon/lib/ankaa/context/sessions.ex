@@ -51,10 +51,17 @@ defmodule Ankaa.Sessions do
   end
 
   @doc """
+  Ends an ongoing session with default values.
+  """
+  def end_session(%Session{} = session) do
+    end_session(session, %{})
+  end
+
+  @doc """
   Ends an ongoing session, setting its end_time and status.
+  Allows for overriding default end attributes.
   """
   def end_session(%Session{} = session, attrs \\ %{}) do
-    # Default attributes for ending a session
     end_attrs =
       Map.merge(
         %{

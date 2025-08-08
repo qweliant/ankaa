@@ -60,28 +60,32 @@ defmodule AnkaaWeb.MonitoringLive do
     patient = socket.assigns.current_user.patient
     current_time = DateTime.utc_now()
 
-    {:ok, _session} =
-      Sessions.create_session(%{
-        start_time: current_time,
-        patient_id: patient.id,
-        status: "ongoing"
-      })
+    case Sessions.create_session(%{
+           start_time: current_time,
+           patient_id: patient.id,
+           status: "ongoing"
+         }) do
+      {:ok, session} ->
+        alert_attrs = %{
+          patient_id: patient.id,
+          type: "session_start",
+          severity: "info",
+          message:
+            "💙 #{patient.name} just started their dialysis session. (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
+        }
 
-    alert_attrs = %{
-      patient_id: patient.id,
-      type: "session_start",
-      severity: "info",
-      message:
-        "💙 #{patient.name} just started their dialysis session. (Started at #{DateTime.to_time(current_time) |> Calendar.strftime("%I:%M:%S %p")})"
-    }
+        Alerts.create_alert(alert_attrs)
 
-    Alerts.create_alert(alert_attrs)
+        {:noreply,
+         assign(socket,
+           session_started: true,
+           session_start_time: session.start_time,
+           active_session: session
+         )}
 
-    {:noreply,
-     assign(socket,
-       session_started: true,
-       session_start_time: DateTime.utc_now()
-     )}
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to start session.")}
+    end
   end
 
   @impl true
@@ -89,44 +93,50 @@ defmodule AnkaaWeb.MonitoringLive do
     patient_name = socket.assigns.current_user.patient.name || "Your patient"
     patient_id = socket.assigns.current_user.patient.id
 
-    case Sessions.end_session(socket.assigns.active_session) do
-      {:ok, ended_session} ->
-        duration_in_minutes =
-          Timex.diff(ended_session.end_time, ended_session.start_time, :minutes)
+    case socket.assigns.active_session do
+      nil ->
+        {:noreply, put_flash(socket, :error, "No active session to end.")}
 
-        alert_message =
-          "✅ #{patient_name}'s session ended successfully after #{duration_in_minutes} minutes."
+      session ->
+        case Sessions.end_session(socket.assigns.active_session) do
+          {:ok, ended_session} ->
+            duration_in_minutes =
+              Timex.diff(ended_session.end_time, ended_session.start_time, :minutes)
 
-        {:ok, alert} =
-          Ankaa.Alerts.create_alert(%{
-            type: "Session",
-            message: alert_message,
-            patient_id: patient_id,
-            severity: "info"
-          })
+            alert_message =
+              "✅ #{patient_name}'s session ended successfully after #{duration_in_minutes} minutes."
 
-        Phoenix.PubSub.broadcast(
-          Ankaa.PubSub,
-          "patient:#{patient_id}:alerts",
-          {:new_alert, alert}
-        )
+            {:ok, alert} =
+              Ankaa.Alerts.create_alert(%{
+                type: "Session",
+                message: alert_message,
+                patient_id: patient_id,
+                severity: "info"
+              })
 
-        socket =
-          put_flash(
-            socket,
-            :info,
-            "Session ended successfully."
-          )
+            Phoenix.PubSub.broadcast(
+              Ankaa.PubSub,
+              "patient:#{patient_id}:alerts",
+              {:new_alert, alert}
+            )
 
-        {:noreply,
-         assign(socket,
-           session_started: false,
-           session_start_time: nil,
-           active_session: nil
-         )}
+            socket =
+              put_flash(
+                socket,
+                :info,
+                "Session ended successfully."
+              )
 
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Failed to end session.")}
+            {:noreply,
+             assign(socket,
+               session_started: false,
+               session_start_time: nil,
+               active_session: nil
+             )}
+
+          {:error, _changeset} ->
+            {:noreply, put_flash(socket, :error, "Failed to end session.")}
+        end
     end
   end
 
