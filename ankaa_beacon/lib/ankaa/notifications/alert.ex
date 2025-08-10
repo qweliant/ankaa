@@ -1,7 +1,7 @@
 defmodule Ankaa.Notifications.Alert do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ankaa.{Accounts.User, Patients.Patient}
+  alias Ankaa.{Accounts.User, Patients.Patient, Notifications.Notification}
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -15,13 +15,15 @@ defmodule Ankaa.Notifications.Alert do
     field(:dismissed_at, :utc_datetime)
     field(:dismissal_reason, :string)
 
-    belongs_to(:dismissed_by, Ankaa.Accounts.User,
+    belongs_to(:dismissed_by, User,
       foreign_key: :dismissed_by_user_id,
       type: :binary_id
     )
 
     belongs_to(:patient, Patient, foreign_key: :patient_id, type: :binary_id)
     belongs_to(:resolved_by, User, foreign_key: :resolved_by_id, type: :binary_id)
+
+    has_many(:notifications, Notification)
 
     timestamps()
   end

@@ -1,7 +1,8 @@
 defmodule AnkaaWeb.AlertBanner do
   use AnkaaWeb, :live_component
+
   alias Ankaa.Alerts
-  alias Ankaa.Accounts.User
+  alias Ankaa.Notifications
 
   @impl true
   def update(assigns, socket) do
@@ -10,55 +11,10 @@ defmodule AnkaaWeb.AlertBanner do
 
   @impl true
   def handle_event("dismiss_alert", %{"alert_id" => alert_id}, socket) do
-    alert = Enum.find(socket.assigns.active_alerts, &(&1.id == alert_id))
     user = socket.assigns.current_user
-
-    case alert do
-      nil ->
-        # Alert wasn't found, do nothing.
-        {:noreply, socket}
-
-      found_alert ->
-        case alert.severity do
-          "info" ->
-            case Alerts.dismiss_alert(found_alert, user, "info_dismissed") do
-              {:ok, dismissed_alert} ->
-                socket = push_event(socket, "dismiss_info_alert", %{id: dismissed_alert.id})
-                {:noreply, socket}
-
-              {:error, _} ->
-                {:noreply, put_flash(socket, :error, "Failed to dismiss alert")}
-            end
-
-          "high" ->
-            dismissal_reason =
-              if User.is_patient?(user),
-                do: "patient_self_dismissal",
-                else: "care_provider_dismissal"
-
-            case Alerts.dismiss_alert(found_alert, user, dismissal_reason) do
-              {:ok, _} ->
-                {:noreply, socket}
-
-              {:error, reason} ->
-                {:noreply, put_flash(socket, :error, reason)}
-            end
-
-          "critical" ->
-            if user.role in ["doctor", "nurse"] do
-              case Alerts.dismiss_alert(found_alert, user, "clinical_dismissal") do
-                {:ok, _} ->
-                  {:noreply, socket}
-
-                {:error, reason} ->
-                  {:noreply, put_flash(socket, :error, reason)}
-              end
-            else
-              {:noreply,
-               put_flash(socket, :error, "Only doctors and nurses can dismiss critical alerts.")}
-            end
-        end
-    end
+    Notifications.dismiss_notification(user.id, alert_id)
+    send(self(), {:alert_dismissed, alert_id})
+    {:noreply, socket}
   end
 
   @impl true
@@ -103,46 +59,54 @@ defmodule AnkaaWeb.AlertBanner do
   def render(assigns) do
     ~H"""
     <div id="alert-banner-portal">
-      <%= for alert <- @active_alerts do %>
-        <div class={alert_classes(alert.severity)}
-             id={"alert-#{alert.id}"}
-             data-alert-id={alert.id}
-             data-severity={alert.severity}>
-
+      <%= for item <- @active_alerts do %>
+        <%!-- `item` is a map like %{alert: alert, notification: notification} --%>
+        <div
+          class={alert_classes(item.alert.severity)}
+          id={"alert-#{item.alert.id}"}
+          data-alert-id={item.alert.id}
+          data-severity={item.alert.severity}
+        >
           <div class="flex items-start justify-between p-4">
             <div class="flex items-start">
-              <.alert_icon severity={alert.severity} />
+              <.alert_icon severity={item.alert.severity} />
 
               <div class="ml-3 flex-1">
                 <div class="flex items-center">
-                  <h3 class={alert_title_classes(alert.severity)}>
-                    <%= alert_title(alert) %>
+                  <h3 class={alert_title_classes(item.alert.severity)}>
+                    <%= alert_title(item.alert) %>
                   </h3>
 
-                  <%= if alert.severity == "critical" && !alert.acknowledged do %>
+                  <%= if item.alert.severity == "critical" && !item.alert.acknowledged do %>
                     <div class="ml-4 flex items-center text-sm">
                       <div class="animate-pulse h-2 w-2 bg-red-500 rounded-full mr-2"></div>
                       <span class="text-red-700 font-medium">
-                        EMS auto-contact in: <span id={"timer-#{alert.id}"} phx-hook="CountdownTimer" data-end-time={ems_contact_time(alert)}>15:00</span>
+                        EMS auto-contact in: <span
+                          id={"timer-#{item.alert.id}"}
+                          phx-hook="CountdownTimer"
+                          data-end-time={ems_contact_time(item.alert)}
+                        >15:00</span>
                       </span>
                     </div>
                   <% end %>
                 </div>
 
-                <div class={alert_message_classes(alert.severity)}>
-                  <%= alert.message %>
+                <div class={alert_message_classes(item.alert.severity)}>
+                  <%= item.alert.message %>
                 </div>
 
-                <%= if alert.severity == "critical" && !alert.acknowledged do %>
+                <%= if item.alert.severity == "critical" && !item.alert.acknowledged do %>
                   <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                     <p class="text-sm text-red-800 mb-2">
                       <strong>⚠️ Critical Alert:</strong> This alert requires immediate acknowledgment.
                       EMS will be automatically contacted in 15 minutes if not acknowledged.
                     </p>
-                    <button phx-click="acknowledge_critical"
-                            phx-value-alert_id={alert.id}
-                            phx-target={@myself}
-                            class="bg-red-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-red-700">
+                    <button
+                      phx-click="acknowledge_critical"
+                      phx-value-alert_id={item.alert.id}
+                      phx-target={@myself}
+                      class="bg-red-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-red-700"
+                    >
                       ✓ Acknowledge & Stop EMS Timer
                     </button>
                   </div>
@@ -151,31 +115,37 @@ defmodule AnkaaWeb.AlertBanner do
             </div>
 
             <div class="flex items-center space-x-2">
-              <%= if alert.severity == "high" && User.is_patient?(@current_user) do %>
-                <button class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium hover:bg-green-200"
-                        phx-click="dismiss_alert"
-                        phx-value-alert_id={alert.id}
-                        phx-target={@myself}>
+              <%= if item.alert.severity == "high" && User.is_patient?(@current_user) do %>
+                <button
+                  class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium hover:bg-green-200"
+                  phx-click="dismiss_alert"
+                  phx-value-alert_id={item.alert.id}
+                  phx-target={@myself}
+                >
                   I'm feeling fine
                 </button>
               <% end %>
 
-              <%= if alert.severity == "high" && @current_user.role in ["doctor", "nurse", "caresupport"] do %>
-                <button class="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm font-medium hover:bg-blue-200"
-                        phx-click="check_on_patient"
-                        phx-value-alert_id={alert.id}
-                        phx-value-patient_id={alert.patient_id}
-                        phx-target={@myself}>
+              <%= if item.alert.severity == "high" && @current_user.role in ["doctor", "nurse", "caresupport"] do %>
+                <button
+                  class="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm font-medium hover:bg-blue-200"
+                  phx-click="check_on_patient"
+                  phx-value-alert_id={item.alert.id}
+                  phx-value-patient_id={item.alert.patient_id}
+                  phx-target={@myself}
+                >
                   Check on Patient
                 </button>
               <% end %>
 
-              <%= if can_dismiss_alert?(alert, @current_user) do %>
-                <button class={dismiss_button_classes(alert.severity)}
-                        phx-click="dismiss_alert"
-                        phx-value-alert_id={alert.id}
-                        phx-target={@myself}>
-                  <%= dismiss_button_text(alert.severity) %>
+              <%= if can_dismiss?(item, @current_user) do %>
+                <button
+                  class={dismiss_button_classes(item.alert.severity)}
+                  phx-click="dismiss_alert"
+                  phx-value-alert_id={item.alert.id}
+                  phx-target={@myself}
+                >
+                  <%= dismiss_button_text(item) %>
                 </button>
               <% end %>
             </div>
@@ -229,12 +199,14 @@ defmodule AnkaaWeb.AlertBanner do
     end
   end
 
-  defp can_dismiss_alert?(alert, user) do
+  defp can_dismiss?(%{alert: alert, notification: _notification}, user) do
     case alert.severity do
       "info" -> true
-      # Patients and care providers can both dismiss
       "high" -> true
-      "critical" -> user.role in ["doctor", "nurse"]
+      # A critical alert can only be dismissed after it's been acknowledged
+      # by a qualified user.
+      "critical" -> alert.acknowledged && user.role in ["doctor", "nurse"]
+      _ -> false
     end
   end
 
@@ -244,9 +216,13 @@ defmodule AnkaaWeb.AlertBanner do
   defp dismiss_button_classes("critical"),
     do: "text-red-800 hover:text-red-900 text-sm font-medium"
 
-  defp dismiss_button_text("info"), do: "×"
-  defp dismiss_button_text("high"), do: "Dismiss"
-  defp dismiss_button_text("critical"), do: "Dismiss"
+  defp dismiss_button_text(%{alert: alert, notification: notification}) do
+    if alert.severity in ["high", "critical"] and notification.status == "unread" do
+      "Acknowledge"
+    else
+      "Dismiss"
+    end
+  end
 
   defp ems_contact_time(alert) do
     # Calculate 15 minutes from alert creation

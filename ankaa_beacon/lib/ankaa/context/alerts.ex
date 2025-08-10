@@ -8,15 +8,45 @@ defmodule Ankaa.Alerts do
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications.Alert
   alias Ankaa.Notifications.AlertTimer
+  alias Ankaa.Notifications.Notification
   alias Ankaa.Repo
 
   require Logger
 
   def create_alert(attrs) do
-    case %Alert{}
-         |> Alert.changeset(attrs)
-         |> Repo.insert() do
-      {:ok, alert} ->
+    patient_id = attrs["patient_id"] || attrs[:patient_id]
+    care_network_user_ids = get_care_network_for_alerts(patient_id)
+
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:alert, Alert.changeset(%Alert{}, attrs))
+      |> Ecto.Multi.run(:notifications, fn repo, %{alert: alert} ->
+        # This step runs after the alert is successfully inserted.
+        # We create a list of notification structs to be inserted all at once.
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+        notifications =
+          Enum.map(care_network_user_ids, fn user_id ->
+            %{
+              alert_id: alert.id,
+              user_id: user_id,
+              status: "unread",
+              inserted_at: now,
+              updated_at: now
+            }
+          end)
+
+        case repo.insert_all(Notification, notifications) do
+          {count, nil} ->
+            {:ok, %{count: count}}
+
+          other ->
+            {:error, other}
+        end
+      end)
+
+    case Repo.transaction(multi) do
+      {:ok, %{alert: alert}} ->
         if alert.severity == "critical" do
           AlertTimer.start_link(alert)
         end
@@ -24,9 +54,9 @@ defmodule Ankaa.Alerts do
         broadcast_alert_created(alert)
         {:ok, alert}
 
-      error ->
-        Logger.error("Failed to create alert: #{inspect(error)}")
-        {:error, error}
+      {:error, _failed_operation, failed_value, _changes_so_far} ->
+        Logger.error("Failed to create alert: #{inspect(failed_value)}")
+        {:error, failed_value}
     end
   end
 
@@ -66,22 +96,25 @@ defmodule Ankaa.Alerts do
   end
 
   @doc """
-  Gets all active alerts for the patients associated with a given provider.
+  Gets all active alerts for a provider, excluding any they have dismissed.
   """
   def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
-    patients = Patients.list_patients_for_any_role(user)
-    patient_ids = Enum.map(patients, & &1.id)
-
-    if patient_ids == [] do
-      []
-    else
+    # This query finds all alerts for a user WHERE a corresponding
+    # notification for that user does NOT have a status of "dismissed".
+    query =
       from(a in Alert,
-        where: a.patient_id in ^patient_ids and a.status == "active",
+        join: n in Notification,
+        on: a.id == n.alert_id,
+        join: p_assoc in CareNetwork,
+        on: a.patient_id == p_assoc.patient_id,
+        where: p_assoc.user_id == ^user.id and n.user_id == ^user.id,
+        where: n.status in ["unread", "acknowledged"],
         order_by: [desc: a.inserted_at],
-        preload: [:patient]
+        preload: [:patient],
+        select: %{alert: a, notification: n}
       )
-      |> Repo.all()
-    end
+
+    Repo.all(query)
   end
 
   @doc """

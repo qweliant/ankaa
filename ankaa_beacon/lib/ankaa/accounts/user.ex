@@ -4,6 +4,7 @@ defmodule Ankaa.Accounts.User do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
+  @roles ["admin", "doctor", "nurse", "caresupport", "technical_support"]
   schema "users" do
     field(:email, :string)
     field(:first_name, :string)
@@ -17,6 +18,10 @@ defmodule Ankaa.Accounts.User do
     has_one(:patient, Ankaa.Patients.Patient)
     has_many(:care_network, Ankaa.Patients.CareNetwork)
     has_many(:associated_patients, through: [:care_network, :patient])
+    has_many(:alerts_resolved, Ankaa.Notifications.Alert)
+    has_many(:alerts_dismissed, Ankaa.Notifications.Alert)
+
+    has_many(:notifications, Ankaa.Notifications.Notification)
 
     timestamps(type: :utc_datetime)
   end
@@ -176,12 +181,13 @@ defmodule Ankaa.Accounts.User do
 
   @doc """
   A changeset for updating a user's role.
+
+  Validates that the role is present and is one of the allowed roles defined in `@roles`.
   """
   def role_changeset(user, attrs) do
     user
-    |> cast(attrs, [:role])
+    |> validate_inclusion(:role, @roles, message: "must be one of: #{Enum.join(@roles, ", ")}")
     |> validate_required([:role])
-    |> foreign_key_constraint(:role, name: :users_role_fkey, message: "is not a valid role")
   end
 
   @doc """

@@ -168,15 +168,6 @@ defmodule AnkaaWeb.MonitoringLive do
   end
 
   @impl true
-  def handle_info({:new_alert, alert}, socket) do
-    # This will receive the session start alert we just created
-    # For now, we'll just log it, but you could show additional UI feedback
-    require Logger
-    Logger.info("Patient received alert confirmation: #{alert.message}")
-    {:noreply, socket}
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
