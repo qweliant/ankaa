@@ -12,23 +12,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - ankaa_network
-  timescale:
-    image: timescale/timescaledb-ha:pg17
-    container_name: ankaa_timescale_dev
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ankaa_timescale_dev
-    ports:
-      - "5433:5432" # Map host 5433 to container's 5432
-    volumes:
-      - timescale_data:/var/lib/postgresql/data
-    networks:
-      - ankaa_network
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
   mqtt:
     image: eclipse-mosquitto:2.0
     container_name: mqtt_broker
@@ -66,31 +49,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  # phoenix:
-  #   build:
-  #     context: ./ankaa_beacon
-  #     dockerfile: Dockerfile.dev
-  #   container_name: ankaa_phoenix
-  #   depends_on:
-  #     - postgres
-  #     - timescale
-  #     - mqtt
-  #   env_file:
-  #     - ./ankaa_beacon/.env
-  #   environment:
-  #     - MIX_ENV=dev
-  #   ports:
-  #     - "4000:4000"
-  #   networks:
-  #     - ankaa_network
-  #   volumes:
-  #     - ./ankaa_beacon:/app
-  #     - phoenix_deps:/app/deps
-  #     - phoenix_build:/app/_build
-  #   logging:
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "3"
   inbucket:
     image: inbucket/inbucket
     container_name: inbucket
@@ -109,7 +67,6 @@ networks:
 
 volumes:
   postgres_data:
-  timescale_data:
   mosquitto_data:
   mosquitto_logs:
   phoenix_deps:

@@ -10,7 +10,7 @@ defmodule Ankaa.NotificationsTest do
 
   describe "alerts" do
     setup do
-      start_supervised!({Registry, keys: :unique, name: Ankaa.Alerts.AlertRegistry})
+      start_supervised!({Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry})
       :ok
     end
 
@@ -155,10 +155,10 @@ defmodule Ankaa.NotificationsTest do
           severity: "critical"
         })
 
-      assert Registry.whereis_name({Ankaa.Alerts.AlertRegistry, alert.id}) != :undefined
+      assert Registry.whereis_name({Ankaa.Notifications.AlertRegistry, alert.id}) != :undefined
       assert {:ok, %Alert{} = acked_alert} = Alerts.acknowledge_critical_alert(alert, doctor.id)
       assert acked_alert.acknowledged == true
-      assert Registry.whereis_name({Ankaa.Alerts.AlertRegistry, alert.id}) == :undefined
+      assert Registry.whereis_name({Ankaa.Notifications.AlertRegistry, alert.id}) == :undefined
     end
   end
 end

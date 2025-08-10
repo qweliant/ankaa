@@ -21,19 +21,10 @@ defmodule Ankaa.Application do
       # Start the Endpoint (http/https)
       AnkaaWeb.Endpoint,
       # Start the Registry for alerts
-      {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry}
+      {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry},
+      # Start the Registry for
+      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry}
     ]
-
-    # Only start MQTT consumer in dev environment
-    children =
-      if Application.get_env(:ankaa, :env) in [:test, :prod] do
-        children
-      else
-        children ++
-          [
-            {Ankaa.Workers.MQTTConsumer, []}
-          ]
-      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
