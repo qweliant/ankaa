@@ -10,11 +10,10 @@ defmodule Ankaa.NotificationsTest do
 
   describe "alerts" do
     setup do
-      start_supervised!({Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry})
-      :ok
-    end
+      # Start the registry once for this test's process
+      # start_supervised!({Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry})
 
-    setup do
+      # Create all the fixtures needed for the tests
       patient_user = AccountsFixtures.patient_fixture()
       nurse_user = AccountsFixtures.nurse_fixture()
       doctor_user = AccountsFixtures.doctor_fixture()
@@ -23,6 +22,7 @@ defmodule Ankaa.NotificationsTest do
 
       Patients.create_patient_association(nurse_user, patient_user.patient, "nurse")
 
+      # Return everything in a single context map
       %{
         patient: patient_user.patient,
         nurse: nurse_user,
@@ -118,7 +118,7 @@ defmodule Ankaa.NotificationsTest do
       alerts_for_nurse = Alerts.get_active_alerts_for_user(nurse)
 
       assert length(alerts_for_nurse) == 1
-      assert hd(alerts_for_nurse).message == "Nurse should see this"
+      assert hd(alerts_for_nurse).alert.message == "Nurse should see this"
     end
 
     test "dismiss_alert/3 updates the alert's status and audit fields", %{
@@ -133,10 +133,10 @@ defmodule Ankaa.NotificationsTest do
           severity: "high"
         })
 
+      # Pass the full `alert` and `nurse` structs, not their IDs
       assert {:ok, %Alert{} = dismissed_alert} =
-               Alerts.dismiss_alert(alert.id, nurse.id, "Test dismissal")
+               Alerts.dismiss_alert(alert, nurse, "Test dismissal")
 
-      # 3. Assert: The audit fields are now correctly set.
       assert dismissed_alert.status == "dismissed"
       assert dismissed_alert.dismissed_by_user_id == nurse.id
       assert dismissed_alert.dismissal_reason == "Test dismissal"

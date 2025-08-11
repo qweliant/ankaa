@@ -25,5 +25,5 @@ defmodule Ankaa.Notifications.AlertTimer do
     {:stop, :normal, state}
   end
 
-  defp via_tuple(alert_id), do: {:via, Registry, {Notifications.AlertRegistry, alert_id}}
+  defp via_tuple(alert_id), do: {:via, Registry, {Ankaa.Notifications.AlertRegistry, alert_id}}
 end
