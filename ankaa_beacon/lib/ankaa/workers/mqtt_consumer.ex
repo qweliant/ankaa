@@ -1,60 +1,72 @@
 defmodule Ankaa.Workers.MQTTConsumer do
-  use Supervisor
+  use GenServer
   require Logger
 
-  def start_link(init_arg) do
-    IO.puts("Starting MQTT Consumer...")
-    Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   @impl true
-  def init(_init_arg) do
-    IO.puts("Initializing MQTT Consumer...")
-    IO.puts("Attempting to start :emqtt client...")
-
-    # We'll manually call start_link to see its return value
-    client_opts = client_options()
-    IO.inspect(client_opts, label: "MQTT Client Options")
-    emqtt_result = :emqtt.start_link(client_opts)
-    IO.inspect(emqtt_result, label: "emqtt.start_link result")
-
-    # This part below is now effectively disabled for our test,
-    # as the manual call above will likely crash if there's an issue.
-    children = [
-      %{id: :emqtt_client, start: {:emqtt, :start_link, [client_options()]}}
-    ]
-
-    Supervisor.init(children, strategy: :one_for_one)
-  end
-
-  def on_connect(client, _connack) do
-    Logger.info("MQTT Dispatcher: Connected. Subscribing to device topics...")
-    :emqtt.subscribe(client, [{"devices/+/telemetry", 0}])
-  end
-
-  def on_publish(_client, %{topic: topic, payload: payload}) do
-    topic_str = to_string(topic)
-    [_, device_id, _] = String.split(topic_str, "/")
-    {:ok, _pid} = Ankaa.Monitoring.DeviceServer.start_link(device_id)
-    Ankaa.Monitoring.DeviceServer.handle_reading(device_id, payload)
-  end
-
-  defp client_options do
-    mqtt_config = Application.get_env(:ankaa, :mqtt)
+  def init(:ok) do
+    Logger.info("MQTTConsumer: Initializing and connecting to broker...")
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
 
-    [
-      name: :emqtt_client,
-      host: Keyword.get(mqtt_config, :host, "localhost") |> to_charlist(),
-      port: Keyword.get(mqtt_config, :port, 1883),
+    opts = [
+      host: "localhost",
+      port: 1883,
       clientid: String.to_charlist(client_id),
-      username: Keyword.get(mqtt_config, :username) |> to_charlist_or_nil(),
-      password: Keyword.get(mqtt_config, :password) |> to_charlist_or_nil(),
-      conn_mod: __MODULE__,
-      ssl_opts: Keyword.get(mqtt_config, :ssl_options, [])
+      clean_start: true,
+      keepalive: 60,
+      proto_ver: :v5
     ]
+
+    {:ok, client} = :emqtt.start_link(opts)
+
+    case :emqtt.connect(client) do
+      # Match the {:ok, properties} tuple for a successful connection
+      {:ok, _properties} ->
+        Logger.info("MQTTConsumer: Successfully connected to broker!")
+        :emqtt.subscribe(client, [{"devices/+/telemetry", 0}])
+        {:ok, %{client: client}}
+
+      {:error, reason} ->
+        Logger.error("MQTTConsumer: Failed to connect: #{inspect(reason)}")
+        {:stop, reason}
+    end
   end
 
-  defp to_charlist_or_nil(nil), do: nil
-  defp to_charlist_or_nil(binary), do: String.to_charlist(binary)
+  @impl true
+  def handle_info({:publish, %{topic: topic, payload: payload}}, state) do
+    topic_str = to_string(topic)
+    Logger.debug("MQTTConsumer: Received message on topic '#{topic_str}'")
+
+    [_, device_id, _] = String.split(topic_str, "/")
+
+    # Ensure a specialist process is running for this device.
+    # We gracefully handle the case where it's already started.
+    case Ankaa.Monitoring.DeviceServer.start_link(device_id) do
+      {:ok, _pid} ->
+        # Process started successfully for the first time.
+        :ok
+
+      {:error, {:already_started, _pid}} ->
+        # Process was already running, which is the normal case.
+        :ok
+
+      {:error, reason} ->
+        # Some other error happened during start, log it.
+        Logger.error("Failed to start DeviceServer for #{device_id}: #{inspect(reason)}")
+    end
+
+    # Now that we know the process is running, dispatch the message to it.
+    Ankaa.Monitoring.DeviceServer.handle_reading(device_id, payload)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:disconnected, reason}, state) do
+    Logger.warning("MQTTConsumer: Disconnected from broker: #{inspect(reason)}")
+    {:noreply, state}
+  end
 end
