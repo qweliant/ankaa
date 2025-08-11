@@ -35,7 +35,8 @@ config :ankaa, :mqtt,
   clean_session: true,
   keep_alive: 60,
   reconnect_timeout: 5_000,
-  test_mode: true
+  test_mode: true,
+  enable_ssl: false
 
 # Configure your application
 config :ankaa, :ecto_repos, [Ankaa.Repo]
