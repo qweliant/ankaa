@@ -27,7 +27,7 @@ config :ankaa, Ankaa.Repo,
 
 # Configure MQTT for testing
 config :ankaa, :mqtt,
-  host: "mqtt_broker",
+  host: System.get_env("MQTT_HOST", "localhost"),
   port: 1883,
   client_id: "ankaa_test",
   username: nil,

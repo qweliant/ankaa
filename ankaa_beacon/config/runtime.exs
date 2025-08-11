@@ -43,15 +43,7 @@ if config_env() == :prod do
     # ]
 
 
-  config :ankaa, :mqtt,
-    host: System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set"),
-    port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
-    username: System.get_env("MQTT_USER"),
-    password: System.get_env("MQTT_PASSWORD"),
-    ssl_options: [
-      verify: :verify_peer,
-      cacertfile: "priv/cert/emqxsl-ca.crt"
-    ]
+s
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   secret_key_base =
