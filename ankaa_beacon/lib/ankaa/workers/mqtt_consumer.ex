@@ -3,11 +3,23 @@ defmodule Ankaa.Workers.MQTTConsumer do
   require Logger
 
   def start_link(init_arg) do
+    IO.puts("Starting MQTT Consumer...")
     Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
   end
 
   @impl true
   def init(_init_arg) do
+    IO.puts("Initializing MQTT Consumer...")
+    IO.puts("Attempting to start :emqtt client...")
+
+    # We'll manually call start_link to see its return value
+    client_opts = client_options()
+    IO.inspect(client_opts, label: "MQTT Client Options")
+    emqtt_result = :emqtt.start_link(client_opts)
+    IO.inspect(emqtt_result, label: "emqtt.start_link result")
+
+    # This part below is now effectively disabled for our test,
+    # as the manual call above will likely crash if there's an issue.
     children = [
       %{id: :emqtt_client, start: {:emqtt, :start_link, [client_options()]}}
     ]

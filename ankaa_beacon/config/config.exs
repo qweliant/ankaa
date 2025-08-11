@@ -8,7 +8,6 @@
 import Config
 
 config :ankaa,
-  # ecto_repos: [Ankaa.Repo, Ankaa.TimescaleRepo],
   ecto_repos: [Ankaa.Repo],
   generators: [timestamp_type: :utc_datetime]
 

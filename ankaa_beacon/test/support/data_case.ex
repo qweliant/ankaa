@@ -9,8 +9,6 @@ defmodule Ankaa.DataCase do
   using do
     quote do
       alias Ankaa.Repo
-      alias Ankaa.TimescaleRepo
-
       import Ecto
       import Ecto.Changeset
       import Ecto.Query

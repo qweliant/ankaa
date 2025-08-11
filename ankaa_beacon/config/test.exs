@@ -25,16 +25,6 @@ config :ankaa, Ankaa.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
-# Configure TimescaleDB
-config :ankaa, Ankaa.TimescaleRepo,
-  username: "user",
-  password: "password",
-  hostname: "localhost",
-  database: "ankaa_timescale_test",
-  port: 5433,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
-
 # Configure MQTT for testing
 config :ankaa, :mqtt,
   host: "mqtt_broker",
@@ -48,7 +38,7 @@ config :ankaa, :mqtt,
   test_mode: true
 
 # Configure your application
-config :ankaa, :ecto_repos, [Ankaa.Repo, Ankaa.TimescaleRepo]
+config :ankaa, :ecto_repos, [Ankaa.Repo]
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

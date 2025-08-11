@@ -2,9 +2,6 @@ defmodule Ankaa.Monitoring.DeviceServer do
   use GenServer
   require Logger
 
-  alias Ankaa.Alerts
-  alias Ankaa.Monitoring
-
   def start_link(device_id) do
     GenServer.start_link(__MODULE__, device_id, name: via_tuple(device_id))
   end

@@ -1,6 +1,6 @@
 defmodule Ankaa.Monitoring.DialysisDeviceReading do
   @moduledoc """
-  Schema for dialysis device readings stored in TimescaleDB.
+  Schema for dialysis device readings stored in Columnar format.
   """
   use Ecto.Schema
   import Ecto.Changeset

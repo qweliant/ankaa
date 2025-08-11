@@ -31,15 +31,6 @@ config :ankaa, :env, :prod
 #   port: String.to_integer(System.get_env("PROD_POSTGRES_PORT") || "5432"),
 #   ssl: true
 
-# # Configure your TimescaleDB database
-# config :ankaa, Ankaa.TimescaleRepo,
-#   username: System.get_env("PROD_TIMESCALE_USER"),
-#   password: System.get_env("PROD_TIMESCALE_PASSWORD"),
-#   hostname: System.get_env("PROD_TIMESCALE_HOST"),
-#   database: System.get_env("PROD_TIMESCALE_DB"),
-#   port: String.to_integer(System.get_env("PROD_TIMESCALE_PORT") || "5433"),
-#   ssl: true
-
 # # Configure your MQTT broker
 # config :ankaa, :mqtt,
 #   host: System.get_env("PROD_MQTT_HOST"),

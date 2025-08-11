@@ -82,7 +82,6 @@ The system aims to:
 - [![Elixir][Elixir-badge]][Elixir-url]
 - [![Phoenix][Phoenix-badge]][Phoenix-url]
 - [![Rust][Rust-badge]][Rust-url]
-- [![TimescaleDB][TimescaleDB-badge]][TimescaleDB-url]
 - [![PostgreSQL][PostgreSQL-badge]][PostgreSQL-url]
 - [![Mosquitto][Mosquitto-badge]][Mosquitto-url]
 - [![Docker][Docker-badge]][Docker-url]
@@ -137,7 +136,6 @@ The system is built as a microservices architecture with the following component
 
 4. **Data Storage**:
    - PostgreSQL: General purpose database
-   - TimescaleDB: Time-series database for IoT sensor data
 
 <!-- ROADMAP -->
 

@@ -3,6 +3,7 @@ defmodule AnkaaWeb.AlertBanner do
 
   alias Ankaa.Alerts
   alias Ankaa.Notifications
+  alias Ankaa.Accounts
 
   @impl true
   def update(assigns, socket) do
@@ -115,7 +116,7 @@ defmodule AnkaaWeb.AlertBanner do
             </div>
 
             <div class="flex items-center space-x-2">
-              <%= if item.alert.severity == "high" && User.is_patient?(@current_user) do %>
+              <%= if item.alert.severity == "high" && Accounts.is_patient?(@current_user) do %>
                 <button
                   class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium hover:bg-green-200"
                   phx-click="dismiss_alert"

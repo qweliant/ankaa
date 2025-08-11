@@ -1,6 +1,6 @@
 defmodule Ankaa.Monitoring.BPDeviceReading do
   @moduledoc """
-  Schema for blood pressure device readings stored in TimescaleDB.
+  Schema for blood pressure device readings stored in Columnar format.
   """
   use Ecto.Schema
   import Ecto.Changeset

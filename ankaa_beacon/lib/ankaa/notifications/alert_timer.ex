@@ -1,6 +1,5 @@
 defmodule Ankaa.Notifications.AlertTimer do
   use GenServer
-  alias Ankaa.Alerts
   require Logger
 
   @ems_delay :timer.minutes(15)

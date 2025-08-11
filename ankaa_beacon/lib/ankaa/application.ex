@@ -12,8 +12,6 @@ defmodule Ankaa.Application do
       AnkaaWeb.Telemetry,
       # Start the Ecto repository
       Ankaa.Repo,
-      # Start the TimescaleDB repository
-      # Ankaa.TimescaleRepo,
       # Start the PubSub system
       {Phoenix.PubSub, name: Ankaa.PubSub},
       # Start Finch
@@ -23,7 +21,9 @@ defmodule Ankaa.Application do
       # Start the Registry for alerts
       {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry},
       # Start the Registry for
-      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry}
+      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry},
+      # Start the MQTT Consumer
+      Ankaa.Workers.MQTTConsumer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
