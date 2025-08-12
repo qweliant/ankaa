@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
-      MQTT_HOST: localhost
+      MQTT_HOST: mqtt
     services:
       postgres:
         image: postgres:17
