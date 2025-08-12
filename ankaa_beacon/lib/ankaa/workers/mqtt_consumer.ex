@@ -8,27 +8,31 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
   @impl true
   def init(:ok) do
-    Logger.info("MQTTConsumer: Initializing and connecting to broker...")
+    Logger.info("MQTTConsumer: Initializing...")
+    # Start the client process but don't connect yet.
+    {:ok, client} = :emqtt.start_link(client_options())
 
-    # Call the helper function to get the correct options for the environment
-    opts = client_options()
-
-    {:ok, client} = :emqtt.start_link(opts)
-
-    # case :emqtt.connect(client) do
-    #   {:ok, _properties} ->
-    #     Logger.info("MQTTConsumer: Successfully connected to broker!")
-    #     :emqtt.subscribe(client, [{"devices/+/telemetry", 0}])
-    #     {:ok, %{client: client}}
-
-    #   {:error, reason} ->
-    #     Logger.error("MQTTConsumer: Failed to connect: #{inspect(reason)}")
-    #     {:stop, reason}
-    # end
-
-    Logger.info("MQTTConsumer: Successfully connected to broker!")
+    # Send a message to ourself to trigger the connection attempt.
+    # This makes the init function non-blocking.
+    send(self(), :connect)
 
     {:ok, %{client: client}}
+  end
+
+  @impl true
+  def handle_info(:connect, state) do
+    Logger.info("MQTTConsumer: Attempting to connect to broker...")
+
+    case :emqtt.connect(state.client) do
+      {:ok, _properties} ->
+        Logger.info("MQTTConsumer: Successfully connected to broker!")
+        :emqtt.subscribe(state.client, [{"devices/+/telemetry", 0}])
+
+      {:error, reason} ->
+        Logger.error("MQTTConsumer: Failed to connect on first attempt: #{inspect(reason)}")
+    end
+
+    {:noreply, state}
   end
 
   @impl true
@@ -37,14 +41,9 @@ defmodule Ankaa.Workers.MQTTConsumer do
     [_, device_id, _] = String.split(topic_str, "/")
 
     case Ankaa.Monitoring.DeviceServer.start_link(device_id) do
-      {:ok, _pid} ->
-        :ok
-
-      {:error, {:already_started, _pid}} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Failed to start DeviceServer for #{device_id}: #{inspect(reason)}")
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+      {:error, reason} -> Logger.error("Failed to start DeviceServer: #{inspect(reason)}")
     end
 
     Ankaa.Monitoring.DeviceServer.handle_reading(device_id, payload)
@@ -57,17 +56,21 @@ defmodule Ankaa.Workers.MQTTConsumer do
     {:noreply, state}
   end
 
-  # This is the helper function that reads from your config files
   defp client_options do
     mqtt_config = Application.get_env(:ankaa, :mqtt, [])
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
 
+    port = Keyword.get(mqtt_config, :port, 1883)
+    port = if is_binary(port), do: String.to_integer(port), else: port
+
     [
+      name: :emqtt_client,
       host: Keyword.get(mqtt_config, :host, "localhost") |> to_charlist(),
-      port: Keyword.get(mqtt_config, :port, 1883),
+      port: port,
       clientid: String.to_charlist(client_id),
-      username: Keyword.get(mqtt_config, :username, "") |> to_charlist(),
-      password: Keyword.get(mqtt_config, :password, "") |> to_charlist(),
+      username: Keyword.get(mqtt_config, :username, '') |> to_charlist(),
+      password: Keyword.get(mqtt_config, :password, '') |> to_charlist(),
+      conn_mod: __MODULE__,
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
       ssl_opts: Keyword.get(mqtt_config, :ssl_options, [])
     ]
