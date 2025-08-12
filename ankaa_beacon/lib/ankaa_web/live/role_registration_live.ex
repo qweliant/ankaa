@@ -1,4 +1,4 @@
-defmodule AnkaaWeb.TokenRegistrationLive do
+defmodule AnkaaWeb.RoleRegistrationLive do
   use AnkaaWeb, :live_view
   import AnkaaWeb.UserAuth
 
@@ -59,21 +59,26 @@ defmodule AnkaaWeb.TokenRegistrationLive do
   def handle_event("save", %{"user" => %{"token" => token}}, socket) do
     user = socket.assigns.current_user
     role = socket.assigns.selected_role
-    is_valid_token = token == role || (role == "patient" && token == "patient")
 
-    if is_valid_token do
-      case Accounts.assign_role(user, role) do
-        {:ok, _updated_user} ->
-          {:noreply, assign(socket, show_name_form: true)}
-
-        {:error, _changeset} ->
-          {:noreply, put_flash(socket, :error, "Failed to assign role. Please try again.")}
-      end
+    if role == "patient" and token == "patient" do
+      {:noreply, assign(socket, show_name_form: true)}
     else
-      {:noreply,
-       socket
-       |> put_flash(:error, "Invalid token for selected role. Please try again.")
-       |> assign(form: to_form(%{"token" => ""}, as: :user))}
+      is_valid_token = token == role
+
+      if is_valid_token do
+        case Accounts.assign_role(user, role) do
+          {:ok, _updated_user} ->
+            {:noreply, assign(socket, show_name_form: true)}
+
+          {:error, _changeset} ->
+            {:noreply, put_flash(socket, :error, "Failed to assign role. Please try again.")}
+        end
+      else
+        {:noreply,
+         socket
+         |> put_flash(:error, "Invalid token for selected role. Please try again.")
+         |> assign(form: to_form(%{"token" => ""}, as: :user))}
+      end
     end
   end
 
@@ -82,12 +87,13 @@ defmodule AnkaaWeb.TokenRegistrationLive do
 
     case Accounts.update_user_name(user, name_params) do
       {:ok, updated_user} ->
-        if updated_user.role == "patient" do
+        if socket.assigns.selected_role == "patient" do
           patient_attrs = %{name: "#{updated_user.first_name} #{updated_user.last_name}"}
 
           case Patients.create_patient(patient_attrs, updated_user) do
             {:ok, _patient} ->
-              redirect_to_dashboard(socket, updated_user)
+              fresh_user = Accounts.get_user!(updated_user.id)
+              redirect_to_dashboard(socket, fresh_user)
 
             {:error, _changeset} ->
               {:noreply,

@@ -243,11 +243,11 @@ defmodule AnkaaWeb.UserAuth do
           "caresupport" -> ~p"/caresupport/caringfor"
           # "technical_support" -> ~p"/support/home"
           # "admin" -> ~p"/admin/users"
-          _ -> ~p"/"
+          _ -> ~p"/register"
         end
 
       true ->
-        ~p"/"
+        ~p"/register"
     end
   end
 end

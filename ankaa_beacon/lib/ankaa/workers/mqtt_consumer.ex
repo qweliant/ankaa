@@ -68,8 +68,8 @@ defmodule Ankaa.Workers.MQTTConsumer do
       host: Keyword.get(mqtt_config, :host, "localhost") |> to_charlist(),
       port: port,
       clientid: String.to_charlist(client_id),
-      username: Keyword.get(mqtt_config, :username, '') |> to_charlist(),
-      password: Keyword.get(mqtt_config, :password, '') |> to_charlist(),
+      username: Keyword.get(mqtt_config, :username, "") |> to_charlist(),
+      password: Keyword.get(mqtt_config, :password, "") |> to_charlist(),
       conn_mod: __MODULE__,
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
       ssl_opts: Keyword.get(mqtt_config, :ssl_options, [])
