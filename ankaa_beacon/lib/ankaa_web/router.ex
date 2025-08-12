@@ -121,8 +121,8 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/patients", CareProvider.PatientsLive.Index, :index)
-      live("/patient/:id", CareProvider.PatientDetailsLive.Index, :index)
       live("/patient/new", CareProvider.PatientLive.New, :new)
+      live("/patient/:id", CareProvider.PatientDetailsLive.Index, :index)
       live("/patient/:id/edit", CareProvider.PatientLive.Edit, :edit)
     end
   end
