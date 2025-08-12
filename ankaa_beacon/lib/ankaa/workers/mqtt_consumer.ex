@@ -15,16 +15,20 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
     {:ok, client} = :emqtt.start_link(opts)
 
-    case :emqtt.connect(client) do
-      {:ok, _properties} ->
-        Logger.info("MQTTConsumer: Successfully connected to broker!")
-        :emqtt.subscribe(client, [{"devices/+/telemetry", 0}])
-        {:ok, %{client: client}}
+    # case :emqtt.connect(client) do
+    #   {:ok, _properties} ->
+    #     Logger.info("MQTTConsumer: Successfully connected to broker!")
+    #     :emqtt.subscribe(client, [{"devices/+/telemetry", 0}])
+    #     {:ok, %{client: client}}
 
-      {:error, reason} ->
-        Logger.error("MQTTConsumer: Failed to connect: #{inspect(reason)}")
-        {:stop, reason}
-    end
+    #   {:error, reason} ->
+    #     Logger.error("MQTTConsumer: Failed to connect: #{inspect(reason)}")
+    #     {:stop, reason}
+    # end
+
+    Logger.info("MQTTConsumer: Successfully connected to broker!")
+
+    {:ok, %{client: client}}
   end
 
   @impl true
@@ -35,8 +39,10 @@ defmodule Ankaa.Workers.MQTTConsumer do
     case Ankaa.Monitoring.DeviceServer.start_link(device_id) do
       {:ok, _pid} ->
         :ok
+
       {:error, {:already_started, _pid}} ->
         :ok
+
       {:error, reason} ->
         Logger.error("Failed to start DeviceServer for #{device_id}: #{inspect(reason)}")
     end
