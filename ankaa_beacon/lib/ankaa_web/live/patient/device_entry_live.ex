@@ -1,130 +1,119 @@
 defmodule AnkaaWeb.DeviceEntryLive do
+  use AnkaaWeb, :live_view
   use AnkaaWeb, :patient_layout
-  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Device
+  alias Phoenix.HTML.Form
+
+  # Define the available scenarios for our dropdowns
+  @bp_scenarios [
+    "Normal": "Normal",
+    "High Systolic": "HighSystolic",
+    "Low Diastolic": "LowDiastolic",
+    "Irregular Heartbeat": "IrregularHeartbeat"
+  ]
+  @dialysis_scenarios [
+    "Normal": "Normal",
+    "High Venous Pressure": "HighVP",
+    "Low Blood Flow": "LowBFR"
+  ]
 
   @impl true
   def mount(_params, _session, socket) do
     changeset = Device.changeset(%Device{}, %{})
-    {:ok, assign(socket, changeset: changeset, current_path: "/patient/devices/new")}
+
+    socket =
+      socket
+      |> assign(:form, to_form(changeset))
+      |> assign(:current_path, "/patient/devices/new")
+      |> assign(:bp_scenarios, @bp_scenarios)
+      |> assign(:dialysis_scenarios, @dialysis_scenarios)
+
+    {:ok, socket}
   end
 
   @impl true
   def handle_event("validate", %{"device" => device_params}, socket) do
-    changeset =
-      %Device{}
-      |> Device.changeset(device_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, changeset: changeset)}
+    # This event is triggered on form changes to provide live validation feedback
+    changeset = Device.changeset(%Device{}, device_params)
+    {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   @impl true
   def handle_event("save", %{"device" => device_params}, socket) do
-    attrs = Map.put(device_params, "patient_id", socket.assigns.current_user.patient.id)
+    patient_id = socket.assigns.current_user.patient.id
+    attrs = Map.put(device_params, "patient_id", patient_id)
 
     case Patients.create_device(attrs) do
-      {:ok, _device} ->
+      {:ok, device} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Device registered successfully")
+         |> put_flash(:info, "#{device.type} device added successfully.")
          |> push_navigate(to: ~p"/patient/devices")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="md:grid md:grid-cols-3 md:gap-6">
-        <div class="md:col-span-1">
-          <div class="px-4 sm:px-0">
-            <h3 class="text-lg font-medium leading-6 text-gray-900">Register New Device</h3>
-            <p class="mt-1 text-sm text-gray-600">
-              Enter your device information below. This will help us connect your device to your account.
-            </p>
-          </div>
+    <div class="max-w-3xl mx-auto py-8">
+      <.link navigate={~p"/patient/devices"} class="text-sm font-semibold text-indigo-600 mb-4 inline-block">
+        &larr; Back to Device List
+      </.link>
+
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Add a Simulated Device
+          </h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Choose a device type and a simulation scenario to add to your account. This will create a unique virtual device for you.
+          </p>
         </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+          <.simple_form for={@form} phx-submit="save" phx-change="validate">
+            <.input
+              field={@form[:type]}
+              type="select"
+              label="Device Type"
+              prompt="Choose a type..."
+              options={[
+                {"Blood Pressure Monitor", "blood_pressure"},
+                {"Dialysis Machine", "dialysis"}
+              ]}
+              required
+            />
 
-        <div class="mt-5 md:mt-0 md:col-span-2">
-          <.form
-            for={@changeset}
-            id="device-form"
-            phx-change="validate"
-            phx-submit="save"
-            class="space-y-6"
-          >
-            <div class="shadow sm:rounded-md sm:overflow-hidden">
-              <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-                <div>
-                  <label for="device_type" class="block text-sm font-medium text-gray-700">
-                    Device Type
-                  </label>
-                  <select
-                    id="device_type"
-                    name="device[type]"
-                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="">Select a device type</option>
-                    <option value="dialysis" selected={Ecto.Changeset.get_field(@changeset, :type) == "dialysis"}>Dialysis Machine</option>
-                    <option value="blood_pressure" selected={Ecto.Changeset.get_field(@changeset, :type) == "blood_pressure"}>Blood Pressure Monitor</option>
-                  </select>
-                  <%= for error <- Ecto.Changeset.get_field(@changeset, :errors, []) |> Keyword.get_values(:type) do %>
-                    <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
-                  <% end %>
-                </div>
+            <%= if Form.input_value(@form, :type) == "blood_pressure" do %>
+              <.input
+                field={@form[:simulation_scenario]}
+                type="select"
+                label="Simulation Scenario"
+                prompt="Choose a behavior..."
+                options={@bp_scenarios}
+                required
+              />
+            <% end %>
 
-                <div>
-                  <label for="device_id" class="block text-sm font-medium text-gray-700">
-                    Device ID
-                  </label>
-                  <input
-                    type="text"
-                    name="device[device_id]"
-                    id="device_id"
-                    value={Ecto.Changeset.get_field(@changeset, :device_id)}
-                    class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  />
-                  <%= for error <- Ecto.Changeset.get_field(@changeset, :errors, []) |> Keyword.get_values(:device_id) do %>
-                    <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
-                  <% end %>
-                </div>
+            <%= if Form.input_value(@form, :type) == "dialysis" do %>
+              <.input
+                field={@form[:simulation_scenario]}
+                type="select"
+                label="Simulation Scenario"
+                prompt="Choose a behavior..."
+                options={@dialysis_scenarios}
+                required
+              />
+            <% end %>
 
-                <div>
-                  <label for="model" class="block text-sm font-medium text-gray-700">
-                    Model (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="device[model]"
-                    id="model"
-                    value={Ecto.Changeset.get_field(@changeset, :model)}
-                    class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-
-              <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-                <.link
-                  navigate={~p"/patient/devices"}
-                  class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </.link>
-                <button
-                  type="submit"
-                  class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Register Device
-                </button>
-              </div>
-            </div>
-          </.form>
+            <:actions>
+              <.button phx-disable-with="Adding...">Add Device</.button>
+            </:actions>
+          </.simple_form>
         </div>
       </div>
     </div>
