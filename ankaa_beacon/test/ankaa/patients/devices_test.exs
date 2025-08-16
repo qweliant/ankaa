@@ -1,114 +1,99 @@
 defmodule Ankaa.DevicesTest do
   use Ankaa.DataCase
 
-  alias Ankaa.Patients
-  alias Ankaa.Patients.{Device}
+  alias Ankaa.Devices
+  alias Ankaa.Patients.Device
   alias Ankaa.AccountsFixtures
 
   describe "devices" do
-    @valid_device_attrs %{
+    @valid_attrs %{
       type: "dialysis",
-      model: "mock-device",
-      device_id: "device123"
+      model: "Sim-D400",
+      simulation_scenario: "Normal"
     }
-    @update_device_attrs %{
+    @update_attrs %{
       type: "blood_pressure",
-      model: "mock-bp-device",
-      device_id: "device456"
+      model: "Sim-BP800",
+      simulation_scenario: "HighSystolic"
     }
-    @invalid_device_attrs %{type: nil, model: nil, device_id: nil}
+    @invalid_attrs %{type: nil, simulation_scenario: nil}
 
     setup do
       patient = AccountsFixtures.patient_fixture()
-      %{patient: patient}
+      %{patient: patient.patient}
     end
 
     test "list_devices_for_patient/1 returns all devices for patient", %{patient: patient} do
       device =
-        %Device{patient_id: patient.patient.id}
-        |> Map.merge(@valid_device_attrs)
+        %Device{patient_id: patient.id}
+        |> Map.merge(@valid_attrs)
         |> Repo.insert!()
 
-      assert Patients.list_devices_for_patient(patient.patient.id) == [device]
+      assert Ankaa.Devices.list_devices_for_patient(patient.id) == [device]
     end
 
     test "get_device!/1 returns the device with given id", %{patient: patient} do
       device =
-        %Device{patient_id: patient.patient.id}
-        |> Map.merge(@valid_device_attrs)
+        %Device{patient_id: patient.id}
+        |> Map.merge(@valid_attrs)
         |> Repo.insert!()
 
-      assert Patients.get_device!(device.id) == device
+      assert Devices.get_device!(device.id) == device
     end
 
     test "create_device/1 with valid data creates a device", %{patient: patient} do
-      attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
-      assert {:ok, %Device{} = device} = Patients.create_device(attrs)
+      attrs = Map.put(@valid_attrs, :patient_id, patient.id)
+      assert {:ok, %Device{} = device} = Devices.create_device(attrs)
       assert device.type == "dialysis"
-      assert device.model == "mock-device"
-      assert device.device_id == "device123"
-      assert device.patient_id == patient.patient.id
+      assert device.model == "Sim-D400"
+      assert device.simulation_scenario == "Normal"
+      assert device.patient_id == patient.id
     end
 
     test "create_device/1 with invalid data returns error changeset", %{patient: patient} do
-      attrs = Map.put(@invalid_device_attrs, :patient_id, patient.patient.id)
-      assert {:error, %Ecto.Changeset{}} = Patients.create_device(attrs)
-    end
-
-    test "create_device/1 enforces unique device_id constraint", %{patient: patient} do
-      attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
-      assert {:ok, _} = Patients.create_device(attrs)
-      assert {:error, changeset} = Patients.create_device(attrs)
-      assert "has already been taken" in errors_on(changeset).device_id
+      attrs = Map.put(@invalid_attrs, :patient_id, patient.id)
+      assert {:error, %Ecto.Changeset{}} = Devices.create_device(attrs)
     end
 
     test "update_device/2 with valid data updates the device", %{patient: patient} do
       device =
-        %Device{patient_id: patient.patient.id}
-        |> Map.merge(@valid_device_attrs)
+        %Device{patient_id: patient.id}
+        |> Map.merge(@valid_attrs)
         |> Repo.insert!()
 
-      assert {:ok, %Device{} = device} = Patients.update_device(device, @update_device_attrs)
+      assert {:ok, %Device{} = device} = Devices.update_device(device, @update_attrs)
       assert device.type == "blood_pressure"
-      assert device.model == "mock-bp-device"
-      assert device.device_id == "device456"
+      assert device.model == "Sim-BP800"
+      assert device.simulation_scenario == "HighSystolic"
     end
 
     test "update_device/2 with invalid data returns error changeset", %{patient: patient} do
       device =
-        %Device{patient_id: patient.patient.id}
-        |> Map.merge(@valid_device_attrs)
+        %Device{patient_id: patient.id}
+        |> Map.merge(@valid_attrs)
         |> Repo.insert!()
 
-      assert {:error, %Ecto.Changeset{}} = Patients.update_device(device, @invalid_device_attrs)
-      assert device == Patients.get_device!(device.id)
+      assert {:error, %Ecto.Changeset{}} = Devices.update_device(device, @invalid_attrs)
+      assert device == Devices.get_device!(device.id)
     end
 
     test "delete_device/1 deletes the device", %{patient: patient} do
       device =
-        %Device{patient_id: patient.patient.id}
-        |> Map.merge(@valid_device_attrs)
+        %Device{patient_id: patient.id}
+        |> Map.merge(@valid_attrs)
         |> Repo.insert!()
 
-      assert {:ok, %Device{}} = Patients.delete_device(device)
-      assert_raise Ecto.NoResultsError, fn -> Patients.get_device!(device.id) end
+      assert {:ok, %Device{}} = Devices.delete_device(device)
+      assert_raise Ecto.NoResultsError, fn -> Devices.get_device!(device.id) end
     end
 
     test "change_device/1 returns a device changeset", %{patient: patient} do
       device =
-        %Device{patient_id: patient.patient.id}
-        |> Map.merge(@valid_device_attrs)
+        %Device{patient_id: patient.id}
+        |> Map.merge(@valid_attrs)
         |> Repo.insert!()
 
-      assert %Ecto.Changeset{} = Patients.change_device(device)
-    end
-
-    test "get_patient_by_device_id/1 returns the patient for given device_id", %{patient: patient} do
-      attrs = Map.put(@valid_device_attrs, :patient_id, patient.patient.id)
-      {:ok, device} = Patients.create_device(attrs)
-
-      result = Patients.get_patient_by_device_id(device.device_id)
-      assert result.id == patient.patient.id
+      assert %Ecto.Changeset{} = Devices.change_device(device)
     end
   end
 end

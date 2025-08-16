@@ -18,7 +18,7 @@ defmodule AnkaaWeb.UserLoginLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/users/login")
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/register")
 
       assert {:ok, _conn} = result
     end

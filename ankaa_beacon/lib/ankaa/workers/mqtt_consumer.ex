@@ -38,15 +38,22 @@ defmodule Ankaa.Workers.MQTTConsumer do
   @impl true
   def handle_info({:publish, %{topic: topic, payload: payload}}, state) do
     topic_str = to_string(topic)
-    [_, device_id, _] = String.split(topic_str, "/")
+    [_, device_uuid, _] = String.split(topic_str, "/")
 
-    case Ankaa.Monitoring.DeviceServer.start_link(device_id) do
-      {:ok, _} -> :ok
-      {:error, {:already_started, _}} -> :ok
-      {:error, reason} -> Logger.error("Failed to start DeviceServer: #{inspect(reason)}")
+    case Ankaa.Devices.get_device!(device_uuid) do
+      %Ankaa.Patients.Device{} = device ->
+        case Ankaa.Monitoring.DeviceServer.start_link(device) do
+          {:ok, _} -> :ok
+          {:error, {:already_started, _}} -> :ok
+          {:error, reason} -> Logger.error("Failed to start DeviceServer: #{inspect(reason)}")
+        end
+
+        Ankaa.Monitoring.DeviceServer.handle_reading(device.id, payload)
+
+      nil ->
+        :ok
     end
 
-    Ankaa.Monitoring.DeviceServer.handle_reading(device_id, payload)
     {:noreply, state}
   end
 
@@ -54,6 +61,26 @@ defmodule Ankaa.Workers.MQTTConsumer do
   def handle_info({:disconnected, reason}, state) do
     Logger.warning("MQTTConsumer: Disconnected from broker: #{inspect(reason)}")
     {:noreply, state}
+  end
+
+  def on_publish(_client, %{topic: topic, payload: payload}) do
+    topic_str = to_string(topic)
+    [_, device_uuid, _] = String.split(topic_str, "/")
+
+    # 1. Find the full Device struct in the database using its UUID.
+    case Ankaa.Devices.get_device!(device_uuid) do
+      %Ankaa.Patients.Device{} = device ->
+        # 2. Find-or-start the specialist process, passing the whole struct.
+        {:ok, _pid} = Ankaa.Monitoring.DeviceServer.start_link(device)
+
+        # 3. Dispatch the message to the specialist.
+        Ankaa.Monitoring.DeviceServer.handle_reading(device.id, payload)
+
+      nil ->
+        # No patient has registered this device. Ignore the message.
+        Logger.warning("Received message for unregistered device: #{device_uuid}")
+        :ok
+    end
   end
 
   defp client_options do

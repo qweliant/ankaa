@@ -4,7 +4,6 @@ defmodule Ankaa.Alerts do
   """
   import Ecto.Query
 
-  alias Ankaa.Patients
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications.Alert
   alias Ankaa.Notifications.AlertTimer
@@ -60,39 +59,19 @@ defmodule Ankaa.Alerts do
     end
   end
 
-  def broadcast_device_alerts(device_id, _reading, violations) do
-    case Patients.get_patient_by_device_id(device_id) do
-      %Patients.Patient{} = patient ->
-        # Create alerts (which will auto-broadcast)
-        Enum.each(violations, fn violation ->
-          case create_alert(%{
-                 type: "Monitoring alert",
-                 message: violation.message,
-                 patient_id: patient.id,
-                 # Convert :critical -> "critical"
-                 severity: Atom.to_string(violation.severity)
-               }) do
-            {:ok, _alert} ->
-              :ok
+  def create_alerts_for_violations(%Ankaa.Patients.Patient{} = patient, violations) do
+    Enum.each(violations, fn violation ->
+      # We just create the alert. The create_alert function already
+      # handles the broadcasting logic.
+      create_alert(%{
+        type: "Monitoring alert",
+        message: violation.message,
+        patient_id: patient.id,
+        severity: Atom.to_string(violation.severity)
+      })
+    end)
 
-            {:error, reason} ->
-              Logger.error("Failed to create alert for patient #{patient.id}: #{inspect(reason)}")
-          end
-        end)
-
-        :ok
-
-      nil ->
-        Logger.warning("No patient found for device_id: #{inspect(device_id)}")
-        {:error, :patient_not_found}
-
-      error ->
-        Logger.error(
-          "Error fetching patient by device_id #{inspect(device_id)}: #{inspect(error)}"
-        )
-
-        {:error, :unexpected_error}
-    end
+    :ok
   end
 
   @doc """

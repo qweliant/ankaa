@@ -1,20 +1,19 @@
 defmodule AnkaaWeb.DeviceEntryLive do
-  use AnkaaWeb, :live_view
   use AnkaaWeb, :patient_layout
 
-  alias Ankaa.Patients
+  alias Ankaa.Devices
   alias Ankaa.Patients.Device
   alias Phoenix.HTML.Form
 
   # Define the available scenarios for our dropdowns
   @bp_scenarios [
-    "Normal": "Normal",
+    Normal: "Normal",
     "High Systolic": "HighSystolic",
     "Low Diastolic": "LowDiastolic",
     "Irregular Heartbeat": "IrregularHeartbeat"
   ]
   @dialysis_scenarios [
-    "Normal": "Normal",
+    Normal: "Normal",
     "High Venous Pressure": "HighVP",
     "Low Blood Flow": "LowBFR"
   ]
@@ -45,7 +44,7 @@ defmodule AnkaaWeb.DeviceEntryLive do
     patient_id = socket.assigns.current_user.patient.id
     attrs = Map.put(device_params, "patient_id", patient_id)
 
-    case Patients.create_device(attrs) do
+    case Devices.create_device(attrs) do
       {:ok, device} ->
         {:noreply,
          socket

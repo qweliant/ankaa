@@ -2,9 +2,10 @@ defmodule AnkaaWeb.MonitoringLive do
   use AnkaaWeb, :patient_layout
   use AnkaaWeb, :alert_handling
 
-  alias Ankaa.Patients
+  alias Ankaa.Devices
   alias Ankaa.Alerts
   alias Ankaa.Sessions
+  alias Ankaa.MQTT
 
   @moduledoc """
   LiveView dashboard to display real-time BP and dialysis data.
@@ -19,7 +20,7 @@ defmodule AnkaaWeb.MonitoringLive do
     end
 
     # Get patient's registered devices
-    devices = Patients.list_devices_for_patient(socket.assigns.current_user.patient.id)
+    devices = Devices.list_devices_for_patient(socket.assigns.current_user.patient.id)
 
     case Sessions.get_active_session_for_patient(socket.assigns.current_user.patient.id) do
       nil ->
@@ -66,6 +67,18 @@ defmodule AnkaaWeb.MonitoringLive do
            status: "ongoing"
          }) do
       {:ok, session} ->
+        devices = Devices.list_devices_for_patient(patient.id)
+
+        command_payload =
+          Enum.map(devices, fn device ->
+            %{
+              device_id: device.id,
+              scenario: device.simulation_scenario
+            }
+          end)
+
+        MQTT.publish("simulator/control", Jason.encode!(%{start_simulations: command_payload}))
+
         alert_attrs = %{
           patient_id: patient.id,
           type: "session_start",
@@ -80,7 +93,8 @@ defmodule AnkaaWeb.MonitoringLive do
          assign(socket,
            session_started: true,
            session_start_time: session.start_time,
-           active_session: session
+           active_session: session,
+           active_devices_in_session: devices
          )}
 
       {:error, _changeset} ->
@@ -100,8 +114,16 @@ defmodule AnkaaWeb.MonitoringLive do
       session ->
         case Sessions.end_session(session) do
           {:ok, ended_session} ->
+            devices_to_stop = socket.assigns.active_devices_in_session || []
+            device_ids_to_stop = Enum.map(devices_to_stop, & &1.id)
+
             duration_in_minutes =
               Timex.diff(ended_session.end_time, ended_session.start_time, :minutes)
+
+            MQTT.publish(
+              "simulator/control",
+              Jason.encode!(%{stop_simulations: device_ids_to_stop})
+            )
 
             alert_message =
               "✅ #{patient_name}'s session ended successfully after #{duration_in_minutes} minutes."
@@ -131,7 +153,8 @@ defmodule AnkaaWeb.MonitoringLive do
              assign(socket,
                session_started: false,
                session_start_time: nil,
-               active_session: nil
+               active_session: nil,
+               active_devices_in_session: []
              )}
 
           {:error, _changeset} ->

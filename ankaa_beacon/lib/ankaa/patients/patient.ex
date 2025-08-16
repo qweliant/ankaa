@@ -24,5 +24,6 @@ defmodule Ankaa.Patients.Patient do
     |> cast(attrs, [:external_id, :name, :date_of_birth, :timezone, :user_id])
     |> validate_required([:name, :user_id])
     |> unique_constraint(:external_id)
+    |> foreign_key_constraint(:user_id)
   end
 end

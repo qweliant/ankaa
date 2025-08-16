@@ -2,11 +2,11 @@ defmodule AnkaaWeb.DeviceLive do
   use AnkaaWeb, :patient_layout
   use AnkaaWeb, :alert_handling
 
-  alias Ankaa.Patients
+  alias Ankaa.Devices
 
   @impl true
   def mount(_params, _session, socket) do
-    devices = Patients.list_devices_for_patient(socket.assigns.current_user.patient.id)
+    devices = Devices.list_devices_for_patient(socket.assigns.current_user.patient.id)
     {:ok, assign(socket, devices: devices, current_path: "/patient/devices")}
   end
 
@@ -32,10 +32,10 @@ defmodule AnkaaWeb.DeviceLive do
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
                     <p class="text-sm font-medium text-indigo-600 truncate">
-                      <%= device.type %>
+                      <%= device.type |> String.replace("_", " ") |> String.capitalize() %>
                     </p>
                     <p class="ml-2 text-sm text-gray-500">
-                      <%= device.device_id %>
+                      Scenario: <%= device.simulation_scenario %>
                     </p>
                   </div>
                   <div class="flex items-center space-x-4">

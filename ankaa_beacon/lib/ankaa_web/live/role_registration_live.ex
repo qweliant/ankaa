@@ -1,9 +1,13 @@
 defmodule AnkaaWeb.RoleRegistrationLive do
   use AnkaaWeb, :live_view
+  # Added for consistency, in case of future alerts
+  use AnkaaWeb, :alert_handling
+
   import AnkaaWeb.UserAuth
 
   alias Ankaa.Accounts
   alias Ankaa.Patients
+  alias Ankaa.Patients.Patient
 
   @roles [
     {"patient", "Patient", "I am receiving home hemodialysis treatment"},
@@ -12,108 +16,100 @@ defmodule AnkaaWeb.RoleRegistrationLive do
     {"caresupport", "Care support", "I help take care of a patient"}
   ]
 
+  @impl true
   def mount(_params, _session, socket) do
+    # Redirects if user has already completed this step
     if socket.assigns.current_user.role || socket.assigns.current_user.patient do
       {:ok,
        push_navigate(socket,
          to: signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
        )}
     else
-      user = socket.assigns.current_user
-      name_changeset = Accounts.User.name_changeset(user, %{})
+      # The form for the final step is now for a Patient changeset
+      patient_form = to_form(Patient.changeset(%Patient{}, %{}))
 
       {:ok,
        assign(socket,
          step: :role_selection,
          selected_role: nil,
          roles: @roles,
-         form: to_form(%{"token" => ""}, as: :user),
-         show_name_form: false,
-         name_form: to_form(name_changeset)
+         token_form: to_form(%{"token" => ""}, as: :token),
+         show_final_form: false,
+         patient_form: patient_form,
+         provider_name_form:
+           to_form(Accounts.User.name_changeset(socket.assigns.current_user, %{}))
        )}
     end
   end
 
+  @impl true
   def handle_event("select_role", %{"role" => role}, socket) do
     {:noreply, assign(socket, step: :token_input, selected_role: role)}
   end
 
-  def handle_event("validate", %{"user" => user_params}, socket) do
-    {:noreply, assign(socket, form: to_form(user_params, as: :user))}
-  end
-
-  def handle_event("validate_name", %{"user" => user_params}, socket) do
-    changeset =
-      Ecto.Changeset.cast(socket.assigns.name_form.source, user_params, [
-        :first_name,
-        :last_name
-      ])
-
-    {:noreply, assign(socket, name_form: to_form(changeset))}
-  end
-
+  @impl true
   def handle_event("back_to_roles", _params, socket) do
     {:noreply, assign(socket, step: :role_selection, selected_role: nil)}
   end
 
-  def handle_event("save", %{"user" => %{"token" => token}}, socket) do
+  @impl true
+  def handle_event("save_role", %{"token" => %{"token" => token}}, socket) do
     user = socket.assigns.current_user
     role = socket.assigns.selected_role
 
     if role == "patient" and token == "patient" do
-      {:noreply, assign(socket, show_name_form: true)}
+      {:noreply, assign(socket, show_final_form: true)}
     else
       is_valid_token = token == role
 
       if is_valid_token do
         case Accounts.assign_role(user, role) do
           {:ok, _updated_user} ->
-            {:noreply, assign(socket, show_name_form: true)}
+            {:noreply, assign(socket, show_final_form: true)}
 
           {:error, _changeset} ->
-            {:noreply, put_flash(socket, :error, "Failed to assign role. Please try again.")}
+            {:noreply, put_flash(socket, :error, "Failed to assign role.")}
         end
       else
-        {:noreply,
-         socket
-         |> put_flash(:error, "Invalid token for selected role. Please try again.")
-         |> assign(form: to_form(%{"token" => ""}, as: :user))}
+        {:noreply, put_flash(socket, :error, "Invalid token for selected role.")}
       end
     end
   end
 
-  def handle_event("save_name", %{"user" => name_params}, socket) do
+  @impl true
+  def handle_event("save_provider_name", %{"user" => name_params}, socket) do
     user = socket.assigns.current_user
 
     case Accounts.update_user_name(user, name_params) do
       {:ok, updated_user} ->
-        if socket.assigns.selected_role == "patient" do
-          patient_attrs = %{name: "#{updated_user.first_name} #{updated_user.last_name}"}
-
-          case Patients.create_patient(patient_attrs, updated_user) do
-            {:ok, _patient} ->
-              fresh_user = Accounts.get_user!(updated_user.id)
-              redirect_to_dashboard(socket, fresh_user)
-
-            {:error, _changeset} ->
-              {:noreply,
-               put_flash(socket, :error, "Failed to create patient profile. Please try again.")}
-          end
-        else
-          redirect_to_dashboard(socket, updated_user)
-        end
+        redirect_to_dashboard(socket, updated_user)
 
       {:error, changeset} ->
-        {:noreply, assign(socket, name_form: to_form(changeset))}
+        {:noreply, assign(socket, provider_name_form: to_form(changeset))}
     end
   end
 
+  @impl true
+  def handle_event("save_patient_profile", %{"patient" => patient_params}, socket) do
+    user = socket.assigns.current_user
+
+    case Patients.create_patient(patient_params, user) do
+      {:ok, _patient} ->
+        fresh_user = Accounts.get_user!(user.id)
+        redirect_to_dashboard(socket, fresh_user)
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, patient_form: to_form(changeset))}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-md">
       <.header class="text-center">
         Complete Your Registration
-        <:subtitle>Let us know your role to continue with registration.</:subtitle>
+        <:subtitle>Let us know your role to continue.</:subtitle>
       </.header>
 
       <%= case @step do %>
@@ -123,7 +119,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
               <button
                 phx-click="select_role"
                 phx-value-role={role_id}
-                class={"w-full p-4 text-left bg-white hover:bg-stone-50 border-2 rounded-xl transition duration-200 #{if role_id == @selected_role, do: "border-amber-600", else: "border-stone-200"}"}
+                class={"w-full p-4 text-left ... #{if role_id == @selected_role, do: "border-amber-600", else: "border-stone-200"}"}
               >
                 <div class="font-semibold text-stone-900"><%= label %></div>
                 <div class="text-sm text-stone-600 mt-1"><%= description %></div>
@@ -133,49 +129,45 @@ defmodule AnkaaWeb.RoleRegistrationLive do
 
         <% :token_input -> %>
           <div class="mt-8">
-            <button
-              phx-click="back_to_roles"
-              class="mb-4 text-stone-600 hover:text-stone-900 flex items-center gap-1"
-            >
+            <button phx-click="back_to_roles" class="mb-4 ...">
               <.icon name="hero-arrow-left-mini" class="w-5 h-5" />
               Back to Role Selection
             </button>
 
-            <%= if !@show_name_form do %>
-              <.simple_form
-                for={@form}
-                id="token_form"
-                phx-submit="save"
-                phx-change="validate"
-              >
-                <.input
-                  field={@form[:token]}
-                  type="text"
-                  label={token_label(@selected_role)}
-                  required
-                />
+            <%= if !@show_final_form do %>
+              <.simple_form for={@token_form} id="token_form" phx-submit="save_role">
+                <.input field={@token_form[:token]} type="text" label={token_label(@selected_role)} required />
                 <:actions>
-                  <.button phx-disable-with="Verifying..." class="w-full">
-                    Continue
-                  </.button>
+                  <.button phx-disable-with="Verifying..." class="w-full">Continue</.button>
                 </:actions>
               </.simple_form>
             <% else %>
-              <.header class="text-center mt-8">Enter Your Name</.header>
-              <.simple_form
-              for={@name_form}
-              id="name_form"
-              phx-submit="save_name"
-              phx-change="validate_name"
-              >
-                <.input field={@name_form[:first_name]} type="text" label="First Name" required />
-                <.input field={@name_form[:last_name]} type="text" label="Last Name" required />
-                <:actions>
-                  <.button phx-disable-with="Registering..." class="w-full">
-                    Complete Registration
-                  </.button>
-                </:actions>
-              </.simple_form>
+              <%= if @selected_role == "patient" do %>
+                <.header class="text-center mt-8">Create Your Patient Profile</.header>
+                <.simple_form for={@patient_form} id="patient_form" phx-submit="save_patient_profile">
+                  <.input field={@patient_form[:name]} type="text" label="Full Name" required />
+                  <.input field={@patient_form[:date_of_birth]} type="date" label="Date of Birth" required />
+                  <.input
+                    field={@patient_form[:timezone]}
+                    type="select"
+                    label="Timezone"
+                    options={timezone_options()}
+                    required
+                  />
+                  <:actions>
+                    <.button phx-disable-with="Saving..." class="w-full">Complete Registration</.button>
+                  </:actions>
+                </.simple_form>
+              <% else %>
+                <.header class="text-center mt-8">Enter Your Name</.header>
+                <.simple_form for={@provider_name_form} id="name_form" phx-submit="save_provider_name">
+                  <.input field={@provider_name_form[:first_name]} type="text" label="First Name" required />
+                  <.input field={@provider_name_form[:last_name]} type="text" label="Last Name" required />
+                  <:actions>
+                    <.button phx-disable-with="Saving..." class="w-full">Complete Registration</.button>
+                  </:actions>
+                </.simple_form>
+              <% end %>
             <% end %>
           </div>
       <% end %>
@@ -191,6 +183,11 @@ defmodule AnkaaWeb.RoleRegistrationLive do
       "caresupport" -> "Invitation Code"
       _ -> "Registration Code"
     end
+  end
+
+  defp timezone_options do
+    Tzdata.zone_list()
+    |> Enum.map(&{&1, &1})
   end
 
   defp redirect_to_dashboard(socket, user) do

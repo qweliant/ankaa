@@ -67,7 +67,9 @@ defmodule Ankaa.AccountsFixtures do
     # Create patient record
     patient_attrs = %{
       name: "Test Patient",
-      user_id: user.id
+      user_id: user.id,
+      date_of_birth: Date.from_iso8601!("1980-01-01"),
+      timezone: "Etc/UTC"
     }
 
     {:ok, _patient} = Ankaa.Patients.create_patient(patient_attrs, user)
@@ -80,11 +82,13 @@ defmodule Ankaa.AccountsFixtures do
     valid_attrs = %{
       type: "dialysis",
       model: "mock-device",
-      device_id: "device#{System.unique_integer([:positive])}",
+      simulation_scenario: "Normal",
       patient_id: patient.id
     }
 
-    {:ok, device} = Ankaa.Patients.create_device(Map.merge(valid_attrs, attrs))
+    attrs = Map.merge(valid_attrs, attrs)
+
+    {:ok, device} = Ankaa.Devices.create_device(attrs)
     device
   end
 

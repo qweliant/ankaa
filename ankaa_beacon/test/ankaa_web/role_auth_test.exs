@@ -183,7 +183,13 @@ defmodule AnkaaWeb.RoleAuthTest do
 
   describe "on_mount :require_patient" do
     test "allows access for patient roles", %{conn: conn, user: user} do
-      attrs = %{name: "Harold Melvin", user_id: user.id}
+      attrs = %{
+        name: "Harold Melvin",
+        user_id: user.id,
+        date_of_birth: ~D[1980-01-01],
+        timezone: "Etc/UTC"
+      }
+
       {:ok, _patient} = Patients.create_patient(attrs, user)
       user_token = Accounts.generate_user_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
