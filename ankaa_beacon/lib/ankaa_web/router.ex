@@ -100,7 +100,7 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.RoleAuth, :require_patient},
         {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
-      live("/health", HealthLive, :index)
+      # live("/health", HealthLive, :index)
       live("/monitoring", MonitoringLive, :index)
       live("/devices/new", DeviceEntryLive, :new)
       live("/devices", DeviceLive, :index)
