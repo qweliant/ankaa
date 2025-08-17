@@ -83,7 +83,6 @@ The system aims to:
 - [![Phoenix][Phoenix-badge]][Phoenix-url]
 - [![Rust][Rust-badge]][Rust-url]
 - [![PostgreSQL][PostgreSQL-badge]][PostgreSQL-url]
-- [![Mosquitto][Mosquitto-badge]][Mosquitto-url]
 - [![Docker][Docker-badge]][Docker-url]
 
 <!-- GETTING STARTED -->
