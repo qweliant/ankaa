@@ -141,12 +141,10 @@ The system is built as a microservices architecture with the following component
 ## Roadmap
 
 - [x] Monorepo structure
-- [x] IoT data storage in TimescaleDB
 - [x] Alert triggering system
-- [ ] Notification service
-- [ ] Care network user management
+- [x] Notification service
+- [x] Care network user management
 - [x] Real-time monitoring dashboard
-- [ ] AI-driven anomaly detection
 
 See the [open issues](https://github.com/qweliant/ankaa/issues) for a full list of proposed features.
 
