@@ -41,6 +41,20 @@ defmodule Ankaa.Devices do
   def get_device!(id), do: Repo.get!(Device, id)
 
   @doc """
+  Gets a single device.
+
+  ## Examples
+
+      iex> get_device(123)
+      %Device{}
+
+      iex> get_device(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_device(id), do: Repo.get!(Device, id)
+
+  @doc """
   Creates a device.
 
   ## Examples

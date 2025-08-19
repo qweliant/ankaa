@@ -4,7 +4,6 @@ defmodule Ankaa.Monitoring.Reading do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
   schema "readings" do
     field(:device_id, :binary_id)
     field(:payload, :map)

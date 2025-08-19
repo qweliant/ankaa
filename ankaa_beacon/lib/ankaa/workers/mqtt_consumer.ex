@@ -40,7 +40,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
     topic_str = to_string(topic)
     [_, device_uuid, _] = String.split(topic_str, "/")
 
-    case Ankaa.Devices.get_device!(device_uuid) do
+    case Ankaa.Devices.get_device(device_uuid) do
       %Ankaa.Patients.Device{} = device ->
         case Ankaa.Monitoring.DeviceServer.start_link(device) do
           {:ok, _} -> :ok
@@ -51,6 +51,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
         Ankaa.Monitoring.DeviceServer.handle_reading(device.id, payload)
 
       nil ->
+        Logger.warning("Ignoring message for unregistered device: #{device_uuid}")
         :ok
     end
 

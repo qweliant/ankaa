@@ -7,12 +7,15 @@ defmodule Ankaa.Monitoring.Threshold do
   import Ecto.Query
   alias Ankaa.Repo
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "thresholds" do
     field(:device_type, Ecto.Enum, values: [:dialysis, :bp])
     field(:parameter, :string)
     field(:min_value, :float)
     field(:max_value, :float)
     field(:severity, Ecto.Enum, values: [:low, :medium, :high, :critical])
+    
 
     belongs_to(:patient, Ankaa.Patients.Patient, foreign_key: :patient_id, type: :binary_id)
     timestamps()
