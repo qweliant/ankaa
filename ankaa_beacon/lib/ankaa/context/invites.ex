@@ -119,9 +119,10 @@ defmodule Ankaa.Invites do
 
   defp accept_as_care_provider(user, invite) do
     Repo.transaction(fn ->
-      with patient <- Patients.get_patient!(invite.patient_id),
+      with {:ok, user_with_role} <- Accounts.assign_role(user, invite.invitee_role),
+           patient <- Patients.get_patient!(invite.patient_id),
            {:ok, _relationship} <-
-             Patients.create_patient_association(user, patient, invite.invitee_role),
+             Patients.create_patient_association(user_with_role, patient, invite.invitee_role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
@@ -132,9 +133,10 @@ defmodule Ankaa.Invites do
 
   defp accept_as_care_support(user, invite) do
     Repo.transaction(fn ->
-      with patient <- Patients.get_patient!(invite.patient_id),
+      with {:ok, user_with_role} <- Accounts.assign_role(user, "caresupport"),
+           patient <- Patients.get_patient!(invite.patient_id),
            {:ok, _relationship} <-
-             Patients.create_patient_association(user, patient, "caresupport"),
+             Patients.create_patient_association(user_with_role, patient, "caresupport"),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
