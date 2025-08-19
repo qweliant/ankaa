@@ -1,0 +1,86 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h3 class="text-lg font-medium text-slate-800">Blood Pressure Monitor</h3>
+    <div class="bg-slate-50 text-slate-600 text-sm px-3 py-1 rounded-full border border-slate-200">
+      Real-time
+    </div>
+  </div>
+
+  <%= if Enum.empty?(@devices |> Enum.filter(&(&1.type == "blood_pressure"))) do %>
+    <div class="text-center py-12">
+      <p class="text-slate-500">No blood pressure device registered.</p>
+      <.link navigate={~p"/patient/devices/new"} class="text-sm font-semibold text-indigo-600 mt-2 inline-block">
+        Register a device &rarr;
+      </.link>
+    </div>
+  <% else %>
+    <%= if @readings == [] do %>
+      <div class="text-center py-12">
+        <p class="mt-2 text-slate-500">No blood pressure readings available.</p>
+        <p class="mt-1 text-sm text-slate-400">Waiting for device data...</p>
+      </div>
+    <% else %>
+      <%= for reading <- Enum.take(@readings, 1) do %>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <%# Main reading display %>
+          <div class="bg-white rounded-lg border border-slate-200 p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <div class="text-sm text-slate-500 mb-1">Blood Pressure</div>
+                <div class="flex items-baseline">
+                  <span class="text-5xl font-bold text-slate-800"><%= reading.systolic %>/<%= reading.diastolic %></span>
+                  <span class="ml-2 text-lg text-slate-500">mmHg</span>
+                </div>
+              </div>
+              <div class={"px-3 py-1 rounded-full text-sm font-medium #{if reading.status == "normal", do: "bg-emerald-100 text-emerald-800", else: "bg-rose-100 text-rose-800"}"}>
+                <%= String.capitalize(reading.status || "Normal") %>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mt-6">
+              <div class="bg-slate-50 rounded-lg p-4">
+                <div class="text-sm font-medium text-slate-800 mb-2">Heart Rate</div>
+                <div class="flex items-baseline">
+                  <span class="text-3xl font-bold text-slate-800"><%= reading.heart_rate %></span>
+                  <span class="ml-1 text-sm text-slate-500">BPM</span>
+                </div>
+              </div>
+
+              <div class="bg-slate-50 rounded-lg p-4">
+                <div class="text-sm font-medium text-slate-800 mb-2">Mean Arterial</div>
+                <div class="flex items-baseline">
+                  <span class="text-3xl font-bold text-slate-800"><%= reading.mean_arterial_pressure %></span>
+                  <span class="ml-1 text-sm text-slate-500">mmHg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%# Recent readings list %>
+          <div class="bg-white rounded-lg border border-slate-200 p-6">
+            <h4 class="text-sm font-medium text-slate-800 mb-4">Recent Readings</h4>
+            <div class="space-y-4">
+              <%= for prev_reading <- @readings do %>
+                <div class="p-3 bg-slate-50 rounded-lg">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-baseline">
+                      <span class="text-lg font-semibold text-slate-800"><%= prev_reading.systolic %>/<%= prev_reading.diastolic %></span>
+                    </div>
+                    <div class={"px-2 py-1 rounded-full text-xs font-medium #{if prev_reading.status == "normal", do: "bg-emerald-100 text-emerald-800", else: "bg-rose-100 text-rose-800"}"}>
+                      <%= String.capitalize(prev_reading.status || "Normal") %>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between text-sm text-slate-500">
+                    <div>HR: <%= prev_reading.heart_rate %> BPM</div>
+                    <div><%= format_time(prev_reading.timestamp) %></div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>
