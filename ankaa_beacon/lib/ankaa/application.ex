@@ -21,9 +21,7 @@ defmodule Ankaa.Application do
       # Start the Registry for alerts
       {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry},
       # Start the Registry for
-      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry},
-      # Start the MQTT Consumer
-      Ankaa.Workers.MQTTConsumer
+      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry}
     ]
 
     children =
