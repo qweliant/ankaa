@@ -70,9 +70,6 @@ defmodule AnkaaWeb.CareNetworkLive do
                     </button>
                   </div>
                 </div>
-                <div class="mt-2">
-
-                </div>
               </div>
             </li>
           <% end %>

@@ -3,6 +3,7 @@ ExUnit.start()
 # Configure Ecto for support and tests
 Application.put_env(:ecto, :primary_key_type, :id)
 
+# Start the application and all its supervisors (including the Repo)
 Application.ensure_all_started(:ankaa)
 
 # Start Ecto repositories

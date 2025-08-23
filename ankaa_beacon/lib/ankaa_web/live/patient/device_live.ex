@@ -4,10 +4,21 @@ defmodule AnkaaWeb.DeviceLive do
 
   alias Ankaa.Devices
 
+
   @impl true
   def mount(_params, _session, socket) do
     devices = Devices.list_devices_for_patient(socket.assigns.current_user.patient.id)
     {:ok, assign(socket, devices: devices, current_path: "/patient/devices")}
+  end
+
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    device = Devices.get_device!(id)
+    {:ok, _} = Devices.delete_device(device)
+
+    # Refetch the list of devices to update the UI
+    devices = Devices.list_devices_for_patient(socket.assigns.current_user.patient.id)
+    {:noreply, assign(socket, :devices, devices)}
   end
 
   @impl true
