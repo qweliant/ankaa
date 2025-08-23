@@ -64,7 +64,6 @@ defmodule Ankaa.AccountsFixtures do
   def patient_fixture(attrs \\ %{}) do
     user = user_fixture(attrs)
 
-    # Create patient record
     patient_attrs = %{
       name: "Test Patient",
       user_id: user.id,

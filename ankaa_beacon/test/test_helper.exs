@@ -10,4 +10,4 @@ Application.ensure_all_started(:ankaa)
 Ecto.Adapters.SQL.Sandbox.mode(Ankaa.Repo, :manual)
 
 # Start the application
-{:ok, _} = Application.ensure_all_started(:ex_machina)
+# {:ok, _} = Application.ensure_all_started(:ex_machina)
