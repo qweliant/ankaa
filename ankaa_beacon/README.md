@@ -20,8 +20,8 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 ## Todo
 
 - [x] make this a monrepo
-- [x] push incoming IoT data to timescale or influxDB
-- [ ] build out notification service
+- [x] push incoming IoT data to db
+- [x] build out notification service
 - [x] triggering alerts
 - [x] adding people to care network
-- [ ] viewing care network realtime hemodialyis and bp. probably doesnt require a dashboard. letting users know the patient is online and providing notifications if something is wrong could be the only view
+- [x] viewing care network realtime hemodialyis and bp. probably doesnt require a dashboard. letting users know the patient is online and providing notifications if something is wrong could be the only view
