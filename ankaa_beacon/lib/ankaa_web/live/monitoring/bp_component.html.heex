@@ -22,8 +22,7 @@
     <% else %>
       <%= for reading <- Enum.take(@readings, 1) do %>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          <%# Main reading display %>
+          <% # Main reading display %>
           <div class="bg-white rounded-lg border border-slate-200 p-6">
             <div class="flex justify-between items-start mb-4">
               <div>
@@ -57,7 +56,7 @@
             </div>
           </div>
 
-          <%# Recent readings list %>
+          <% # Recent readings list %>
           <div class="bg-white rounded-lg border border-slate-200 p-6">
             <h4 class="text-sm font-medium text-slate-800 mb-4">Recent Readings</h4>
             <div class="space-y-4">

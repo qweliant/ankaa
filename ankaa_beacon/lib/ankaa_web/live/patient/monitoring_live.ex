@@ -139,7 +139,7 @@ defmodule AnkaaWeb.MonitoringLive do
             alert_message =
               "✅ #{patient_name}'s session ended successfully after #{duration_in_minutes} minutes."
 
-            {:ok, alert} =
+            {:ok, _alert} =
               Ankaa.Alerts.create_alert(%{
                 type: "Session",
                 message: alert_message,
@@ -276,7 +276,7 @@ defmodule AnkaaWeb.MonitoringLive do
           </div>
         </div>
       <% else %>
-        <%# --- NO SESSION ACTIVE --- %>
+        <% # NO SESSION ACTIVE  %>
         <div class="bg-white shadow rounded-lg p-6 mb-8 flex flex-col items-center justify-center">
           <h2 class="text-lg font-medium text-gray-900 mb-4">Ready to Start Your Dialysis Session?</h2>
           <p class="text-sm text-gray-500 mb-6 text-center">
