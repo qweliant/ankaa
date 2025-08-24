@@ -154,7 +154,7 @@ defmodule AnkaaWeb.CareNetworkMemberLive.Index do
     case Patients.update_care_network_member(member, params) do
       {:ok, _updated_member} ->
         network =
-          Patients.get_care_network_for_patient(socket.assigns.current_user.patient.id)
+          Patients.get_care_network_for_patient(socket.assigns.current_user.patient)
         {:noreply,
          socket
          |> assign(show_modal: false, network: network)
