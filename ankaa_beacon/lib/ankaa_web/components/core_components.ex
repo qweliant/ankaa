@@ -20,6 +20,28 @@ defmodule AnkaaWeb.CoreComponents do
   alias Phoenix.LiveView.JS
 
   @doc """
+  Renders a multi-select checkbox group.
+  """
+  attr :id, :any
+  attr :name, :any
+  attr :label, :string, default: nil
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :errors, :list, default: []
+  attr :options, :list, required: true
+  attr :rest, :global, include: ~w(disabled form readonly)
+  attr :class, :string, default: nil
+
+  def checkgroup(assigns) do
+    # This just sets the defaults and calls the main input/1 component
+    new_assigns =
+      assigns
+      |> assign(:multiple, true)
+      |> assign(:type, "checkgroup")
+
+    input(new_assigns)
+  end
+
+  @doc """
   Renders a modal.
 
   ## Examples
@@ -276,7 +298,7 @@ defmodule AnkaaWeb.CoreComponents do
   attr :type, :string,
     default: "text",
     values: ~w(checkbox color date datetime-local email file month number password
-               range search select tel text textarea time url week)
+               range search select tel text textarea time url week checkgroup)
 
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
@@ -366,6 +388,35 @@ defmodule AnkaaWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "checkgroup"} = assigns) do
+      ~H"""
+      <div phx-feedback-for={@name} class="text-sm">
+        <.label for={@id}><%= @label %></.label>
+        <div class="mt-1 w-full bg-white border border-gray-300 ...">
+          <div class="grid grid-cols-1 gap-1 text-sm items-baseline">
+            <input type="hidden" name={@name} value="" />
+            <div class="..." :for={{label, value} <- @options}>
+              <label
+                for={"#{@name}-#{value}"} class="...">
+                <input
+                  type="checkbox"
+                  id={"#{@name}-#{value}"}
+                  name={@name}
+                  value={value}
+                  checked={value in @value}
+                  class="mr-2 h-4 w-4 rounded ..."
+                  {@rest}
+                />
+                <%= label %>
+              </label>
+            </div>
+          </div>
+        </div>
+        <.error :for={msg <- @errors}><%= msg %></.error>
+      </div>
+      """
+    end
+
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
@@ -387,6 +438,7 @@ defmodule AnkaaWeb.CoreComponents do
     </div>
     """
   end
+
 
   @doc """
   Renders a label.

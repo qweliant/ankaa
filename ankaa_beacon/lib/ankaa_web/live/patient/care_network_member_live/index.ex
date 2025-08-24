@@ -1,8 +1,14 @@
-defmodule AnkaaWeb.CareNetworkLive do
+defmodule AnkaaWeb.CareNetworkMemberLive.Index do
   use AnkaaWeb, :patient_layout
   use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
+
+  @available_permissions [
+    {"Receive Alerts", "receive_alerts"},
+    {"Manage Care Network", "manage_network"},
+    {"View Vitals", "view_vitals"}
+  ]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -23,7 +29,8 @@ defmodule AnkaaWeb.CareNetworkLive do
        show_modal: false,
        selected_member_id: nil,
        member_in_modal: nil,
-       member_form: nil
+       member_form: nil,
+       available_permissions: @available_permissions
      )}
   end
 
@@ -35,7 +42,7 @@ defmodule AnkaaWeb.CareNetworkLive do
         <h1 class="text-2xl font-bold text-slate-900">Care Network</h1>
         <.link
           navigate={~p"/patient/carenetwork/invite"}
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
         >
           Invite Member
         </.link>
@@ -88,18 +95,14 @@ defmodule AnkaaWeb.CareNetworkLive do
               <h3 class="text-lg font-medium text-gray-900">
                 Manage <%= @member_in_modal.user.first_name %>'s Permissions
               </h3>
-              <div class="mt-4">
-                <.input
-                  field={@member_form[:permissions]}
-                  type="checkbox"
-                  label="Permissions"
-                  options={[
-                    {"Receive Alerts", "receive_alerts"},
-                    {"Manage Care Network", "manage_network"},
-                    {"View Vitals", "view_vitals"}
-                  ]}
-                />
-              </div>
+
+              <% # Use the new, reusable checkgroup component %>
+              <.checkgroup
+                field={@member_form[:permissions]}
+                label="Permissions"
+                options={@available_permissions}
+              />
+
               <div class="mt-6 flex justify-between">
                 <button
                   type="button"
@@ -139,10 +142,12 @@ defmodule AnkaaWeb.CareNetworkLive do
      )}
   end
 
+  @impl true
   def handle_event("close_modal", _, socket) do
     {:noreply, assign(socket, show_modal: false)}
   end
 
+  @impl true
   def handle_event("save_changes", %{"care_network" => params}, socket) do
     member = socket.assigns.member_in_modal
 
