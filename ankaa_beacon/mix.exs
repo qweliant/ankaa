@@ -62,6 +62,7 @@ defmodule Ankaa.MixProject do
       {:bandit, "~> 1.5"},
       {:emqtt, github: "emqx/emqtt", tag: "1.11.0", system_env: [{"BUILD_WITHOUT_QUIC", "1"}]},
       {:castore, "~> 1.0"},
+       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       # Test dependencies
       {:ex_machina, "~> 2.7", only: :test},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},

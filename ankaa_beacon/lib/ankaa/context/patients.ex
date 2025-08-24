@@ -48,9 +48,8 @@ defmodule Ankaa.Patients do
         {:ok, list_care_provider_patients(user)}
 
       User.is_patient?(user) ->
-        with %Patient{} = patient <- get_patient_by_user_id(user.id) do
-          {:ok, list_peer_patients(patient)}
-        else
+        case get_patient_by_user_id(user.id) do
+          %Patient{} = patient -> {:ok, list_peer_patients(patient)}
           nil -> {:error, :patient_not_found}
         end
 
@@ -204,13 +203,14 @@ defmodule Ankaa.Patients do
       {:error, :unauthorized_role}
   """
   def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
+    default_permissions = ["receive_alerts"]
     if User.is_doctor?(user) || User.is_nurse?(user) || User.is_caresupport?(user) do
       %CareNetwork{}
       |> CareNetwork.changeset(%{
         user_id: user.id,
         patient_id: patient.id,
         relationship: relationship,
-        can_alert: relationship in ["doctor", "nurse", "caresupport"]
+        permissions: default_permissions
       })
       |> Repo.insert()
     else
@@ -230,22 +230,32 @@ defmodule Ankaa.Patients do
       {:error, :not_a_patient}
   """
   def create_peer_association(%User{} = patient_user, %Patient{} = peer_patient) do
-    if User.is_patient?(patient_user) do
-      with %Patient{} = _patient <- get_patient_by_user_id(patient_user.id) do
-        %CareNetwork{}
-        |> CareNetwork.changeset(%{
-          user_id: patient_user.id,
-          patient_id: peer_patient.id,
-          relationship: "peer_support",
-          can_alert: false
-        })
-        |> Repo.insert()
-      else
-        nil -> {:error, :patient_not_found}
-      end
-    else
-      {:error, :not_a_patient}
-    end
+    default_permissions = ["receive_alerts"]
+    # Get the User struct for the second patient
+    user2 = Repo.get!(User, peer_patient.user_id)
+
+    # Use a transaction to ensure both or neither are created
+    Repo.transaction(fn ->
+      # Create link: User 2 is a peer for Patient 1
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: user2.id,
+        patient_id: patient_user.patient.id,
+        relationship: "peer_support",
+        permissions: default_permissions
+      })
+      |> Repo.insert!()
+
+      # Create reciprocal link: User 1 is a peer for Patient 2
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: patient_user.id,
+        patient_id: peer_patient.id,
+        relationship: "peer_support",
+        permissions: default_permissions
+      })
+      |> Repo.insert!()
+    end)
   end
 
   @doc """
@@ -319,6 +329,29 @@ defmodule Ankaa.Patients do
     (care_link && care_link.relationship) || "Unknown"
   end
 
+  @doc """
+  Gets a single care network member by their ID.
+  """
+  def get_care_network_member!(id) do
+    Repo.get!(CareNetwork, id)
+  end
+
+  @doc """
+  Updates a care network member's attributes, such as their permissions.
+  """
+  def update_care_network_member(%CareNetwork{} = member, attrs) do
+    member
+    |> CareNetwork.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Removes a member from a patient's care network.
+  """
+  def remove_care_network_member(%CareNetwork{} = member) do
+    Repo.delete(member)
+  end
+
   # Private helpers
 
   defp list_care_provider_patients(user) do
@@ -329,9 +362,15 @@ defmodule Ankaa.Patients do
     |> Repo.all()
   end
 
-  defp list_peer_patients(patient) do
-    Patient
-    |> where([p], p.id != ^patient.id)
+  defp list_peer_patients(%Patient{} = patient) do
+    peer_user_ids_query =
+      from(cn in CareNetwork,
+        where: cn.patient_id == ^patient.id and cn.relationship == "peer_support",
+        select: cn.user_id
+      )
+    from(p in Patient,
+      where: p.user_id in subquery(peer_user_ids_query)
+    )
     |> Repo.all()
   end
 

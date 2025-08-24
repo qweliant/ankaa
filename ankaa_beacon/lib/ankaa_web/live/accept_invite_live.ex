@@ -15,8 +15,6 @@ defmodule AnkaaWeb.AcceptInviteLive do
   end
 
   defp apply_action(socket, :handle_invite, %{"token" => token}) do
-    IO.inspect(token, label: "INVITE TOKEN")
-
     socket
     # only assign if not already set
     |> assign_new(:invite, fn -> Invites.get_pending_invite_by_token(token) end)
@@ -64,8 +62,6 @@ defmodule AnkaaWeb.AcceptInviteLive do
   # Case 3: User is NOT logged in. This now acts as a catch-all for any valid invite
   # that didn't match the logged-in case above.
   defp handle_invite_logic(%{assigns: %{invite: invite}} = socket, original_token) do
-    IO.inspect(invite, label: "INVITE")
-
     invited_user = Accounts.get_user_by_email(invite.invitee_email)
 
     if invited_user do

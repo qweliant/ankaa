@@ -1,4 +1,7 @@
 defmodule Ankaa.Patients.Patient do
+  @moduledoc """
+  The Patient schema.
+  """
   use Ecto.Schema
   import Ecto.Changeset
   alias Ankaa.Accounts.User

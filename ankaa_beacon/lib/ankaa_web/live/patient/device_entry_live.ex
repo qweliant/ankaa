@@ -41,18 +41,25 @@ defmodule AnkaaWeb.DeviceEntryLive do
 
   @impl true
   def handle_event("save", %{"device" => device_params}, socket) do
-    patient_id = socket.assigns.current_user.patient.id
-    attrs = Map.put(device_params, "patient_id", patient_id)
+    patient = socket.assigns.current_user.patient
+    existing_devices = Devices.list_devices_for_patient(patient.id)
 
-    case Devices.create_device(attrs) do
-      {:ok, device} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "#{device.type} device added successfully.")
-         |> push_navigate(to: ~p"/patient/devices")}
+    if Enum.count(existing_devices) >= 2 do
+      {:noreply,
+       put_flash(socket, :error, "You have reached the maximum of two registered devices.")}
+    else
+      attrs = Map.put(device_params, "patient_id", patient.id)
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+      case Devices.create_device(attrs) do
+        {:ok, _device} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Device added successfully.")
+           |> push_navigate(to: ~p"/patient/devices")}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, form: to_form(changeset))}
+      end
     end
   end
 

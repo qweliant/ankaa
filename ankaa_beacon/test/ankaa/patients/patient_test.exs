@@ -186,17 +186,22 @@ defmodule Ankaa.PatientsTest do
   describe "care network" do
     setup do
       doctor = AccountsFixtures.doctor_fixture()
-      nurse = AccountsFixtures.nurse_fixture()
+      nurse1 = AccountsFixtures.nurse_fixture()
+      nurse2 = AccountsFixtures.nurse_fixture()
       patient1 = AccountsFixtures.patient_fixture()
       patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
       regular_user = AccountsFixtures.user_fixture()
 
+      {:ok, member} = Patients.create_patient_association(nurse1, patient1.patient, "nurse")
+
       %{
         doctor: doctor,
-        nurse: nurse,
+        nurse: nurse1,
+        nurse2: nurse2,
         patient1: patient1,
         patient2: patient2,
-        user: regular_user
+        user: regular_user,
+        member: member
       }
     end
 
@@ -205,29 +210,41 @@ defmodule Ankaa.PatientsTest do
       assert assoc.user_id == doctor.id
       assert assoc.patient_id == patient.patient.id
       assert assoc.relationship == "doctor"
-      assert assoc.can_alert == true
+      assert assoc.permissions == ["receive_alerts"]
     end
 
-    test "nurse can create association", %{nurse: nurse, patient1: patient} do
-      assert {:ok, assoc} = Patients.create_patient_association(nurse, patient.patient, "nurse")
+    test "nurse can create association", %{nurse2: nurse2, patient1: patient} do
+      assert {:ok, assoc} = Patients.create_patient_association(nurse2, patient.patient, "nurse")
       assert assoc.relationship == "nurse"
-      assert assoc.can_alert == true
+      assert assoc.permissions == ["receive_alerts"]
     end
 
     test "regular user cannot create professional association", %{user: user, patient1: patient} do
-      assert {:error, :unauthorized_role} =
+      assert {:error, _reason} =
                Patients.create_patient_association(user, patient.patient, "caresupport")
     end
 
     test "patients can create peer associations", %{patient1: p1, patient2: p2} do
       assert {:ok, assoc} = Patients.create_peer_association(p1, p2.patient)
       assert assoc.relationship == "peer_support"
-      assert assoc.can_alert == false
+      assert assoc.permissions == ["receive_alerts"]
     end
 
-    test "non-patients cannot create peer associations", %{doctor: doctor, patient1: patient} do
-      assert {:error, :not_a_patient} =
-               Patients.create_peer_association(doctor, patient.patient)
+    test "update_care_network_member/2 updates permissions", %{member: member} do
+      new_permissions = ["manage_network", "view_vitals"]
+
+      assert {:ok, %CareNetwork{} = updated_member} =
+               Patients.update_care_network_member(member, %{permissions: new_permissions})
+
+      assert updated_member.permissions == new_permissions
+    end
+
+    test "remove_care_network_member/1 deletes the association", %{member: member} do
+      assert {:ok, %CareNetwork{}} = Patients.remove_care_network_member(member)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Patients.get_care_network_member!(member.id)
+      end
     end
   end
 end

@@ -1,4 +1,7 @@
 defmodule Ankaa.Patients.CareNetwork do
+  @moduledoc """
+  Schema for the care_network table, representing associations between patients and their care network members.
+  """
   use Ecto.Schema
   import Ecto.Changeset
   alias Ankaa.{Accounts.User, Patients.Patient}
@@ -8,7 +11,7 @@ defmodule Ankaa.Patients.CareNetwork do
 
   schema "care_network" do
     field(:relationship, :string)
-    field(:can_alert, :boolean, default: false)
+    field(:permissions, {:array, :string}, default: [])
 
     belongs_to(:user, User, foreign_key: :user_id)
     belongs_to(:patient, Patient, foreign_key: :patient_id)
@@ -18,7 +21,7 @@ defmodule Ankaa.Patients.CareNetwork do
 
   def changeset(patient_association, attrs) do
     patient_association
-    |> cast(attrs, [:relationship, :can_alert, :patient_id, :user_id])
+    |> cast(attrs, [:relationship, :patient_id, :user_id, :permissions])
     |> validate_required([:relationship, :patient_id, :user_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:patient_id)

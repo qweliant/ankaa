@@ -174,11 +174,15 @@ defmodule Ankaa.Alerts do
   end
 
   defp get_care_network_for_alerts(patient_id) do
-    CareNetwork
-    |> where([cn], cn.patient_id == ^patient_id and cn.can_alert == true)
-    |> select([cn], cn.user_id)
+    from(cn in CareNetwork,
+      # This checks if the `permissions` array contains the "receive_alerts" string
+      where:
+        cn.patient_id == ^patient_id and
+          fragment("? @> ARRAY[?]::varchar[]", cn.permissions, "receive_alerts"),
+      select: cn.user_id
+    )
     |> Repo.all()
-  end
+    end
 
   defp broadcast_alert_dismissed(alert) do
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
