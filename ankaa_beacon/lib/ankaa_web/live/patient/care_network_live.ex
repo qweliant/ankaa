@@ -6,21 +6,24 @@ defmodule AnkaaWeb.CareNetworkLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    patient = socket.assigns.current_user.patient
+    user = socket.assigns.current_user
+    patient = user.patient
 
-    network =
+    network_members =
       if patient do
         Patients.get_care_network_for_patient(patient)
       else
         []
       end
 
-    {:ok,
+      {:ok,
      assign(socket,
-       network: network,
+       network: network_members,
        current_path: "/patient/carenetwork",
        show_modal: false,
-       selected_member_id: nil
+       selected_member_id: nil,
+       member_in_modal: nil,
+       member_form: nil
      )}
   end
 
@@ -51,24 +54,26 @@ defmodule AnkaaWeb.CareNetworkLive do
                         case member.status do
                           "active" -> "bg-green-400"
                           "pending" -> "bg-yellow-400"
-                          "inactive" -> "bg-red-400"
                         end
                       ]}></span>
                     </div>
                     <div class="ml-3">
                       <p class="text-sm font-medium text-gray-900"><%= member.name %></p>
-                      <p class="text-sm text-gray-500"><%= member.role %></p>
+                      <p class="text-sm text-gray-500"><%= member.role |> String.capitalize() %></p>
                     </div>
                   </div>
-                  <div class="flex items-center space-x-4">
-                    <button
-                      phx-click="show_modal"
-                      phx-value-id={member.id}
-                      class="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Manage
-                    </button>
-                  </div>
+
+                  <%= if member.status == "active" do %>
+                    <div class="flex items-center space-x-4">
+                      <button
+                        phx-click="show_modal"
+                        phx-value-id={member.id}
+                        class="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                      >
+                        Manage
+                      </button>
+                    </div>
+                  <% end %>
                 </div>
               </div>
             </li>
@@ -79,70 +84,40 @@ defmodule AnkaaWeb.CareNetworkLive do
       <%= if @show_modal do %>
         <.modal id="member-modal" show>
           <div class="p-6">
-            <h3 class="text-lg font-medium text-gray-900">Manage Network Member</h3>
-            <div class="mt-4">
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Status</label>
-                  <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Permissions</label>
-                  <div class="mt-2 space-y-2">
-                    <div class="flex items-center">
-                      <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">View Real-time Dialysis Data</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Receive Critical Alerts</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">View Historical Trends</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Initiate Live Monitoring</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Recommend Machine Adjustments</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Set BP Monitoring Parameters</label>
-                    </div>
-                  </div>
+            <.simple_form for={@member_form} phx-submit="save_changes">
+              <h3 class="text-lg font-medium text-gray-900">
+                Manage <%= @member_in_modal.user.first_name %>'s Permissions
+              </h3>
+              <div class="mt-4">
+                <.input
+                  field={@member_form[:permissions]}
+                  type="checkbox"
+                  label="Permissions"
+                  options={[
+                    {"Receive Alerts", "receive_alerts"},
+                    {"Manage Care Network", "manage_network"},
+                    {"View Vitals", "view_vitals"}
+                  ]}
+                />
+              </div>
+              <div class="mt-6 flex justify-between">
+                <button
+                  type="button"
+                  phx-click="delete_member"
+                  phx-value-id={@member_in_modal.id}
+                  data-confirm="Are you sure you want to remove this member from your care network?"
+                  class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  Remove Member
+                </button>
+                <div class="flex space-x-3">
+                  <button type="button" phx-click="close_modal" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <.button phx-disable-with="Saving...">Save Changes</.button>
                 </div>
               </div>
-            </div>
-            <div class="mt-6 flex justify-between">
-              <button
-                phx-click="delete_member"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Remove Member
-              </button>
-              <div class="flex space-x-3">
-                <button
-                  phx-click="close_modal"
-                  class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  phx-click="save_changes"
-                  class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
+            </.simple_form>
           </div>
         </.modal>
       <% end %>
@@ -152,31 +127,50 @@ defmodule AnkaaWeb.CareNetworkLive do
 
   @impl true
   def handle_event("show_modal", %{"id" => id}, socket) do
-    {:noreply, assign(socket, show_modal: true, selected_member_id: id)}
+    member = Patients.get_care_network_member!(id)
+    changeset = Ankaa.Patients.CareNetwork.changeset(member, %{})
+
+    {:noreply,
+     assign(socket,
+       show_modal: true,
+       selected_member_id: id,
+       member_in_modal: member,
+       member_form: to_form(changeset)
+     )}
   end
 
   def handle_event("close_modal", _, socket) do
     {:noreply, assign(socket, show_modal: false)}
   end
 
-  def handle_event("save_changes", _, socket) do
-    {:noreply, assign(socket, show_modal: false)}
+  def handle_event("save_changes", %{"care_network" => params}, socket) do
+    member = socket.assigns.member_in_modal
+
+    case Patients.update_care_network_member(member, params) do
+      {:ok, _updated_member} ->
+        network =
+          Patients.get_care_network_for_patient(socket.assigns.current_user.patient.id)
+        {:noreply,
+         socket
+         |> assign(show_modal: false, network: network)
+         |> put_flash(:info, "Member permissions updated.")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, member_form: to_form(changeset))}
+    end
   end
 
   @impl true
-  def handle_event("delete_member", _, socket) do
-    # In a real app, we would delete the member from the database
-    # For now, we'll just remove it from the dummy data
-    network =
-      Enum.reject(socket.assigns.network, fn member ->
-        member.id == socket.assigns.selected_member_id
-      end)
+  def handle_event("delete_member", %{"id" => member_id}, socket) do
+    member = Patients.get_care_network_member!(member_id)
+    {:ok, _} = Patients.remove_care_network_member(member)
+
+    # Refetch the network list to show the changes
+    network = Patients.get_care_network_for_patient(socket.assigns.current_user.patient.id)
 
     {:noreply,
-     assign(socket,
-       network: network,
-       show_modal: false,
-       selected_member_id: nil
-     )}
+     socket
+     |> assign(show_modal: false, network: network)
+     |> put_flash(:info, "Member removed from your care network.")}
   end
 end

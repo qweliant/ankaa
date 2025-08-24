@@ -334,6 +334,7 @@ defmodule Ankaa.Patients do
   """
   def get_care_network_member!(id) do
     Repo.get!(CareNetwork, id)
+    |> Repo.preload(:user)
   end
 
   @doc """
@@ -352,8 +353,41 @@ defmodule Ankaa.Patients do
     Repo.delete(member)
   end
 
-  # Private helpers
+  @doc """
+  Gets the full CareNetwork structs with user data for management purposes.
+  """
+  def list_care_network_members(patient_id) do
+    from(cn in CareNetwork,
+      where: cn.patient_id == ^patient_id,
+      preload: [:user]
+    )
+    |> Repo.all()
+  end
 
+  @doc """
+  Checks if a given user is authorized to manage a patient's care network.
+  """
+  def can_manage_network?(%User{} = user, %Patient{} = patient) do
+    # patient can always manage their own network.
+    is_the_patient = user.id == patient.user_id
+
+    if is_the_patient do
+      true
+    else
+      # check if the user is a member with the correct permission.
+      case Repo.get_by(CareNetwork, user_id: user.id, patient_id: patient.id) do
+        nil ->
+          # Not a member of the network.
+          false
+
+        %CareNetwork{permissions: permissions} ->
+          # is a member; check if they have the "manage_network" permission.
+          "manage_network" in permissions
+      end
+    end
+  end
+
+  # Private helpers
   defp list_care_provider_patients(user) do
     CareNetwork
     |> join(:inner, [pa], p in Patient, on: pa.patient_id == p.id)
@@ -378,35 +412,45 @@ defmodule Ankaa.Patients do
     query =
       from(cn in CareNetwork,
         where: cn.patient_id == ^patient.id,
-        join: u in User,
-        on: cn.user_id == u.id,
-        # Select the fields we need to build the map
-        select: %{
-          id: u.id,
-          # You can change this to `u.name` if you have a name field on your User schema
-          name: u.email,
-          role: cn.relationship,
-          email: u.email,
-          status: "active"
-        }
+        join: u in assoc(cn, :user),
+        # Select the raw structs we need
+        select: {cn, u}
       )
 
     Repo.all(query)
+    |> Enum.map(fn {care_network, user} ->
+      # Safely build the full name, handling potential nil values
+      full_name =
+        [user.first_name, user.last_name]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(" ")
+
+      # If the name is blank after joining, fall back to the email
+      display_name = if full_name == "", do: user.email, else: full_name
+
+      %{
+        id: care_network.id,
+        name: display_name,
+        role: care_network.relationship,
+        email: user.email,
+        status: "active"
+      }
+    end)
   end
 
   defp list_pending_members(%Patient{} = patient) do
-    query =
-      from(i in Invite,
-        where: i.patient_id == ^patient.id and i.status == "pending",
-        select: %{
-          id: i.id,
-          name: "Pending Invitation",
-          role: i.invitee_role,
-          email: i.invitee_email,
-          status: "pending"
-        }
-      )
-
-    Repo.all(query)
+    from(i in Invite,
+          where: i.patient_id == ^patient.id and i.status == "pending",
+          select: i
+        )
+        |> Repo.all()
+        |> Enum.map(fn invite ->
+          %{
+            id: invite.id,
+            name: "Invitation to #{invite.invitee_email}",
+            role: invite.invitee_role,
+            status: "pending"
+          }
+        end)
   end
 end
