@@ -1,9 +1,15 @@
 defmodule AnkaaWeb.AlertBanner do
+  @moduledoc """
+  A LiveComponent that displays active alerts to users.
+  """
+
   use AnkaaWeb, :live_component
 
   alias Ankaa.Alerts
   alias Ankaa.Notifications
   alias Ankaa.Accounts
+
+  require Logger
 
   @impl true
   def update(assigns, socket) do
@@ -20,18 +26,15 @@ defmodule AnkaaWeb.AlertBanner do
 
   @impl true
   def handle_event(
-        "check_on_patient",
-        %{"alert_id" => alert_id, "patient_id" => patient_id},
-        socket
-      ) do
+    "check_on_patient",
+      %{"alert_id" => alert_id, "patient_id" => patient_id},
+      socket
+    ) do
     # This would integrate with your existing care network/communication system
-    # Start the chat → call → EMS escalation flow
+    # Start the escalation process to check on the patient
 
     # For now, just show that the check was initiated
-    send(
-      self(),
-      {:patient_check_initiated, String.to_integer(alert_id), String.to_integer(patient_id)}
-    )
+    Logger.info("Check on patient #{patient_id} initiated for alert #{alert_id}")
 
     {:noreply, socket}
   end
