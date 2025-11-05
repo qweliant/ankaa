@@ -14,28 +14,38 @@ defmodule AnkaaWeb.CareProvider.PatientLive.New do
   def handle_event("invite_patient", %{"invite" => invite_params}, socket) do
     current_user = socket.assigns.current_user
     invitee_email = invite_params["invitee_email"]
+    existing_user = Accounts.get_user_by_email(invitee_email)
 
     attrs = %{
       "invitee_email" => invitee_email,
       "invitee_role" => "patient",
-      # No associated patient yet
       "patient_id" => nil
     }
 
-    # Optional: Check if a user or pending invite for this email already exists
-    if Accounts.get_user_by_email(invitee_email) do
-      {:noreply, put_flash(socket, :error, "A user with this email already exists.")}
-    else
-      case Invites.create_invite(current_user, attrs) do
-        {:ok, _invite} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Invitation sent successfully to #{invitee_email}.")
-           |> push_navigate(to: ~p"/careprovider/patients")}
+   cond do
+      existing_user && Accounts.User.patient?(existing_user) ->
+        {:noreply,
+         put_flash(socket, :error, "A user with this email is already registered as a patient.")}
+      # in the future we will allow care support to be invited as patients. we just dont have any way to handle multiple roles
+      existing_user && existing_user.role != nil ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "A user with this email is already registered under another role."
+         )}
 
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, assign(socket, form: to_form(changeset))}
-      end
+      true ->
+        case Invites.create_invite(current_user, attrs) do
+          {:ok, _invite} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Invitation sent successfully to #{invitee_email}.")
+             |> push_navigate(to: ~p"/careprovider/patients")}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign(socket, form: to_form(changeset))}
+        end
     end
   end
 

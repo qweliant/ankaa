@@ -220,6 +220,9 @@ defmodule Ankaa.Accounts.User do
   def caresupport?(user), do: has_role?(user, "caresupport")
   def technical_support?(user), do: has_role?(user, "technical_support")
 
+  @doc """
+  Checks if the user is associated with a patient record.
+  """
   def patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
   def patient?(_), do: false
 end
