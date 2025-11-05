@@ -143,6 +143,7 @@ defmodule Ankaa.Accounts do
   If the token matches, the user email is updated and the token is deleted.
   The confirmed_at date is also updated to the current time.
   """
+  @dialyzer {:nowarn_function, update_user_email: 2}
   def update_user_email(user, token) do
     context = "change:#{user.email}"
 
@@ -155,6 +156,7 @@ defmodule Ankaa.Accounts do
     end
   end
 
+  @dialyzer {:nowarn_function, user_email_multi: 2}
   defp user_email_multi(user, email, context) do
     changeset =
       user
@@ -412,13 +414,12 @@ defmodule Ankaa.Accounts do
     User.has_role?(user, role)
   end
 
-  # Role checking convenience functions
-  def is_doctor?(user), do: has_role?(user, "doctor")
-  def is_nurse?(user), do: has_role?(user, "nurse")
-  def is_admin?(user), do: has_role?(user, "admin")
-  def is_caresupport?(user), do: has_role?(user, "caresupport")
-  def is_technical_support?(user), do: has_role?(user, "technical_support")
-  def is_patient?(user), do: User.is_patient?(user)
+  def doctor?(user), do: has_role?(user, "doctor")
+  def nurse?(user), do: has_role?(user, "nurse")
+  def admin?(user), do: has_role?(user, "admin")
+  def caresupport?(user), do: has_role?(user, "caresupport")
+  def technical_support?(user), do: has_role?(user, "technical_support")
+  def patient?(user), do: User.patient?(user)
 
   @doc """
   Generates a short-lived, single-use token to log a user in.

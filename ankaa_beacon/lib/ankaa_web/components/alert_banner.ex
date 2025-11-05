@@ -119,7 +119,7 @@ defmodule AnkaaWeb.AlertBanner do
             </div>
 
             <div class="flex items-center space-x-2">
-              <%= if item.alert.severity == "high" && Accounts.is_patient?(@current_user) do %>
+              <%= if item.alert.severity == "high" && Accounts.patient?(@current_user) do %>
                 <button
                   class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium hover:bg-green-200"
                   phx-click="dismiss_alert"
@@ -176,7 +176,7 @@ defmodule AnkaaWeb.AlertBanner do
 
   defp alert_icon(assigns) do
     ~H"""
-    <div class="flex-shrink-0">
+    <div class="shrink-0">
       <%= case @severity do %>
         <% "info" -> %>
           <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">

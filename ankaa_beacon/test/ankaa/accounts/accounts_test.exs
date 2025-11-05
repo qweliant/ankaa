@@ -553,11 +553,11 @@ defmodule Ankaa.AccountsTest do
   describe "is_<role>/1" do
     test "role convenience functions work correctly" do
       user = user_fixture(%{role: "doctor"})
-      assert User.is_doctor?(user)
-      refute User.is_nurse?(user)
-      refute User.is_admin?(user)
-      refute User.is_caresupport?(user)
-      refute User.is_technical_support?(user)
+      assert User.doctor?(user)
+      refute User.nurse?(user)
+      refute User.admin?(user)
+      refute User.caresupport?(user)
+      refute User.technical_support?(user)
     end
   end
 end

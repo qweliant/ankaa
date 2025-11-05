@@ -41,13 +41,13 @@ defmodule Ankaa.Patients do
   """
   def list_patients_for_user(%User{} = user) do
     cond do
-      User.is_admin?(user) ->
+      User.admin?(user) ->
         {:ok, list_patients()}
 
-      User.is_doctor?(user) or User.is_nurse?(user) ->
+      User.doctor?(user) or User.nurse?(user) ->
         {:ok, list_care_provider_patients(user)}
 
-      User.is_patient?(user) ->
+      User.patient?(user) ->
         case get_patient_by_user_id(user.id) do
           %Patient{} = patient -> {:ok, list_peer_patients(patient)}
           nil -> {:error, :patient_not_found}
@@ -204,7 +204,7 @@ defmodule Ankaa.Patients do
   """
   def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
     default_permissions = ["receive_alerts"]
-    if User.is_doctor?(user) || User.is_nurse?(user) || User.is_caresupport?(user) do
+    if User.doctor?(user) || User.nurse?(user) || User.caresupport?(user) do
       %CareNetwork{}
       |> CareNetwork.changeset(%{
         user_id: user.id,

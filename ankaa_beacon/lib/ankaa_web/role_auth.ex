@@ -41,7 +41,7 @@ defmodule AnkaaWeb.RoleAuth do
   def on_mount(:require_patient, _params, _session, socket) do
     socket = mount_current_user(socket)
 
-    if socket.assigns.current_user && Ankaa.Accounts.User.is_patient?(socket.assigns.current_user) do
+    if socket.assigns.current_user && Ankaa.Accounts.User.patient?(socket.assigns.current_user) do
       {:cont, socket}
     else
       socket =

@@ -1,4 +1,7 @@
 defmodule Ankaa.Accounts.User do
+  @moduledoc """
+  The user schema and changesets.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -211,12 +214,12 @@ defmodule Ankaa.Accounts.User do
   end
 
   # Role checking functions
-  def is_doctor?(user), do: has_role?(user, "doctor")
-  def is_nurse?(user), do: has_role?(user, "nurse")
-  def is_admin?(user), do: has_role?(user, "admin")
-  def is_caresupport?(user), do: has_role?(user, "caresupport")
-  def is_technical_support?(user), do: has_role?(user, "technical_support")
+  def doctor?(user), do: has_role?(user, "doctor")
+  def nurse?(user), do: has_role?(user, "nurse")
+  def admin?(user), do: has_role?(user, "admin")
+  def caresupport?(user), do: has_role?(user, "caresupport")
+  def technical_support?(user), do: has_role?(user, "technical_support")
 
-  def is_patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
-  def is_patient?(_), do: false
+  def patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
+  def patient?(_), do: false
 end

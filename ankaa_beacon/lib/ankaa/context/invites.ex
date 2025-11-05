@@ -199,7 +199,7 @@ defmodule Ankaa.Invites do
   end
 
   defp authorize_invite(inviter_user, invitee_role) do
-    inviter_role = if Accounts.User.is_patient?(inviter_user), do: "patient", else: inviter_user.role
+    inviter_role = if Accounts.User.patient?(inviter_user), do: "patient", else: inviter_user.role
     allowed_roles = Map.get(@allowed_invites, inviter_role, [])
 
     if invitee_role in allowed_roles do
