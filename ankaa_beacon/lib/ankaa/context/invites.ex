@@ -1,5 +1,9 @@
 defmodule Ankaa.Invites do
-  import Ecto.Query, warn: false
+  @moduledoc """
+  The Invites context.
+  """
+  import Ecto.{Query}, warn: false
+
   alias Ankaa.Repo
 
   alias Ankaa.Mailer
@@ -9,13 +13,33 @@ defmodule Ankaa.Invites do
 
   @rand_size 32
 
+  @allowed_invites %{
+    "patient" => ["caresupport", "doctor", "nurse"],
+    "doctor" => ["patient"],
+    "nurse" => ["patient"],
+    "caresupport" => []
+  }
+
+  @doc """
+  Authorizes, validates, and creates a new invite.
+  """
+  def send_invitation(inviter_user, patient, invite_params) do
+    with :ok <- authorize_invite(inviter_user, invite_params["invitee_role"]),
+         :ok <- validate_self_invite(inviter_user, invite_params["invitee_email"]),
+         :ok <- validate_existing_user(invite_params["invitee_email"], invite_params["invitee_role"]),
+         :ok <- validate_pending_invite(invite_params["invitee_email"], patient.id) do
+      attrs = Map.put(invite_params, "patient_id", patient.id)
+      create_invite(inviter_user, attrs)
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @doc """
   Creates a new invite, saves its hash, and delivers the invite email in a single transaction.
   """
+  @dialyzer {:nowarn_function, create_invite: 2}
   def create_invite(inviter_user, invite_attrs) do
-    # token = :crypto.strong_rand_bytes(@rand_size)
-    # hashed_token = :crypto.hash(@hash_algorithm, token)
-    # encoded_token = Base.encode16(hashed_token, case: :lower)
     token = :crypto.strong_rand_bytes(@rand_size) |> Base.url_encode64(padding: false)
     expires_at = DateTime.add(DateTime.utc_now(), 7, :day)
 
@@ -27,21 +51,28 @@ defmodule Ankaa.Invites do
       |> Map.put("status", "pending")
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
-    Repo.transaction(fn ->
-      case Repo.insert(Invite.changeset(%Invite{}, final_attrs)) do
-        {:ok, invite} ->
-          case Mailer.deliver_invite_email(invite, token) do
-            {:ok, _delivery_details} ->
-              invite
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:invite, Invite.changeset(%Invite{}, final_attrs))
+      |> Ecto.Multi.run(:email, fn _repo, %{invite: invite} ->
+        case Mailer.deliver_invite_email(invite, token) do
+          {:ok, _delivery_details} ->
+            {:ok, :email_sent} # Report success
+          {:error, reason} ->
+            {:error, reason} # Report failure, this will roll back the transaction
+        end
+      end)
 
-            {:error, _reason} ->
-              Repo.rollback("email_delivery_failed")
-          end
+    case Repo.transaction(multi) do
+      {:ok, %{invite: invite}} ->
+        {:ok, invite}
 
-        {:error, changeset} ->
-          Repo.rollback(changeset)
-      end
-    end)
+      {:error, :invite, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :email, email_error, _} ->
+        {:error, {:error, email_error}}
+    end
   end
 
   @doc """
@@ -164,6 +195,49 @@ defmodule Ankaa.Invites do
       existing_patient ->
         # A patient record already exists, so we just return it.
         {:ok, existing_patient}
+    end
+  end
+
+  defp authorize_invite(inviter_user, invitee_role) do
+    inviter_role = if Accounts.User.is_patient?(inviter_user), do: "patient", else: inviter_user.role
+    allowed_roles = Map.get(@allowed_invites, inviter_role, [])
+
+    if invitee_role in allowed_roles do
+      :ok
+    else
+      {:error, "A #{inviter_role} is not authorized to invite a #{invitee_role}."}
+    end
+  end
+
+  defp validate_self_invite(inviter_user, invitee_email) do
+    if inviter_user.email == invitee_email do
+      {:error, "You cannot invite yourself to your own care network."}
+    else
+      :ok
+    end
+  end
+
+  defp validate_existing_user(invitee_email, invitee_role) do
+    case Accounts.get_user_by_email(invitee_email) do
+      nil ->
+        :ok # No user exists, so no conflict.
+
+      existing_user ->
+        # A user exists, but their role is different AND not nil
+        if existing_user.role != invitee_role and !is_nil(existing_user.role) do
+          {:error,
+           "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."}
+        else
+          :ok # User exists but role matches (or is nil), which is fine.
+        end
+    end
+  end
+
+  defp validate_pending_invite(invitee_email, patient_id) do
+    if get_pending_invite_for_email_and_patient(invitee_email, patient_id) do
+      {:error, "An invitation has already been sent to #{invitee_email} and is still pending."}
+    else
+      :ok
     end
   end
 end

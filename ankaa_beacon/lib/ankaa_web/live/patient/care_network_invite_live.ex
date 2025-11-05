@@ -2,7 +2,6 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
   use AnkaaWeb, :patient_layout
 
   alias Ankaa.Invites
-  alias Ankaa.Accounts
   alias Ankaa.Invites.Invite
 
   @impl true
@@ -19,77 +18,25 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
   @impl true
   def handle_event("invite", %{"invite" => invite_params}, socket) do
     current_user = socket.assigns.current_user
-    invitee_email = invite_params["invitee_email"]
-    invitee_role = invite_params["invitee_role"]
-    patient_id = current_user.patient.id
+    patient = current_user.patient
 
-    allowed_invites = %{
-      "patient" => ["caresupport", "doctor", "nurse"],
-      "doctor" => ["patient"],
-      "nurse" => ["patient"],
-      "caresupport" => []
-    }
+    case Invites.send_invitation(current_user, patient, invite_params) do
+      {:ok, _invite} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Invitation sent successfully to #{invite_params["invitee_email"]}.")
+         |> push_navigate(to: ~p"/patient/carenetwork")}
 
-    existing_user = Accounts.get_user_by_email(invitee_email)
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
 
-    inviter_role =
-      if Accounts.User.is_patient?(current_user) do
-        "patient"
-      else
-        current_user.role
-      end
+      {:error, {:error, _reason}} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Could not send invitation email. Please try again later.")}
 
-    allowed_roles_for_inviter = Map.get(allowed_invites, inviter_role, [])
-
-    if invitee_role in allowed_roles_for_inviter do
-      cond do
-        current_user.email == invitee_email ->
-          {:noreply,
-           socket
-           |> put_flash(:error, "You cannot invite yourself to your own care network.")}
-
-        existing_user && existing_user.role != invitee_role ->
-          {:noreply,
-           socket
-           |> put_flash(
-             :error,
-             "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."
-           )}
-
-        Invites.get_pending_invite_for_email_and_patient(invitee_email, patient_id) ->
-          {:noreply,
-           socket
-           |> put_flash(
-             :error,
-             "An invitation has already been sent to #{invitee_email} and is still pending."
-           )}
-
-        true ->
-          attrs = Map.put(invite_params, "patient_id", patient_id)
-
-          case Invites.create_invite(current_user, attrs) do
-            {:ok, _invite} ->
-              {:noreply,
-               socket
-               |> put_flash(:info, "Invitation sent successfully to #{attrs["invitee_email"]}.")
-               |> push_navigate(to: ~p"/patient/carenetwork")}
-
-            {:error, %Ecto.Changeset{} = changeset} ->
-              {:noreply, assign(socket, form: to_form(changeset))}
-
-            {:error, {:error, _reason}} ->
-              {:noreply,
-               socket
-               |> put_flash(:error, "Could not send invitation email. Please try again later.")}
-          end
-      end
-    else
-      {:noreply,
-       put_flash(
-         socket,
-         :error,
-         "A #{current_user.role} is not authorized to invite a #{invitee_role}."
-       )}
+      {:error, error_message} when is_binary(error_message) ->
+        {:noreply, put_flash(socket, :error, error_message)}
     end
   end
 
