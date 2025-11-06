@@ -93,9 +93,10 @@ defmodule Ankaa.Workers.MQTTConsumer do
   defp client_options do
     mqtt_config = Application.get_env(:ankaa, :mqtt, [])
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
-
     port = Keyword.get(mqtt_config, :port, 1883)
     port = if is_binary(port), do: String.to_integer(port), else: port
+    ssl_opts = Keyword.get(mqtt_config, :ssl_options, [])
+    {sni, ssl_opts_without_sni} = Keyword.pop(ssl_opts, :server_name_indication, nil)
 
     [
       name: :emqtt_client,
@@ -106,7 +107,8 @@ defmodule Ankaa.Workers.MQTTConsumer do
       password: Keyword.get(mqtt_config, :password, "") |> to_charlist(),
       conn_mod: self(),
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
-      ssl_opts: Keyword.get(mqtt_config, :ssl_options, [])
+      ssl_opts: ssl_opts_without_sni,
+      server_name_indication: String.to_charlist(sni)
     ]
   end
 end
