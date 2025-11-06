@@ -51,7 +51,8 @@ if config_env() == :prod do
     enable_ssl: true,
     ssl_options: [
       verify: :verify_peer,
-      # cacertfile: Path.join(:code.priv_dir(:ankaa), "cert/emqxsl-ca.crt")
+      cacertfile: CAStore.file_path(),
+      server_name_indication: String.to_charlist(host)
     ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -75,7 +76,7 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-    
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key
