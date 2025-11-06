@@ -15,7 +15,7 @@ kill_signal = 'SIGTERM'
 [env]
   PHX_HOST = 'ankaa-beacon.fly.dev'
   PORT = '8080'
-  PHX_SERVER="true bin/ankaa start"
+  PHX_SERVER="true"
 
 [http_service]
   internal_port = 8080

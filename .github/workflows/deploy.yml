@@ -46,7 +46,7 @@ jobs:
         working-directory: ankaa_beacon
       - name: Deploy to Fly.io
         uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only --depot=false
+      - run: flyctl deploy --remote-only --depot=false --config fly.toml
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         working-directory: ankaa_beacon
