@@ -48,7 +48,11 @@ if config_env() == :prod do
     port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
     username: System.get_env("MQTT_USER"),
     password: System.get_env("MQTT_PASSWORD"),
-    enable_ssl: true
+    enable_ssl: true,
+      ssl_options: [
+    verify: :verify_peer,
+    cacertfile: Path.join(:code.priv_dir(:ankaa), "publiccert/emqxsl-ca.crt")
+  ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   secret_key_base =
