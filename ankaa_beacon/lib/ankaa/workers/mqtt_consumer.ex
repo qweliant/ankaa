@@ -25,7 +25,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
   @impl true
   def handle_info(:connect, state) do
-    Logger.debug("MQTTConsumer: Client options: #{inspect(client_options())}")
+    Logger.info("MQTTConsumer: Client options: #{inspect(client_options())}")
     Logger.info("MQTTConsumer: Attempting to connect to broker...")
 
 
