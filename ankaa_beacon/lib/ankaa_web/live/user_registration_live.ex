@@ -65,33 +65,44 @@ defmodule AnkaaWeb.UserRegistrationLive do
     {:ok, socket, temporary_assigns: [form: nil]}
   end
 
+  @impl true
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.register_user(user_params) do
-      {:ok, user} ->
-        {:ok, _} =
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            &url(~p"/users/confirm/#{&1}")
-          )
+    multi =
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:register, fn _repo, _changes ->
+        Accounts.register_user(user_params)
+      end)
+      |> Ecto.Multi.run(:email, fn _repo, %{register: user} ->
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          &url(~p"/users/confirm/#{&1}")
+        )
+      end)
 
-        # 1. Generate the temporary login token
+    case Ankaa.Repo.transaction(multi) do
+      {:ok, %{register: user}} ->
         login_token = Accounts.generate_temporary_login_token(user)
-
-        # 2. Determine the final destination after login
         return_to =
           case socket.assigns.invite_token do
             nil -> ~p"/"
             invite_token -> ~p"/invites/accept?token=#{invite_token}"
           end
 
-        # 3. Navigate to the controller action to perform the login
         {:noreply,
          push_navigate(socket,
            to: ~p"/users/log_in_from_token?token=#{login_token}&return_to=#{return_to}"
          )}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, :register, changeset, _} ->
         {:noreply, assign(socket, form: to_form(changeset))}
+
+      {:error, :email, _reason, _} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Registration failed. We couldn't send a confirmation email at this time."
+         )}
     end
   end
 
