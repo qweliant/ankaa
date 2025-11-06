@@ -33,18 +33,21 @@ config :ankaa, :start_mqtt_consumer, true
 #   port: String.to_integer(System.get_env("POSTGRES_PORT") || "5432"),
 #   ssl: true
 
+host = System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set")
+
 # # Configure your MQTT broker
 config :ankaa, :mqtt,
-  host: System.get_env("MQTT_HOST"),
+  host: host,
   port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
   username: System.get_env("MQTT_USERNAME"),
   password: System.get_env("MQTT_PASSWORD"),
   enable_ssl: true,
   ssl_options: [
     verify: :verify_peer,
-    CAfile: System.get_env("MQTT_CA_CERT"),
-    cert: System.get_env("MQTT_CLIENT_CERT"),
-    key: System.get_env("MQTT_CLIENT_KEY"),
+    cacertfile: System.get_env("MQTT_CA_CERT"),
+    certfile: System.get_env("MQTT_CLIENT_CERT"),
+    keyfile: System.get_env("MQTT_CLIENT_KEY"),
     server_name_indication: System.get_env("MQTT_HOST"),
-    tls_versions: [:"tlsv1.2", :"tlsv1.3"]
+    tls_versions: [:"tlsv1.2", :"tlsv1.3"],
+    server_name_indication: host
   ]
