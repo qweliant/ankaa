@@ -25,12 +25,12 @@ config :ankaa, :start_mqtt_consumer, true
 
 # # Configure your primary PostgreSQL database
 # config :ankaa, Ankaa.Repo,
-#   username: System.get_env("PROD_POSTGRES_USER"),
-#   password: System.get_env("PROD_POSTGRES_PASSWORD"),
-#   hostname: System.get_env("PROD_POSTGRES_HOST"),
+#   username: System.get_env("POSTGRES_USER"),
+#   password: System.get_env("POSTGRES_PASSWORD"),
+#   hostname: System.get_env("POSTGRES_HOST"),
 #   # Updated to match .env
-#   database: System.get_env("PROD_POSTGRES_DB"),
-#   port: String.to_integer(System.get_env("PROD_POSTGRES_PORT") || "5432"),
+#   database: System.get_env("POSTGRES_DB"),
+#   port: String.to_integer(System.get_env("POSTGRES_PORT") || "5432"),
 #   ssl: true
 
 # # Configure your MQTT broker
@@ -39,4 +39,5 @@ config :ankaa, :mqtt,
   port: String.to_integer(System.get_env("MQTT_PORT") || "1883"),
   # client_id: System.get_env("MQTT_CLIENT_ID"),
   username: System.get_env("MQTT_USERNAME"),
-  password: System.get_env("MQTT_PASSWORD")
+  password: System.get_env("MQTT_PASSWORD"),
+  enable_ssl: true
