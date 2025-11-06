@@ -65,3 +65,6 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :ankaa, base_url: "http://localhost:4000"
+
+
+config :ankaa, :start_mqtt_consumer, false

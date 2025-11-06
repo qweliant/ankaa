@@ -24,12 +24,12 @@ defmodule Ankaa.Application do
       {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry}
     ]
 
-    children =
-      if Mix.env() == :test do
-        children
-      else
-        children ++ [Ankaa.Workers.MQTTConsumer]
-      end
+  children =
+    if Application.get_env(:ankaa, :start_mqtt_consumer, true) do
+      children ++ [Ankaa.Workers.MQTTConsumer]
+    else
+      children
+    end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

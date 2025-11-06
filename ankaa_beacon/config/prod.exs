@@ -18,6 +18,8 @@ config :logger, level: :info
 
 config :ankaa, :env, :prod
 
+config :ankaa, :start_mqtt_consumer, true
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
 

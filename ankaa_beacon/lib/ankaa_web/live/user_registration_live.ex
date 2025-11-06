@@ -4,6 +4,7 @@ defmodule AnkaaWeb.UserRegistrationLive do
   alias Ankaa.Accounts
   alias Ankaa.Accounts.User
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
@@ -39,6 +40,7 @@ defmodule AnkaaWeb.UserRegistrationLive do
     """
   end
 
+  @impl true
   def mount(%{"invite_token" => token}, _session, socket) do
     changeset = Accounts.change_user_registration(%User{})
 
@@ -52,6 +54,7 @@ defmodule AnkaaWeb.UserRegistrationLive do
     {:ok, socket, temporary_assigns: [form: nil]}
   end
 
+  @impl true
   def mount(_params, _session, socket) do
     changeset = Accounts.change_user_registration(%User{})
 
