@@ -42,9 +42,9 @@ if config_env() == :prod do
     #   server_name_indication: "shard-hacker-5530.g8z.gcp-us-east1.cockroachlabs.cloud"
     # ]
 
-
+  host = System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set")
   config :ankaa, :mqtt,
-    host: System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set"),
+    host: host,
     port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
     username: System.get_env("MQTT_USER"),
     password: System.get_env("MQTT_PASSWORD"),
