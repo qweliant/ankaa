@@ -1,4 +1,7 @@
 defmodule Ankaa.Patients.Device do
+  @moduledoc """
+  Ecto schema for patient devices.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 

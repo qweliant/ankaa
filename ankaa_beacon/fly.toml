@@ -4,7 +4,7 @@
 #
 
 app = 'ankaa-beacon'
-primary_region = 'atl'
+primary_region = 'iad'
 kill_signal = 'SIGTERM'
 
 [build]
