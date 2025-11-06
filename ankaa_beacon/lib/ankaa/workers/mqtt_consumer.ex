@@ -1,4 +1,8 @@
 defmodule Ankaa.Workers.MQTTConsumer do
+  @moduledoc """
+  An MQTT consumer that connects to the broker, subscribes to device telemetry topics,
+  and dispatches incoming messages to the appropriate device processes.
+  """
   use GenServer
   require Logger
 

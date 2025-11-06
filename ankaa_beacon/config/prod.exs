@@ -34,9 +34,9 @@ config :ankaa, :start_mqtt_consumer, true
 #   ssl: true
 
 # # Configure your MQTT broker
-# config :ankaa, :mqtt,
-#   host: System.get_env("PROD_MQTT_HOST"),
-#   port: String.to_integer(System.get_env("PROD_MQTT_PORT") || "1883"),
-#   client_id: System.get_env("PROD_MQTT_CLIENT_ID"),
-#   username: System.get_env("PROD_MQTT_USERNAME"),
-#   password: System.get_env("PROD_MQTT_PASSWORD")
+config :ankaa, :mqtt,
+  host: System.get_env("MQTT_HOST"),
+  port: String.to_integer(System.get_env("MQTT_PORT") || "1883"),
+  # client_id: System.get_env("MQTT_CLIENT_ID"),
+  username: System.get_env("MQTT_USERNAME"),
+  password: System.get_env("MQTT_PASSWORD")

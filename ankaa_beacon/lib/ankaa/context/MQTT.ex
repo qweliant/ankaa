@@ -1,4 +1,7 @@
 defmodule Ankaa.MQTT do
+  @moduledoc """
+  Module responsible for MQTT interactions.
+  """
   require Logger
 
   @doc """

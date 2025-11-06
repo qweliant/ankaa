@@ -4,8 +4,8 @@ use log::{error, info};
 use rand::SeedableRng;
 use rand::prelude::*;
 use rand::rngs::StdRng;
-use rumqttc::{AsyncClient, MqttOptions, QoS};
-use serde::Serialize;
+use rumqttc::{AsyncClient, MqttOptions, QoS, Transport};
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
@@ -52,7 +52,7 @@ struct SimulationConfig {
     batch_size: usize,
 }
 
-#[derive(Debug, serde::Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 enum Scenario {
     Normal,
     HighSystolic,
@@ -62,13 +62,13 @@ enum Scenario {
     LowBFR,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 struct DeviceConfig {
     device_id: String,
-    scenario: String, // We'll just use a string for simplicity for now
+    scenario: Scenario, // We'll just use a string for simplicity for now
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(untagged)] // Allows us to parse different command types
 enum SimulatorCommand {
     Start {
@@ -105,15 +105,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Batch size: {}", config.batch_size);
 
     let mqtt_host = env::var("MQTT_HOST").unwrap_or_else(|_| "mqtt".to_string());
+    let mqtt_port: u16 = env::var("MQTT_PORT")
+        .unwrap_or_else(|_| "1883".to_string())
+        .parse()
+        .unwrap_or(1883);
+
+    let mqtt_user = env::var("MQTT_USER").unwrap_or_else(|_| "".to_string());
+    let mqtt_pass = env::var("MQTT_PASSWORD").unwrap_or_else(|_| "".to_string());
     info!("Connecting to MQTT broker at {}", mqtt_host);
 
-    let mut mqtt_options = MqttOptions::new("iot_device_simulator", mqtt_host, 1883);
+    let mut mqtt_options = MqttOptions::new("iot_device_simulator", mqtt_host, mqtt_port);
 
     // Connection optimization
     mqtt_options.set_keep_alive(Duration::from_secs(30));
+    mqtt_options.set_credentials(mqtt_user, mqtt_pass);
     mqtt_options.set_clean_session(true);
     mqtt_options.set_max_packet_size(10 * 1024 * 1024, 10 * 1024 * 1024); // Allow larger packets for batching
     mqtt_options.set_inflight(100); // Increase in-flight messages
+    mqtt_options.set_transport(Transport::tls_with_default_config()); // Use TLS from with sys
 
     // Create client with larger capacities
     let (client, mut eventloop) = AsyncClient::new(mqtt_options, 1000);
@@ -276,51 +285,27 @@ async fn simulate_bp_device(
     let topic = format!("devices/{}/telemetry", device_config.device_id);
     let mut interval = time::interval(Duration::from_millis(config.message_interval_ms));
 
-    let mut systolic_base = 120;
-    let mut diastolic_base = 80;
-    let mut heart_rate_base = 70;
+    let (mut systolic_base, mut diastolic_base, mut heart_rate_base) = (120, 80, 70);
     let mut is_irregular_rhythm = false;
-    let mut status_str = "normal";
+    let mut status_str: &str = "normal";
 
-    // Set the baseline vitals based on the scenario
-    let scenario =
-        match serde_json::from_str::<Scenario>(&format!("\"{}\"", device_config.scenario)) {
-            Ok(s) => s,
-            Err(_) => Scenario::Normal,
-        };
-
-    match scenario {
-        Scenario::Normal => {
-            // No changes needed, we'll use the healthy defaults.
-        }
+   match device_config.scenario {
+        Scenario::Normal => { /* Use defaults */ }
         Scenario::HighSystolic => {
-            info!(
-                "Device {} is starting HighSystolic scenario.",
-                device_config.device_id
-            );
-            systolic_base = 185; // Consistently high systolic pressure
+            systolic_base = 185;
             diastolic_base = 95;
             heart_rate_base = 90;
             status_str = "critical";
         }
         Scenario::LowDiastolic => {
-            info!(
-                "Device {} is starting LowDiastolic scenario.",
-                device_config.device_id
-            );
             systolic_base = 95;
-            diastolic_base = 50; // Consistently low diastolic pressure
-            heart_rate_base = 85; // Heart rate may increase to compensate
+            diastolic_base = 50;
+            heart_rate_base = 85;
             status_str = "warning";
         }
         Scenario::IrregularHeartbeat => {
-            info!(
-                "Device {} is starting IrregularHeartbeat scenario.",
-                device_config.device_id
-            );
-            // BP might be in the normal range, but the rhythm is the key issue.
             is_irregular_rhythm = true;
-            heart_rate_base = 85; // Often slightly elevated
+            heart_rate_base = 85;
             status_str = "warning";
         }
         _ => {}
