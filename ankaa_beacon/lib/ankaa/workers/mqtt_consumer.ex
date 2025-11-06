@@ -93,14 +93,20 @@ defmodule Ankaa.Workers.MQTTConsumer do
   defp client_options do
     mqtt_config = Application.get_env(:ankaa, :mqtt, [])
     client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
+
     port = Keyword.get(mqtt_config, :port, 1883)
     port = if is_binary(port), do: String.to_integer(port), else: port
+
+    # Extract the host binary from the config
+    host_binary = Keyword.get(mqtt_config, :host, "localhost")
+    # Get the full ssl_opts map
     ssl_opts = Keyword.get(mqtt_config, :ssl_options, [])
-    {sni, ssl_opts_without_sni} = Keyword.pop(ssl_opts, :server_name_indication, nil)
+
+    {sni, ssl_opts_without_sni} = Keyword.pop(ssl_opts, :server_name_indication, host_binary)
 
     [
       name: :emqtt_client,
-      host: Keyword.get(mqtt_config, :host, "localhost") |> to_charlist(),
+      host: String.to_charlist(host_binary),
       port: port,
       clientid: String.to_charlist(client_id),
       username: Keyword.get(mqtt_config, :username, "") |> to_charlist(),
@@ -108,7 +114,11 @@ defmodule Ankaa.Workers.MQTTConsumer do
       conn_mod: self(),
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
       ssl_opts: ssl_opts_without_sni,
-      server_name_indication: String.to_charlist(sni)
+      server_name_indication: String.to_charlist(sni),
+      clean_start: false,
+      name: :emqtt_client,
+      reconnect: true,
+      reconnect_interval: 10_000
     ]
   end
 end

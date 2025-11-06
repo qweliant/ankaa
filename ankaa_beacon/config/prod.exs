@@ -37,7 +37,13 @@ config :ankaa, :start_mqtt_consumer, true
 config :ankaa, :mqtt,
   host: System.get_env("MQTT_HOST"),
   port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
-  # client_id: System.get_env("MQTT_CLIENT_ID"),
   username: System.get_env("MQTT_USERNAME"),
   password: System.get_env("MQTT_PASSWORD"),
-  enable_ssl: true
+  enable_ssl: true,
+  ssl_options: [
+    verify: :verify_peer,
+    cacert: System.get_env("MQTT_CA_CERT"),
+    cert: System.get_env("MQTT_CLIENT_CERT"),
+    key: System.get_env("MQTT_CLIENT_KEY"),
+    server_name_indication: System.get_env("MQTT_HOST")
+  ]
