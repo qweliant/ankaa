@@ -26,6 +26,8 @@ defmodule Ankaa.Workers.MQTTConsumer do
   @impl true
   def handle_info(:connect, state) do
     Logger.info("MQTTConsumer: Attempting to connect to broker...")
+    Logger.debug("MQTTConsumer: Client options: #{inspect(client_options())}")
+
 
     case :emqtt.connect(state.client) do
       {:ok, _properties} ->
@@ -102,7 +104,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
       clientid: String.to_charlist(client_id),
       username: Keyword.get(mqtt_config, :username, "") |> to_charlist(),
       password: Keyword.get(mqtt_config, :password, "") |> to_charlist(),
-      conn_mod: __MODULE__,
+      conn_mod: self(),
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
       ssl_opts: Keyword.get(mqtt_config, :ssl_options, [])
     ]
