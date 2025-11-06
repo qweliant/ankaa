@@ -113,10 +113,9 @@ defmodule Ankaa.Workers.MQTTConsumer do
       password: Keyword.get(mqtt_config, :password, "") |> to_charlist(),
       conn_mod: self(),
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
+      clean_start: false,
       ssl_opts: ssl_opts_without_sni,
       server_name_indication: String.to_charlist(sni),
-      clean_start: false,
-      name: :emqtt_client,
       reconnect: true,
       reconnect_interval: 10_000
     ]

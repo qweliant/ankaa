@@ -42,8 +42,9 @@ config :ankaa, :mqtt,
   enable_ssl: true,
   ssl_options: [
     verify: :verify_peer,
-    cacert: System.get_env("MQTT_CA_CERT"),
+    CAfile: System.get_env("MQTT_CA_CERT"),
     cert: System.get_env("MQTT_CLIENT_CERT"),
     key: System.get_env("MQTT_CLIENT_KEY"),
-    server_name_indication: System.get_env("MQTT_HOST")
+    server_name_indication: System.get_env("MQTT_HOST"),
+    tls_versions: [:"tlsv1.2", :"tlsv1.3"]
   ]
