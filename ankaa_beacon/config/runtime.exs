@@ -34,13 +34,6 @@ if config_env() == :prod do
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
-    # ssl: true,
-    # ssl_opts: [
-    #   cacertfile: "priv/cert/cockroach.crt",
-    #   verify: :verify_peer,
-    #   # This part is often necessary for cloud databases
-    #   server_name_indication: "shard-hacker-5530.g8z.gcp-us-east1.cockroachlabs.cloud"
-    # ]
 
   host = System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set")
   ca_cert = System.get_env("MQTT_CA_CERT") || raise("MQTT_CA_CERT is not set")
@@ -48,7 +41,7 @@ if config_env() == :prod do
   client_key = System.get_env("MQTT_CLIENT_KEY") || raise("MQTT_CLIENT_KEY is not set")
   config :ankaa, :mqtt,
     host: host,
-    port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
+    port: System.get_env("MQTT_PORT") || "8883",
     username: System.get_env("MQTT_USER"),
     password: System.get_env("MQTT_PASSWORD"),
     clean_start: false,
@@ -58,12 +51,9 @@ if config_env() == :prod do
       cacert: ca_cert,
       cert: client_cert,
       key: client_key,
-      server_name_indication: String.to_charlist(host),
+      server_name_indication: host,
       tls_versions: [:"tlsv1.2", :"tlsv1.3"]
-    ],
-    name: :emqtt,
-    reconnect: true,
-    reconnect_interval: 10000
+    ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   secret_key_base =

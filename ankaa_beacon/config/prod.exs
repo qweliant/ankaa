@@ -25,27 +25,10 @@ config :ankaa, :start_mqtt_consumer, true
 
 # # Configure your primary PostgreSQL database
 # config :ankaa, Ankaa.Repo,
-#   username: System.get_env("POSTGRES_USER"),
-#   password: System.get_env("POSTGRES_PASSWORD"),
-#   hostname: System.get_env("POSTGRES_HOST"),
+#   username: System.get_env("PROD_POSTGRES_USER"),
+#   password: System.get_env("PROD_POSTGRES_PASSWORD"),
+#   hostname: System.get_env("PROD_POSTGRES_HOST"),
 #   # Updated to match .env
-#   database: System.get_env("POSTGRES_DB"),
-#   port: String.to_integer(System.get_env("POSTGRES_PORT") || "5432"),
+#   database: System.get_env("PROD_POSTGRES_DB"),
+#   port: String.to_integer(System.get_env("PROD_POSTGRES_PORT") || "5432"),
 #   ssl: true
-
-# # Configure your MQTT broker
-config :ankaa, :mqtt,
-  host: System.get_env("MQTT_HOST"),
-  port: String.to_integer(System.get_env("MQTT_PORT") || "8883"),
-  username: System.get_env("MQTT_USERNAME"),
-  password: System.get_env("MQTT_PASSWORD"),
-  enable_ssl: true,
-  ssl_options: [
-    verify: :verify_peer,
-    CAfile: System.get_env("MQTT_CA_CERT"),
-    cert: System.get_env("MQTT_CLIENT_CERT"),
-    key: System.get_env("MQTT_CLIENT_KEY"),
-    server_name_indication: System.get_env("MQTT_HOST"),
-    tls_versions: [:"tlsv1.2", :"tlsv1.3"],
-    server_name_indication: System.get_env("MQTT_HOST")
-  ]
