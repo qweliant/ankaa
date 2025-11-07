@@ -22,6 +22,9 @@ defmodule AnkaaWeb.Router do
     pipe_through(:browser)
 
     get("/", PageController, :home)
+    live("/privacy-policy", StaticPageLive, :privacy)
+    live("/disclaimer", StaticPageLive, :disclaimer)
+    live("/cookie-policy", StaticPageLive, :cookies)
   end
 
   # Other scopes may use custom stacks.
@@ -144,10 +147,9 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # # Technical Support routes
+  # Technical Support routes
   # scope "/support", AnkaaWeb do
   #   pipe_through([:browser, :require_authenticated_user])
-
   #   live_session :technical_support,
   #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_technical_support}] do
   #     live("/home", SupportDashboardLive.Index, :index)
@@ -165,7 +167,6 @@ defmodule AnkaaWeb.Router do
   # Admin routes
   # scope "/admin", AnkaaWeb do
   #   pipe_through([:browser, :require_authenticated_user])
-
   #   live_session :admin,
   #     on_mount: [
   #       {AnkaaWeb.UserAuth, :ensure_authenticated},
