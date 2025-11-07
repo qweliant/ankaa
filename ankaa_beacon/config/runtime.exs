@@ -47,12 +47,10 @@ if config_env() == :prod do
     clean_start: false,
     enable_ssl: true,
     ssl_options: [
-      verify: :verify_peer,
       cacert: ca_cert,
       cert: client_cert,
       key: client_key,
       server_name_indication: host,
-      tls_versions: [:"tlsv1.2", :"tlsv1.3"]
     ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.

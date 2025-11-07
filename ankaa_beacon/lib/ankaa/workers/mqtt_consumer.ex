@@ -114,8 +114,11 @@ defmodule Ankaa.Workers.MQTTConsumer do
       conn_mod: self(),
       enable_ssl: Keyword.get(mqtt_config, :enable_ssl, false),
       clean_start: false,
-      ssl_opts: ssl_opts_without_sni,
-      server_name_indication: String.to_charlist(sni),
+      ssl_opts: [
+        verify: :verify_peer,
+        server_name_indication: String.to_charlist(sni),
+        tls_versions: [:"tlsv1.2", :"tlsv1.3"]
+      ] ++ ssl_opts_without_sni,
       reconnect: true,
       reconnect_interval: 10_000
     ]
