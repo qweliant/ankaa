@@ -40,13 +40,12 @@ defmodule AnkaaWeb.AlertBanner do
 
   @impl true
   def handle_event("acknowledge_critical", %{"alert_id" => alert_id}, socket) do
-    alert = Enum.find(socket.assigns.active_alerts, &(&1.id == alert_id))
-
-    case alert do
+    item = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
+    case item do
       nil ->
         {:noreply, socket}
 
-      found_alert ->
+    %{alert: found_alert} ->
         # Stop the 15-minute EMS timer
         case Alerts.acknowledge_critical_alert(found_alert, socket.assigns.current_user.id) do
           {:ok, _} ->
