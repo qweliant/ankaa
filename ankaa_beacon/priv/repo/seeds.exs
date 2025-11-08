@@ -30,12 +30,9 @@ create_provider = fn attrs, role ->
   end
 end
 
-# --------------------------------------------------------------------------
-# 1. Create the Care Team
-# --------------------------------------------------------------------------
+
 IO.puts("   -> Creating care team...")
 
-# Call the anonymous function using the dot-syntax
 {:ok, dr_daedalus} =
   create_provider.(
     %{
@@ -69,10 +66,7 @@ IO.puts("   -> Creating care team...")
     "caresupport"
   )
 
-# --------------------------------------------------------------------------
-# 2. Create the Patients & Link the Care Team
-# --------------------------------------------------------------------------
-# (The rest of the script for creating patients and linking them is unchanged)
+
 IO.puts("   -> Creating patients...")
 {:ok, user_rel} = Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234"})
 patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezone: "Etc/UTC"}

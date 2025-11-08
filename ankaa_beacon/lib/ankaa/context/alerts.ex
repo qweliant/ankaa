@@ -184,7 +184,8 @@ defmodule Ankaa.Alerts do
     |> Repo.all()
     end
 
-  defp broadcast_alert_dismissed(alert) do
+
+    defp broadcast_alert_dismissed(alert) do
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
     # Broadcast the dismissal to each member
     Enum.each(care_network_user_ids, fn user_id ->

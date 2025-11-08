@@ -1,4 +1,9 @@
 defmodule Ankaa.Monitoring.DeviceServer do
+  @moduledoc """
+  A GenServer that manages telemetry data for a specific medical device.
+  It processes incoming readings, checks for threshold violations,
+  triggers alerts, broadcasts updates, and persists data.
+  """
   use GenServer
   require Logger
 

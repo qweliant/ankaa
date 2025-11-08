@@ -31,8 +31,7 @@ defmodule AnkaaWeb.AlertBanner do
       socket
     ) do
     # This would integrate with your existing care network/communication system
-    # Start the escalation process to check on the patient
-
+    # We would start the process to check on the patient
     # For now, just show that the check was initiated
     Logger.info("Check on patient #{patient_id} initiated for alert #{alert_id}")
 
@@ -230,7 +229,11 @@ defmodule AnkaaWeb.AlertBanner do
 
   defp ems_contact_time(alert) do
     # Calculate 15 minutes from alert creation
-    alert.inserted_at
+    patient_timezone = alert.patient.timezone
+
+    start_time = DateTime.from_naive!(alert.inserted_at, patient_timezone)
+
+    start_time
     |> DateTime.add(15, :minute)
     |> DateTime.to_iso8601()
   end

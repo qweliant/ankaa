@@ -1,4 +1,8 @@
 defmodule Ankaa.Notifications.AlertTimer do
+  @moduledoc """
+  A timer that triggers an emergency medical services (EMS) alert
+  if not cancelled within a specified duration.
+  """
   use GenServer
   require Logger
 
@@ -15,7 +19,7 @@ defmodule Ankaa.Notifications.AlertTimer do
 
   @impl true
   def handle_info(:call_ems, state) do
-    Logger.critical("EMS TIMER EXPIRED for alert #{state.alert.id}")
+    Logger.critical("EMS timer is triggering a call for alert #{state.alert.id}")
     {:stop, :normal, state}
   end
 
