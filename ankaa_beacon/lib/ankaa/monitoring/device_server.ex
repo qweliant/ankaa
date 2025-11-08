@@ -19,38 +19,65 @@ defmodule Ankaa.Monitoring.DeviceServer do
   def init(%Ankaa.Patients.Device{} = device) do
     patient = Ankaa.Patients.get_patient!(device.patient_id)
     thresholds = Ankaa.Monitoring.Threshold.get_for_patient(patient)
-    {:ok, %{device: device, patient: patient, thresholds: thresholds}}
+
+    {:ok,
+     %{
+       device: device,
+       patient: patient,
+       thresholds: thresholds,
+       last_violation_key: []
+     }}
   end
 
   @impl true
   def handle_cast({:new_reading, payload}, state) do
-    %{device: device, patient: patient, thresholds: custom_thresholds} = state
+    %{
+      device: device,
+      patient: patient,
+      thresholds: custom_thresholds,
+      last_violation_key: last_key
+    } = state
 
     # 1. Parse & Structure the incoming data
     data = Jason.decode!(payload)
-    # add a `case` statement on `device.type` later.
     reading = Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
 
     # 2. Analyze the reading for any threshold violations
     violations = Ankaa.Monitoring.ThresholdChecker.check(reading, custom_thresholds)
 
-    # 3. Trigger alerts if any violations were found
-    if !Enum.empty?(violations) do
-      Ankaa.Alerts.create_alerts_for_violations(patient, violations)
+    # 3. Create a unique "signature" for the current set of violations.
+    #    For example: `[:high_systolic, :high_heart_rate]` or `[]` if normal.
+    current_key = Enum.map(violations, & &1.parameter) |> Enum.sort()
+
+    # 4. Trigger alerts ONLY if the state has changed.
+    if current_key != last_key do
+      # The patient's condition has changed.
+      # Only create alerts if the new state is actually a violation.
+      if Enum.any?(violations) do
+        Logger.info(
+          "[DeviceServer #{device.id}] New violation detected (was: #{inspect(last_key)}, is: #{inspect(current_key)}). Sending alert."
+        )
+        Ankaa.Alerts.create_alerts_for_violations(patient, violations)
+      else
+        Logger.info(
+          "[DeviceServer #{device.id}] Violation state cleared (was: #{inspect(last_key)}, is: normal)."
+        )
+      end
     end
 
-    # 4. Broadcast the new reading to the patient's LiveView UI
+    # 5. Broadcast the new reading to the patient's LiveView UI
     Phoenix.PubSub.broadcast(
       Ankaa.PubSub,
       pubsub_topic_for(reading),
       {:new_reading, reading, violations}
     )
 
-    # 5. Persist the reading to the database asynchronously
+    # 6. Persist the reading to the database asynchronously
     Task.start(fn -> Ankaa.Monitoring.save_reading(device, reading) end)
 
-    # The GenServer remains ready for the next message
-    {:noreply, state}
+    # 7. Update the state for the next check
+    new_state = %{state | last_violation_key: current_key}
+    {:noreply, new_state}
   end
 
   defp via_tuple(device_id), do: {:via, Registry, {Ankaa.Monitoring.DeviceRegistry, device_id}}
