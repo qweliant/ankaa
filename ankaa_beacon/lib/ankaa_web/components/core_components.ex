@@ -18,7 +18,6 @@ defmodule AnkaaWeb.CoreComponents do
   use Gettext, backend: AnkaaWeb.Gettext
 
   alias Phoenix.LiveView.JS
-  import Phoenix.LiveView.Router
 
   @doc """
   Renders a multi-select checkbox group.
@@ -739,8 +738,6 @@ def disclaimer_banner(assigns) do
         <span class="font-bold">Experimental App:</span>
         This is a pre-alpha application and is NOT a medical device. In an emergency, always call 911.
 
-        <%# --- THE FIX --- %>
-        <%# Use a standard `href` with a hardcoded path instead of ~p %>
         <.link href="/disclaimer" class="font-bold underline hover:text-yellow-700">
           Learn more
         </.link>
