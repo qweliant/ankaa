@@ -18,6 +18,7 @@ defmodule AnkaaWeb.CoreComponents do
   use Gettext, backend: AnkaaWeb.Gettext
 
   alias Phoenix.LiveView.JS
+  import Phoenix.LiveView.Router
 
   @doc """
   Renders a multi-select checkbox group.
@@ -389,33 +390,32 @@ defmodule AnkaaWeb.CoreComponents do
   end
 
   def input(%{type: "checkgroup"} = assigns) do
-      ~H"""
-      <div phx-feedback-for={@name} class="text-sm">
-        <.label for={@id}><%= @label %></.label>
-        <div class="mt-1 w-full bg-white border border-gray-300 ...">
-          <div class="grid grid-cols-1 gap-1 text-sm items-baseline">
-            <input type="hidden" name={@name} value="" />
-            <div class="..." :for={{label, value} <- @options}>
-              <label
-                for={"#{@name}-#{value}"} class="...">
-                <input
-                  type="checkbox"
-                  id={"#{@name}-#{value}"}
-                  name={@name}
-                  value={value}
-                  checked={value in @value}
-                  class="mr-2 h-4 w-4 rounded ..."
-                  {@rest}
-                />
-                <%= label %>
-              </label>
-            </div>
+    ~H"""
+    <div phx-feedback-for={@name} class="text-sm">
+      <.label for={@id}>{@label}</.label>
+      <div class="mt-1 w-full bg-white border border-gray-300 ...">
+        <div class="grid grid-cols-1 gap-1 text-sm items-baseline">
+          <input type="hidden" name={@name} value="" />
+          <div :for={{label, value} <- @options} class="...">
+            <label for={"#{@name}-#{value}"} class="...">
+              <input
+                type="checkbox"
+                id={"#{@name}-#{value}"}
+                name={@name}
+                value={value}
+                checked={value in @value}
+                class="mr-2 h-4 w-4 rounded ..."
+                {@rest}
+              />
+              {label}
+            </label>
           </div>
         </div>
-        <.error :for={msg <- @errors}><%= msg %></.error>
       </div>
-      """
-    end
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
@@ -438,7 +438,6 @@ defmodule AnkaaWeb.CoreComponents do
     </div>
     """
   end
-
 
   @doc """
   Renders a label.
@@ -724,5 +723,38 @@ defmodule AnkaaWeb.CoreComponents do
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+  end
+
+  @doc """
+  Renders a site-wide disclaimer banner that can be dismissed.
+  """
+def disclaimer_banner(assigns) do
+    ~H"""
+    <div
+      id="disclaimer-banner"
+      phx-hook="DisclaimerBanner"
+      class="relative z-50 bg-yellow-400 p-3 text-center text-sm font-medium text-yellow-900"
+    >
+      <p>
+        <span class="font-bold">Experimental App:</span>
+        This is a pre-alpha application and is NOT a medical device. In an emergency, always call 911.
+
+        <%# --- THE FIX --- %>
+        <%# Use a standard `href` with a hardcoded path instead of ~p %>
+        <.link href="/disclaimer" class="font-bold underline hover:text-yellow-700">
+          Learn more
+        </.link>
+      </p>
+
+      <button
+        id="dismiss-disclaimer-btn"
+        type="button"
+        aria-label="Dismiss"
+        class="absolute top-1/2 right-4 -translate-y-1/2"
+      >
+        <.icon name="hero-x-mark-solid" class="h-5 w-5" />
+      </button>
+    </div>
+    """
   end
 end

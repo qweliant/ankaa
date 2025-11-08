@@ -17,6 +17,7 @@
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html";
+
 // Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "phoenix";
 import { LiveSocket, Hook } from "phoenix_live_view";
@@ -75,6 +76,23 @@ const SessionTimer: Partial<Hook> = {
   },
 };
 
+const DisclaimerBannerHook: Partial<Hook> = {
+  mounted() {
+    const banner = this.el as HTMLElement;
+    const dismissButton = document.getElementById("dismiss-disclaimer-btn");
+    const storageKey = "hide_disclaimer_banner";
+
+    if (sessionStorage.getItem(storageKey) === "true") {
+      banner.style.display = "none";
+    }
+
+    dismissButton?.addEventListener("click", () => {
+      banner.style.display = "none";
+      sessionStorage.setItem(storageKey, "true");
+    });
+  },
+};
+
 const csrfToken = (
   document.querySelector("meta[name='csrf-token']") as HTMLElement
 ).getAttribute("content");
@@ -82,7 +100,8 @@ const csrfToken = (
 // Register our hooks
 const hooks: { [key: string]: Partial<Hook> } = {
   AlertsHook: AlertsHook,
-  SessionTimer: SessionTimer, 
+  SessionTimer: SessionTimer,
+  DisclaimerBanner: DisclaimerBannerHook,
 };
 
 // Custom loading animation setup
