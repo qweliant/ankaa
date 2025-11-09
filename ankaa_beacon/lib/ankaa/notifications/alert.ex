@@ -1,4 +1,7 @@
 defmodule Ankaa.Notifications.Alert do
+  @moduledoc """
+  Ecto schema for patient alerts and related changesets.
+  """
   use Ecto.Schema
   import Ecto.Changeset
   alias Ankaa.{Accounts.User, Patients.Patient, Notifications.Notification}

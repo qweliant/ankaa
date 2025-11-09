@@ -42,6 +42,12 @@ defmodule Ankaa.Workers.MQTTConsumer do
   end
 
   @impl true
+  def handle_info({:connected, _reason}, state) do
+    Logger.info("MQTTConsumer: Successfully connected and ready!")
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:publish, %{topic: topic, payload: payload}}, state) do
     topic_str = to_string(topic)
     [_, device_uuid, _] = String.split(topic_str, "/")

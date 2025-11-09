@@ -13,6 +13,8 @@ defmodule AnkaaWeb.AlertHook do
 
       # Subscribe to user-specific alerts
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:alerts")
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient_alerts:#{user.id}:alerts")
+
 
       # Subscribe to role-based alerts
       # role_topic = get_role_topic(user)

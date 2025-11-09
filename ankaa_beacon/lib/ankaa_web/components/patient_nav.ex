@@ -20,7 +20,6 @@ defmodule AnkaaWeb.PatientNav do
               >
                 Session Monitoring
               </.link>
-
               <%!-- <.link
                 navigate={~p"/patient/health"}
                 class={[
@@ -56,6 +55,18 @@ defmodule AnkaaWeb.PatientNav do
                 ]}
               >
                 My Devices
+              </.link>
+              <.link
+                navigate={~p"/patient/inbox"}
+                class={[
+                  "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium",
+                  if(@current_path == "/patient/inbox",
+                    do: "border-indigo-500 text-gray-900",
+                    else: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  )
+                ]}
+              >
+                My Inbox
               </.link>
             </div>
           </div>

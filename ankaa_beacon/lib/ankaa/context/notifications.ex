@@ -29,10 +29,10 @@ defmodule Ankaa.Notifications do
   Creates a "checked on" message for the patient's inbox and
   sends a (mock) SMS to their care support.
   """
-  def send_checked_on_message(patient, provider) do
+  def send_checked_on_message(patient, care_network_member) do
     provider_name =
-      if provider.first_name,
-        do: "#{provider.first_name} #{provider.last_name}",
+      if care_network_member.first_name,
+        do: "#{care_network_member.first_name} #{care_network_member.last_name}",
         else: "Your Care Team"
 
     content =
@@ -40,7 +40,7 @@ defmodule Ankaa.Notifications do
 
     attrs = %{
       content: content,
-      sender_id: provider.id,
+      sender_id: care_network_member.id,
       patient_id: patient.id
     }
 

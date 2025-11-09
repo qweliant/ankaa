@@ -8,6 +8,7 @@ defmodule Ankaa.Alerts do
   alias Ankaa.Notifications.Alert
   alias Ankaa.Notifications.EMSAlertTimer
   alias Ankaa.Notifications.Notification
+  alias Ankaa.Patients
   alias Ankaa.Repo
 
   require Logger
@@ -15,7 +16,7 @@ defmodule Ankaa.Alerts do
   def create_alert(attrs) do
     patient_id = attrs["patient_id"] || attrs[:patient_id]
     care_network_user_ids = get_care_network_for_alerts(patient_id)
-
+    patient_user_id = Patients.get_patient!(patient_id).user_id
     multi =
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:alert, Alert.changeset(%Alert{}, attrs))
@@ -51,6 +52,13 @@ defmodule Ankaa.Alerts do
         end
 
         broadcast_alert_created(alert)
+
+        Phoenix.PubSub.broadcast(
+          Ankaa.PubSub,
+          "patient_alerts:#{patient_user_id}",
+          {:new_alert, alert}
+        )
+
         {:ok, alert}
 
       {:error, _failed_operation, failed_value, _changes_so_far} ->
@@ -160,10 +168,8 @@ defmodule Ankaa.Alerts do
   end
 
   defp broadcast_alert_created(alert) do
-    # Get all care network members who can receive alerts
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
 
-    # Broadcast to each care network member
     Enum.each(care_network_user_ids, fn user_id ->
       Phoenix.PubSub.broadcast(
         Ankaa.PubSub,
@@ -182,17 +188,14 @@ defmodule Ankaa.Alerts do
       select: cn.user_id
     )
     |> Repo.all()
-    end
+  end
 
-
-    defp broadcast_alert_dismissed(alert) do
+  defp broadcast_alert_dismissed(alert) do
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
-    # Broadcast the dismissal to each member
     Enum.each(care_network_user_ids, fn user_id ->
       Phoenix.PubSub.broadcast(
         Ankaa.PubSub,
         "user:#{user_id}:alerts",
-        # The AlertHook is already set up to handle this message
         {:alert_dismissed, alert.id}
       )
     end)

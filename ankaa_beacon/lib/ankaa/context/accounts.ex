@@ -414,11 +414,46 @@ defmodule Ankaa.Accounts do
     User.has_role?(user, role)
   end
 
+  @doc """
+  Returns `true` if the given user has the "doctor" role.
+
+  This check delegates to `has_role?(user, "doctor")` and expects a user struct or map that `has_role?/2` can inspect.
+  """
   def doctor?(user), do: has_role?(user, "doctor")
+
+  @doc """
+  Returns `true` if the given user has the "nurse" role.
+
+  This check delegates to `has_role?(user, "nurse")` and expects a user struct or map that `has_role?/2` can inspect.
+  """
   def nurse?(user), do: has_role?(user, "nurse")
+
+  @doc """
+  Returns `true` if the given user has the "admin" role.
+
+  This check delegates to `has_role?(user, "admin")` and expects a user struct or map that `has_role?/2` can inspect.
+  """
   def admin?(user), do: has_role?(user, "admin")
+
+  @doc """
+  Returns `true` if the given user has the "caresupport" role.
+
+  This check delegates to `has_role?(user, "caresupport")` and expects a user struct or map that `has_role?/2` can inspect.
+  """
   def caresupport?(user), do: has_role?(user, "caresupport")
+
+  @doc """
+  Returns `true` if the given user has the "technical_support" role.
+
+  This check delegates to `has_role?(user, "technical_support")` and expects a user struct or map that `has_role?/2` can inspect.
+  """
   def technical_support?(user), do: has_role?(user, "technical_support")
+
+  @doc """
+  Returns `true` if the given user is considered a patient.
+
+  This delegates to `User.patient?/1`, so the concrete determination of "patient" is implemented on the `User` module.
+  """
   def patient?(user), do: User.patient?(user)
 
   @doc """

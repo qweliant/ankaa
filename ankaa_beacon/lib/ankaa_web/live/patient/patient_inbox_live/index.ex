@@ -1,8 +1,8 @@
-defmodule AnkaaWeb.PatientInboxLive do
+defmodule AnkaaWeb.PatientInboxListLive.Index do
   use AnkaaWeb, :patient_layout
 
-  alias Ankaa.Notifications
   alias Ankaa.Message
+
   @impl true
   def mount(_params, _session, socket) do
     patient = socket.assigns.current_user.patient
@@ -39,7 +39,7 @@ defmodule AnkaaWeb.PatientInboxLive do
           <%= for message <- @messages do %>
             <li class="p-4 sm:p-6">
               <div class="flex items-start">
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                   <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
                     <.icon name="hero-chat-bubble-left-right" class="h-6 w-6 text-blue-600" />
                   </span>
