@@ -2,7 +2,7 @@ defmodule Ankaa.InvitesTest do
   use Ankaa.DataCase, async: true
 
   alias Ankaa.Invites
-  alias Ankaa.Invites.Invite
+  alias Ankaa.Notifications.Invite
   alias Ankaa.Patients.{CareNetwork, Patient}
   alias Ankaa.AccountsFixtures
 

@@ -2,7 +2,7 @@ defmodule Ankaa.Mailer do
   use Swoosh.Mailer, otp_app: :ankaa
   import Swoosh.Email
 
-  alias Ankaa.Invites.Invite
+  alias Ankaa.Notifications.Invite
 
   @doc """
   Builds and delivers the care network invitation email.

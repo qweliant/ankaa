@@ -9,7 +9,7 @@ defmodule Ankaa.Patients do
   alias Ankaa.Repo
   alias Ankaa.Patients.{Patient, CareNetwork}
   alias Ankaa.Accounts.User
-  alias Ankaa.Invites.Invite
+  alias Ankaa.Notifications.Invite
   alias Ankaa.Sessions
 
   @doc """

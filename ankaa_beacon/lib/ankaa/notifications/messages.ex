@@ -1,4 +1,4 @@
-defmodule Ankaa.Communication.Message do
+defmodule Ankaa.Notifications.Message do
   use Ecto.Schema
   import Ecto.Changeset
   alias Ankaa.{Accounts.User, Patients.Patient}

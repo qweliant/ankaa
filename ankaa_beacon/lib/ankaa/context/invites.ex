@@ -7,7 +7,8 @@ defmodule Ankaa.Invites do
   alias Ankaa.Repo
 
   alias Ankaa.Mailer
-  alias Ankaa.Invites.Invite
+  
+  alias Ankaa.Notifications.Invite
   alias Ankaa.Patients
   alias Ankaa.Accounts
 
@@ -26,7 +27,8 @@ defmodule Ankaa.Invites do
   def send_invitation(inviter_user, patient, invite_params) do
     with :ok <- authorize_invite(inviter_user, invite_params["invitee_role"]),
          :ok <- validate_self_invite(inviter_user, invite_params["invitee_email"]),
-         :ok <- validate_existing_user(invite_params["invitee_email"], invite_params["invitee_role"]),
+         :ok <-
+           validate_existing_user(invite_params["invitee_email"], invite_params["invitee_role"]),
          :ok <- validate_pending_invite(invite_params["invitee_email"], patient.id) do
       attrs = Map.put(invite_params, "patient_id", patient.id)
       create_invite(inviter_user, attrs)
@@ -57,9 +59,12 @@ defmodule Ankaa.Invites do
       |> Ecto.Multi.run(:email, fn _repo, %{invite: invite} ->
         case Mailer.deliver_invite_email(invite, token) do
           {:ok, _delivery_details} ->
-            {:ok, :email_sent} # Report success
+            # Report success
+            {:ok, :email_sent}
+
           {:error, reason} ->
-            {:error, reason} # Report failure, this will roll back the transaction
+            # Report failure, this will roll back the transaction
+            {:error, reason}
         end
       end)
 
@@ -220,7 +225,8 @@ defmodule Ankaa.Invites do
   defp validate_existing_user(invitee_email, invitee_role) do
     case Accounts.get_user_by_email(invitee_email) do
       nil ->
-        :ok # No user exists, so no conflict.
+        # No user exists, so no conflict.
+        :ok
 
       existing_user ->
         # A user exists, but their role is different AND not nil
@@ -228,7 +234,8 @@ defmodule Ankaa.Invites do
           {:error,
            "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."}
         else
-          :ok # User exists but role matches (or is nil), which is fine.
+          # User exists but role matches (or is nil), which is fine.
+          :ok
         end
     end
   end

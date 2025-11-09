@@ -2,7 +2,7 @@ defmodule AnkaaWeb.CareNetworkInviteLive do
   use AnkaaWeb, :patient_layout
 
   alias Ankaa.Invites
-  alias Ankaa.Invites.Invite
+  alias Ankaa.Notifications.Invite
 
   @impl true
   def mount(_params, _session, socket) do

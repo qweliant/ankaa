@@ -1,4 +1,7 @@
 defmodule AnkaaWeb.UserRegistrationLiveTest do
+  @moduledoc """
+  Test the user registration live view.
+  """
   use AnkaaWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

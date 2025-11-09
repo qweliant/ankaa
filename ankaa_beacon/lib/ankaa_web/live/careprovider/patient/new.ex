@@ -2,11 +2,12 @@ defmodule AnkaaWeb.CareProvider.PatientLive.New do
   use AnkaaWeb, :live_view
 
   alias Ankaa.Invites
+  alias Ankaa.Notifications.Invite
   alias Ankaa.Accounts
 
   @impl true
   def mount(_params, _session, socket) do
-    changeset = Invites.Invite.changeset(%Invites.Invite{}, %{})
+    changeset = Invite.changeset(%Invite{}, %{})
     {:ok, assign(socket, form: to_form(changeset))}
   end
 

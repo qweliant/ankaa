@@ -1,4 +1,7 @@
-defmodule Ankaa.Invites.Invite do
+defmodule Ankaa.Notifications.Invite do
+  @moduledoc """
+  The Role Invite schema.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
