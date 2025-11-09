@@ -113,3 +113,6 @@ config :ankaa, Ankaa.Mailer,
   port: 2500
 
 config :ankaa, :base_url, "http://localhost:4000"
+
+# Configure our mock SMS client
+config :ankaa, :sms_client, Ankaa.Notifications.SMS

@@ -111,6 +111,7 @@ defmodule AnkaaWeb.Router do
       live("/carenetwork/invite", CareNetworkInviteLive, :new)
       live("/carenetwork/", CareNetworkMemberLive.Index, :index)
       live("/carenetwork/:id/edit", CareNetworkMemberLive.Edit, :edit)
+      live("/inbox", PatientInboxLive, :index)
 
     end
   end

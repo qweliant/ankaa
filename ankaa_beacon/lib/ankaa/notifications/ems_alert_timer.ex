@@ -1,4 +1,4 @@
-defmodule Ankaa.Notifications.AlertTimer do
+defmodule Ankaa.Notifications.EMSAlertTimer do
   @moduledoc """
   A timer that triggers an emergency medical services (EMS) alert
   if not cancelled within a specified duration.
@@ -8,8 +8,11 @@ defmodule Ankaa.Notifications.AlertTimer do
 
   @ems_delay :timer.minutes(15)
 
+  # start link is called on ln 50 or so in the alerts context and again
+  # im not sure why. maybe these start and stop the servers. but if it starts a server
+  # how does ems actually get called?
   def start_link(alert), do: GenServer.start_link(__MODULE__, alert, name: via_tuple(alert.id))
-  def cancel(alert_id), do: GenServer.cast(via_tuple(alert_id), :cancel)
+  def cancel(alert_id), do: GenServer.cast(via_tuple(alert_id), :cancel) # not sure why i have to call handle cast
 
   @impl true
   def init(alert) do

@@ -1,4 +1,8 @@
-defmodule Ankaa.Notifications.Message do
+defmodule Ankaa.Notifications.Messages do
+  @moduledoc """
+  The Messages schema and changeset.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   alias Ankaa.{Accounts.User, Patients.Patient}
@@ -8,7 +12,7 @@ defmodule Ankaa.Notifications.Message do
   schema "messages" do
     field(:content, :string)
     field(:read, :boolean, default: false)
-    belongs_to(:sender, User, foreign_key: :user_id)
+    belongs_to(:sender, User, foreign_key: :sender_id)
     belongs_to(:patient, Patient, foreign_key: :patient_id)
     timestamps()
   end

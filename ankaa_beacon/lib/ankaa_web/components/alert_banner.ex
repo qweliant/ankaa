@@ -30,11 +30,14 @@ defmodule AnkaaWeb.AlertBanner do
       %{"alert_id" => alert_id, "patient_id" => patient_id},
       socket
     ) do
-    # This would integrate with your existing care network/communication system
-    # We would start the process to check on the patient
-    # For now, just show that the check was initiated
-    Logger.info("Check on patient #{patient_id} initiated for alert #{alert_id}")
 
+    care_network_memeber = socket.assigns.current_user
+    patient = Ankaa.Patients.get_patient!(patient_id)
+    alert = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
+
+    Alerts.acknowledge_critical_alert(alert.alert, care_network_memeber.id)
+    Ankaa.Notifications.send_checked_on_message(patient, care_network_memeber)
+    Logger.info("Check on patient #{patient_id} initiated for alert #{alert_id}")
     {:noreply, socket}
   end
 

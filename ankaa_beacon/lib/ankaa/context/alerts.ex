@@ -6,7 +6,7 @@ defmodule Ankaa.Alerts do
 
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications.Alert
-  alias Ankaa.Notifications.AlertTimer
+  alias Ankaa.Notifications.EMSAlertTimer
   alias Ankaa.Notifications.Notification
   alias Ankaa.Repo
 
@@ -47,7 +47,7 @@ defmodule Ankaa.Alerts do
     case Repo.transaction(multi) do
       {:ok, %{alert: alert}} ->
         if alert.severity == "critical" do
-          AlertTimer.start_link(alert)
+          EMSAlertTimer.start_link(alert)
         end
 
         broadcast_alert_created(alert)
@@ -126,7 +126,7 @@ defmodule Ankaa.Alerts do
   """
   def acknowledge_critical_alert(%Alert{} = alert, user_id) do
     # 1. Cancel the countdown timer process
-    AlertTimer.cancel(alert.id)
+    EMSAlertTimer.cancel(alert.id)
 
     # 2. Update the alert in the database
     attrs = %{
