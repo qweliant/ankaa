@@ -59,8 +59,9 @@ defmodule Ankaa.Alerts do
           )
 
           Logger.info("INFO: Sent critical #{inspect(alert)} notification to patient user #{patient_user_id}")
+        {:ok, alert}
         end
-
+        Logger.info("INFO: only call this for #{alert.severity}")
         broadcast_alert_created(alert)
         {:ok, alert}
 
@@ -122,7 +123,7 @@ defmodule Ankaa.Alerts do
             select: %{alert: a, notification: n}
           )
 
-        Repo.all(query)
+          Repo.all(query)
 
       true ->
         []

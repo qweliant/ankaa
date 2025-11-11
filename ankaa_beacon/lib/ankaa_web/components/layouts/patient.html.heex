@@ -1,3 +1,13 @@
+<!-- Alert Banner Portal - Renders at top of page -->
+<div id="alert-portal">
+  <%= if assigns[:active_alerts] && not Enum.empty?(@active_alerts) do %>
+    <.live_component 
+      module={AnkaaWeb.AlertBanner} 
+      id="alert-banner"
+      active_alerts={@active_alerts}
+      current_user={@current_user} />
+  <% end %>
+</div>
 <.live_component module={AnkaaWeb.PatientNav} id="patient-nav"
 current_path={@current_path} current_user={@current_user} />
 <div class="py-10">

@@ -1,5 +1,6 @@
 defmodule AnkaaWeb.CareProvider.PatientLive.New do
   use AnkaaWeb, :live_view
+  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Invites
   alias Ankaa.Notifications.Invite
