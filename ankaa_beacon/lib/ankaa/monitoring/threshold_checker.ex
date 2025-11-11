@@ -1,4 +1,7 @@
 defmodule Ankaa.Monitoring.ThresholdChecker do
+  @moduledoc """
+  Checks device readings against defined thresholds to identify violations.
+  """
   alias Ankaa.Monitoring.ThresholdViolation
 
   @systolic_critical 180

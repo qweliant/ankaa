@@ -17,11 +17,25 @@ defmodule AnkaaWeb.AlertBanner do
   end
 
   @impl true
-  def handle_event("dismiss_alert", %{"alert_id" => alert_id}, socket) do
+  def handle_event("dismiss_alert", %{"alert_id" => alert_id, "patient_id" => patient_id}, socket) do
     user = socket.assigns.current_user
-    Notifications.dismiss_notification(user.id, alert_id)
-    send(self(), {:alert_dismissed, alert_id})
-    {:noreply, socket}
+    item = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
+
+    case item do
+      nil ->
+        {:noreply, socket}
+
+      %{alert: found_alert} ->
+        case Alerts.dismiss_alert(found_alert, user, "dismissed") do
+          {:ok, _} ->
+            Notifications.dismiss_notification(user.id, alert_id)
+            send(self(), {:alert_dismissed, alert_id})
+            {:noreply, socket}
+
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Failed to acknowledge alert")}
+        end
+    end
   end
 
   @impl true
@@ -30,12 +44,12 @@ defmodule AnkaaWeb.AlertBanner do
         %{"alert_id" => alert_id, "patient_id" => patient_id},
         socket
       ) do
-    care_network_memeber = socket.assigns.current_user
+    user = socket.assigns.current_user
     patient = Ankaa.Patients.get_patient!(patient_id)
     alert = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
 
-    Alerts.acknowledge_critical_alert(alert.alert, care_network_memeber.id)
-    Ankaa.Notifications.send_checked_on_message(patient, care_network_memeber)
+    Alerts.acknowledge_critical_alert(alert.alert, user.id)
+    Notifications.send_checked_on_message(patient, user)
     Logger.info("Check on patient #{patient_id} initiated for alert #{alert_id}")
     {:noreply, socket}
   end
@@ -47,7 +61,7 @@ defmodule AnkaaWeb.AlertBanner do
         socket
       ) do
     item = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
-    care_network_member = socket.assigns.current_user
+    user = socket.assigns.current_user
 
     case item do
       nil ->
@@ -55,11 +69,11 @@ defmodule AnkaaWeb.AlertBanner do
 
       %{alert: found_alert} ->
         # Stop the 15-minute EMS timer
-        case Alerts.acknowledge_critical_alert(found_alert, care_network_member.id) do
+        case Alerts.acknowledge_critical_alert(found_alert, user.id) do
           {:ok, _} ->
             patient = Ankaa.Patients.get_patient!(patient_id)
-            Ankaa.Notifications.send_checked_on_message(patient, care_network_member)
-            Notifications.dismiss_notification(care_network_member.id, alert_id)
+            Ankaa.Notifications.send_checked_on_message(patient, user)
+            Notifications.dismiss_notification(user.id, alert_id)
             send(self(), {:alert_dismissed, alert_id})
             {:noreply, socket}
 
@@ -77,6 +91,7 @@ defmodule AnkaaWeb.AlertBanner do
     case item do
       nil ->
         {:noreply, socket}
+
       %{alert: found_alert} ->
         Alerts.acknowledge_critical_alert(found_alert, patient_user.id)
         Notifications.dismiss_notification(patient_user.id, alert_id)
@@ -164,6 +179,7 @@ defmodule AnkaaWeb.AlertBanner do
                   class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium hover:bg-green-200"
                   phx-click="dismiss_alert"
                   phx-value-alert_id={item.alert.id}
+                  phx-value-patient_id={item.alert.patient_id}
                   phx-target={@myself}
                 >
                   I'm feeling fine
@@ -185,6 +201,7 @@ defmodule AnkaaWeb.AlertBanner do
                   class={dismiss_button_classes(item.alert.severity)}
                   phx-click="dismiss_alert"
                   phx-value-alert_id={item.alert.id}
+                  phx-value-patient_id={item.alert.patient_id}
                   phx-target={@myself}
                 >
                   <%= dismiss_button_text(item) %>

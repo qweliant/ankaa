@@ -3,13 +3,14 @@ defmodule Ankaa.Alerts do
   Handles alert logic and care network notifications.
   """
   import Ecto.Query
+  alias Ankaa.Repo
 
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications.Alert
   alias Ankaa.Notifications.EMSAlertTimer
   alias Ankaa.Notifications.Notification
   alias Ankaa.Patients
-  alias Ankaa.Repo
+  alias Ankaa.Accounts
 
   require Logger
 
@@ -17,6 +18,7 @@ defmodule Ankaa.Alerts do
     patient_id = attrs["patient_id"] || attrs[:patient_id]
     care_network_user_ids = get_care_network_for_alerts(patient_id)
     patient_user_id = Patients.get_patient!(patient_id).user_id
+
     multi =
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:alert, Alert.changeset(%Alert{}, attrs))
@@ -49,16 +51,17 @@ defmodule Ankaa.Alerts do
       {:ok, %{alert: alert}} ->
         if alert.severity == "critical" do
           EMSAlertTimer.start_link(alert)
+
+          Phoenix.PubSub.broadcast(
+            Ankaa.PubSub,
+            "patient_alerts:#{patient_user_id}",
+            {:new_alert, alert}
+          )
+
+          Logger.info("INFO: Sent critical #{inspect(alert)} notification to patient user #{patient_user_id}")
         end
 
         broadcast_alert_created(alert)
-
-        Phoenix.PubSub.broadcast(
-          Ankaa.PubSub,
-          "patient_alerts:#{patient_user_id}",
-          {:new_alert, alert}
-        )
-
         {:ok, alert}
 
       {:error, _failed_operation, failed_value, _changes_so_far} ->
@@ -84,28 +87,55 @@ defmodule Ankaa.Alerts do
 
   @doc """
   Gets all active alerts for a provider, excluding any they have dismissed.
+  - For providers, it gets alerts for all their associated patients.
+  - For patients, it gets alerts for themselves.
   """
   def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
-    # This query finds all alerts for a user WHERE a corresponding
-    # notification for that user does NOT have a status of "dismissed".
-    query =
-      from(a in Alert,
-        join: n in Notification,
-        on: a.id == n.alert_id,
-        join: p_assoc in CareNetwork,
-        on: a.patient_id == p_assoc.patient_id,
-        where: p_assoc.user_id == ^user.id and n.user_id == ^user.id,
-        where: n.status in ["unread", "acknowledged"],
-        order_by: [desc: a.inserted_at],
-        preload: [:patient],
-        select: %{alert: a, notification: n}
-      )
+    cond do
+      user.role in ["doctor", "nurse", "caresupport"] ->
+        query =
+          from(a in Alert,
+            join: n in Notification,
+            on: a.id == n.alert_id,
+            join: p_assoc in CareNetwork,
+            on: a.patient_id == p_assoc.patient_id,
+            where: p_assoc.user_id == ^user.id and n.user_id == ^user.id,
+            where: n.status in ["unread", "acknowledged"],
+            order_by: [desc: a.inserted_at],
+            preload: [:patient],
+            select: %{alert: a, notification: n}
+          )
 
-    Repo.all(query)
+        Repo.all(query)
+
+      Accounts.User.patient?(user) ->
+        Logger.info("INFO: Fetching active alerts for patient user #{inspect(user.email)} who is the patient #{(user.patient.id)}")
+
+        query =
+          from(a in Alert,
+            join: n in Notification,
+            on: a.id == n.alert_id,
+            where: a.patient_id == ^user.patient.id and n.user_id == ^user.id,
+            where: n.status in ["unread", "acknowledged"],
+            order_by: [desc: a.inserted_at],
+            preload: [:patient],
+            select: %{alert: a, notification: n}
+          )
+
+        Repo.all(query)
+
+      true ->
+        []
+    end
   end
 
   @doc """
   Dismisses an alert, creating an audit trail and broadcasting the change.
+
+  Example:
+
+      iex> Ankaa.Alerts.dismiss_alert(alert, user, "No longer relevant")
+      {:ok, %Alert{}}
   """
   def dismiss_alert(%Alert{} = alert, %Ankaa.Accounts.User{} = user, dismissal_reason) do
     if can_dismiss_alert?(alert, user) do
@@ -141,7 +171,8 @@ defmodule Ankaa.Alerts do
       acknowledged: true,
       dismissed_at: DateTime.utc_now(),
       dismissed_by_user_id: user_id,
-      dismissal_reason: "critical_acknowledged"
+      dismissal_reason: "critical_acknowledged",
+      status: "acknowledged"
     }
 
     case alert |> Alert.changeset(attrs) |> Repo.update() do
@@ -192,6 +223,7 @@ defmodule Ankaa.Alerts do
 
   defp broadcast_alert_dismissed(alert) do
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
+
     Enum.each(care_network_user_ids, fn user_id ->
       Phoenix.PubSub.broadcast(
         Ankaa.PubSub,

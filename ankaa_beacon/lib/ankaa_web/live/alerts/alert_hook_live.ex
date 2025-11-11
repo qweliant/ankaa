@@ -4,6 +4,7 @@ defmodule AnkaaWeb.AlertHook do
   Integrates with existing UserAuth patterns.
   """
 
+require Logger
   use AnkaaWeb, :live_view
   alias Ankaa.Alerts
 
@@ -22,6 +23,7 @@ defmodule AnkaaWeb.AlertHook do
 
       # Fetch any alerts that are already active for this provider's patients.
       active_alerts = Alerts.get_active_alerts_for_user(user)
+      Logger.info("INFO: FOund alerts for user #{user.first_name}: #{inspect(active_alerts)}")
 
       {:cont,
        assign(socket,
