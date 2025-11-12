@@ -23,12 +23,12 @@ defmodule AnkaaWeb.AlertBanner do
 
     case item do
       nil ->
-        {:noreply, socket}
+        {:noreply, put_flash(socket, :error, "No item found")}
 
       %{alert: found_alert} ->
         case Alerts.dismiss_alert(found_alert, user, "dismissed") do
           {:ok, _} ->
-            Notifications.dismiss_notification(user.id, alert_id)
+            Notifications.dismiss_all_notifications_for_alert(alert_id)
             send(self(), {:alert_dismissed, alert_id})
             {:noreply, socket}
 

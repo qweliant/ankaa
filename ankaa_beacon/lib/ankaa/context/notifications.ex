@@ -26,6 +26,16 @@ defmodule Ankaa.Notifications do
   end
 
   @doc """
+  dismisses notifications for all users
+  """
+  def dismiss_all_notifications_for_alert(alert_id) do
+    from(n in Notification,
+      where: n.alert_id == ^alert_id
+    )
+    |> Repo.update_all(set: [status: "dismissed"])
+  end
+
+  @doc """
   Creates a "checked on" message for the patient's inbox and
   sends a (mock) SMS to their care support.
   """
