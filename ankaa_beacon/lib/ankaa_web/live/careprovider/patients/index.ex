@@ -1,4 +1,8 @@
 defmodule AnkaaWeb.CareProvider.PatientsLive.Index do
+  @moduledoc """
+  LiveView for listing patients assigned to the care provider.
+  Displays patient name, status, last session, next session, and alert count.
+  """
   use AnkaaWeb, :live_view
   use AnkaaWeb, :alert_handling
 

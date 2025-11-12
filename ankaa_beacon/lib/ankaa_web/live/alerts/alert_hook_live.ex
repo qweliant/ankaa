@@ -4,7 +4,7 @@ defmodule AnkaaWeb.AlertHook do
   Integrates with existing UserAuth patterns.
   """
 
-require Logger
+  require Logger
   use AnkaaWeb, :live_view
   alias Ankaa.Alerts
 
@@ -16,14 +16,13 @@ require Logger
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:alerts")
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient_alerts:#{user.id}:alerts")
 
-
-      # Subscribe to role-based alerts
-      # role_topic = get_role_topic(user)
-      # if role_topic, do: Phoenix.PubSub.subscribe(Ankaa.PubSub, role_topic)
-
       # Fetch any alerts that are already active for this provider's patients.
       active_alerts = Alerts.get_active_alerts_for_user(user)
-      Logger.info("INFO: FOund alerts for user #{user.first_name}: #{inspect(active_alerts)}")
+      # active_alerts = [%{hello: "world"}]
+
+      Logger.info(
+        "INFO: FOund alerts for user #{user.first_name}: #{inspect(active_alerts, pretty: true)}"
+      )
 
       {:cont,
        assign(socket,
@@ -36,7 +35,7 @@ require Logger
     end
   end
 
-
+  @impl true
   def handle_event("load_dismissed_alerts", %{"ids" => ids}, socket) do
     # For efficient lookups, convert the list of IDs into a MapSet
     dismissed_alerts = Enum.into(ids, MapSet.new())
@@ -55,5 +54,4 @@ require Logger
        dismissed_info_alerts: dismissed_alerts
      )}
   end
-
 end

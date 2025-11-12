@@ -16,7 +16,6 @@ defmodule AnkaaWeb.MonitoringLive do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "bpdevicereading_readings")
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "dialysisdevicereading_readings")
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient_alerts:#{socket.assigns.current_user.id}")
     end
 
     devices = Devices.list_devices_for_patient(socket.assigns.current_user.patient.id)

@@ -49,20 +49,24 @@ defmodule Ankaa.Alerts do
 
     case Repo.transaction(multi) do
       {:ok, %{alert: alert}} ->
-        if alert.severity == "critical" do
-          EMSAlertTimer.start_link(alert)
+        if alert.severity in ["high", "critical"] do
+          if alert.severity == "critical" do
+            EMSAlertTimer.start_link(alert)
+          end
 
           Phoenix.PubSub.broadcast(
             Ankaa.PubSub,
-            "patient_alerts:#{patient_user_id}",
+            "patient_alerts:#{patient_user_id}:alerts",
             {:new_alert, alert}
           )
 
-          Logger.info("INFO: Sent critical #{inspect(alert)} notification to patient user #{patient_user_id}")
-        {:ok, alert}
+          Logger.info(
+            "INFO: Sent critical #{inspect(alert)} notification to patient user #{patient_user_id}"
+          )
         end
-        Logger.info("INFO: only call this for #{alert.severity}")
+
         broadcast_alert_created(alert)
+        Logger.info("INFO: Broadcasted alert #{alert.id} to care team.")
         {:ok, alert}
 
       {:error, _failed_operation, failed_value, _changes_so_far} ->
@@ -71,6 +75,16 @@ defmodule Ankaa.Alerts do
     end
   end
 
+  @doc """
+  Creates alerts for a patient based on a list of violations.
+  Each violation should be a map with at least :message and :severity keys.
+
+  Example:
+
+      iex> violations = [%{message: "High heart rate", severity: :high}]
+      iex> Ankaa.Alerts.create_alerts_for_violations(patient, violations)
+      :ok
+  """
   def create_alerts_for_violations(%Ankaa.Patients.Patient{} = patient, violations) do
     Enum.each(violations, fn violation ->
       # We just create the alert. The create_alert function already
@@ -95,35 +109,42 @@ defmodule Ankaa.Alerts do
     cond do
       user.role in ["doctor", "nurse", "caresupport"] ->
         query =
-          from(a in Alert,
-            join: n in Notification,
-            on: a.id == n.alert_id,
-            join: p_assoc in CareNetwork,
-            on: a.patient_id == p_assoc.patient_id,
-            where: p_assoc.user_id == ^user.id and n.user_id == ^user.id,
+          from(n in Notification,
+            where: n.user_id == ^user.id,
             where: n.status in ["unread", "acknowledged"],
+            join: a in Alert,
+            on: n.alert_id == a.id,
             order_by: [desc: a.inserted_at],
-            preload: [:patient],
-            select: %{alert: a, notification: n}
+            preload: [alert: :patient],
+            select: n
           )
 
-        Repo.all(query)
+        notifications = Repo.all(query)
+
+        Enum.map(notifications, fn notification ->
+          %{alert: notification.alert, notification: notification}
+        end)
 
       Accounts.User.patient?(user) ->
-        Logger.info("INFO: Fetching active alerts for patient user #{inspect(user.email)} who is the patient #{(user.patient.id)}")
+        Logger.info(
+          "INFO: Fetching active alerts for patient user #{inspect(user.email)} who is the patient #{user.patient.id}"
+        )
 
         query =
           from(a in Alert,
-            join: n in Notification,
-            on: a.id == n.alert_id,
-            where: a.patient_id == ^user.patient.id and n.user_id == ^user.id,
-            where: n.status in ["unread", "acknowledged"],
+            where:
+              a.patient_id == ^user.patient.id and
+                a.status == "active" and
+                a.severity in ["high", "critical"],
             order_by: [desc: a.inserted_at],
-            preload: [:patient],
-            select: %{alert: a, notification: n}
+            preload: [:patient]
           )
 
-          Repo.all(query)
+        alerts = Repo.all(query)
+
+        Enum.map(alerts, fn alert ->
+          %{alert: alert, notification: nil}
+        end)
 
       true ->
         []

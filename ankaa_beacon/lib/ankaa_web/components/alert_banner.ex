@@ -17,7 +17,7 @@ defmodule AnkaaWeb.AlertBanner do
   end
 
   @impl true
-  def handle_event("dismiss_alert", %{"alert_id" => alert_id, "patient_id" => patient_id}, socket) do
+  def handle_event("dismiss_alert", %{"alert_id" => alert_id}, socket) do
     user = socket.assigns.current_user
     item = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
 
@@ -105,6 +105,18 @@ defmodule AnkaaWeb.AlertBanner do
   def render(assigns) do
     ~H"""
     <div id="alert-banner-portal">
+      <%!-- PATIENT'S VIEW --%>
+      <p class="text-sm text-red-800 mb-2">
+        <strong>⚠️ Critical Alert:</strong> A critical issue was detected.
+        Please check your device and contact your care team immediately.
+      </p>
+      <button
+        phx-click="patient_acknowledge"
+        phx-target={@myself}
+        class="bg-red-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-red-700"
+      >
+        ✓ I see this alert.
+      </button>
       <%= for item <- @active_alerts do %>
         <%!-- `item` is a map like %{alert: alert, notification: notification} --%>
         <div
@@ -137,7 +149,7 @@ defmodule AnkaaWeb.AlertBanner do
                 <div class={alert_message_classes(item.alert.severity)}>
                   <%= item.alert.message %>
                 </div>
-               <%= if item.alert.severity == "critical" && !item.alert.acknowledged do %>
+                <%= if item.alert.severity == "critical" && !item.alert.acknowledged do %>
                   <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                     <%= if Accounts.patient?(@current_user) do %>
                       <%# PATIENT'S VIEW %>

@@ -1,4 +1,8 @@
 defmodule AnkaaWeb.CaringForLive.Show do
+  @moduledoc """
+  LiveView for displaying care support details for a specific patient.
+  Shows relationship, session status, and recent sessions.
+  """
   use AnkaaWeb, :live_view
   use AnkaaWeb, :alert_handling
 
@@ -44,14 +48,24 @@ defmodule AnkaaWeb.CaringForLive.Show do
             class="inline-flex items-center justify-center rounded-full bg-white p-2 text-gray-400 shadow-sm ring-1 ring-gray-900/10 hover:bg-gray-50 hover:text-gray-600 -ml-2"
           >
             <span class="sr-only">Go back</span>
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+              />
             </svg>
           </.link>
           <div>
-            <h1 class="text-xl font-semibold text-gray-900">Supporting <%= @patient.name %></h1>
+            <h1 class="text-xl font-semibold text-gray-900">Supporting {@patient.name}</h1>
             <p class="mt-2 text-sm text-gray-700">
-              Detailed information about your role in <%= @patient.name %>'s care.
+              Detailed information about your role in {@patient.name}'s care.
             </p>
           </div>
         </div>
@@ -61,7 +75,7 @@ defmodule AnkaaWeb.CaringForLive.Show do
             phx-click="toggle_chat"
             class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
           >
-            Chat with <%= @patient.name %>
+            Chat with {@patient.name}
           </button>
         </div>
       </div>
@@ -72,20 +86,20 @@ defmodule AnkaaWeb.CaringForLive.Show do
           <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <dt class="text-sm font-medium text-gray-500">Relationship</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @relationship %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@relationship}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Last Session Status</dt>
               <dd class="mt-1">
                 <span class={status_badge_color(@status)}>
-                  <%= @status %>
+                  {@status}
                 </span>
               </dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Last Session Start</dt>
               <dd class="mt-1 text-sm text-gray-900">
-                <%= if @last_check, do: Calendar.strftime(@last_check, "%Y-%m-%d %H:%M"), else: "N/A" %>
+                {if @last_check, do: Calendar.strftime(@last_check, "%Y-%m-%d %H:%M"), else: "N/A"}
               </dd>
             </div>
           </dl>
@@ -116,15 +130,15 @@ defmodule AnkaaWeb.CaringForLive.Show do
                   <%= for session <- @recent_sessions do %>
                     <tr>
                       <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900 sm:pl-0">
-                        <%= Calendar.strftime(session.start_time, "%Y-%m-%d %H:%M") %>
+                        {Calendar.strftime(session.start_time, "%Y-%m-%d %H:%M")}
                       </td>
                       <td class="whitespace-nowrap px-3 py-4 text-sm">
                         <span class={status_badge_color(String.capitalize(session.status))}>
-                          <%= String.capitalize(session.status) %>
+                          {String.capitalize(session.status)}
                         </span>
                       </td>
                       <td class="px-3 py-4 text-sm text-gray-500">
-                        <%= session.notes || "No notes." %>
+                        {session.notes || "No notes."}
                       </td>
                     </tr>
                   <% end %>
