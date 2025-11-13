@@ -8,6 +8,7 @@ defmodule AnkaaWeb.AlertBanner do
   alias Ankaa.Alerts
   alias Ankaa.Notifications
   alias Ankaa.Accounts
+  alias Ankaa.Messages
 
   require Logger
 
@@ -19,23 +20,11 @@ defmodule AnkaaWeb.AlertBanner do
   @impl true
   def handle_event("dismiss_alert", %{"alert_id" => alert_id}, socket) do
     user = socket.assigns.current_user
-    item = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
+    Notifications.dismiss_notification(user.id, alert_id)
 
-    case item do
-      nil ->
-        {:noreply, put_flash(socket, :error, "No item found")}
+    send(self(), {:alert_dismissed, alert_id})
 
-      %{alert: found_alert} ->
-        case Alerts.dismiss_alert(found_alert, user, "dismissed") do
-          {:ok, _} ->
-            Notifications.dismiss_all_notifications_for_alert(alert_id)
-            send(self(), {:alert_dismissed, alert_id})
-            {:noreply, socket}
-
-          {:error, _} ->
-            {:noreply, put_flash(socket, :error, "Failed to acknowledge alert")}
-        end
-    end
+    {:noreply, socket}
   end
 
   @impl true
@@ -45,13 +34,22 @@ defmodule AnkaaWeb.AlertBanner do
         socket
       ) do
     user = socket.assigns.current_user
-    patient = Ankaa.Patients.get_patient!(patient_id)
-    alert = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
 
-    Alerts.acknowledge_critical_alert(alert.alert, user.id)
-    Notifications.send_checked_on_message(patient, user)
-    Logger.info("Check on patient #{patient_id} initiated for alert #{alert_id}")
-    {:noreply, socket}
+    if user.role in ["doctor", "nurse"] do
+      # Clinical users can acknowledge the alert
+      patient = Ankaa.Patients.get_patient!(patient_id)
+      alert = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
+
+      Alerts.acknowledge_critical_alert(alert.alert, user.id)
+      Messages.send_checked_on_message(patient, user)
+
+      Logger.info("Check on patient #{patient_id} initiated by clinical user #{user.id}")
+      {:noreply, socket}
+    else
+      # Non-clinical users cannot
+      Logger.warn("Non-clinical user #{user.id} attempted to acknowledge alert #{alert_id}")
+      {:noreply, put_flash(socket, :error, "You are not authorized to perform this action.")}
+    end
   end
 
   @impl true
@@ -72,7 +70,7 @@ defmodule AnkaaWeb.AlertBanner do
         case Alerts.acknowledge_critical_alert(found_alert, user.id) do
           {:ok, _} ->
             patient = Ankaa.Patients.get_patient!(patient_id)
-            Ankaa.Notifications.send_checked_on_message(patient, user)
+            Messages.send_checked_on_message(patient, user)
             Notifications.dismiss_notification(user.id, alert_id)
             send(self(), {:alert_dismissed, alert_id})
             {:noreply, socket}
@@ -119,28 +117,31 @@ defmodule AnkaaWeb.AlertBanner do
               <div class="ml-3 flex-1">
                 <div class="flex items-center">
                   <h3 class={alert_title_classes(item.alert.severity)}>
-                    <%= alert_title(item.alert) %>
+                    {alert_title(item.alert)}
                   </h3>
                   <%= if item.alert.severity == "critical" && !item.alert.acknowledged do %>
                     <div class="ml-4 flex items-center text-sm">
                       <div class="animate-pulse h-2 w-2 bg-red-500 rounded-full mr-2"></div>
                       <span class="text-red-700 font-medium">
-                        EMS auto-contact in: <span
+                        EMS auto-contact in:
+                        <span
                           id={"timer-#{item.alert.id}"}
                           phx-hook="CountdownTimer"
                           data-end-time={ems_contact_time(item.alert)}
-                        >15:00</span>
+                        >
+                          15:00
+                        </span>
                       </span>
                     </div>
                   <% end %>
                 </div>
                 <div class={alert_message_classes(item.alert.severity)}>
-                  <%= item.alert.message %>
+                  {item.alert.message}
                 </div>
                 <%= if item.alert.severity == "critical" && !item.alert.acknowledged do %>
                   <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                     <%= if Accounts.patient?(@current_user) do %>
-                      <%# PATIENT'S VIEW %>
+                      <%!-- PATIENT'S VIEW --%>
                       <p class="text-sm text-red-800 mb-2">
                         <strong>⚠️ Critical Alert:</strong> A critical issue was detected.
                         Please check your device and contact your care team immediately.
@@ -154,9 +155,10 @@ defmodule AnkaaWeb.AlertBanner do
                         ✓ I see this alert.
                       </button>
                     <% else %>
-                      <%# CARE NETWORKS'S VIEW %>
+                      <%!-- CARE NETWORKS'S VIEW --%>
                       <p class="text-sm text-red-800 mb-2">
-                        <strong>⚠️ Critical Alert:</strong> This alert requires immediate acknowledgment.
+                        <strong>⚠️ Critical Alert:</strong>
+                        This alert requires immediate acknowledgment.
                         EMS will be automatically contacted in 15 minutes.
                       </p>
                       <button
@@ -204,7 +206,7 @@ defmodule AnkaaWeb.AlertBanner do
                   phx-value-patient_id={item.alert.patient_id}
                   phx-target={@myself}
                 >
-                  <%= dismiss_button_text(item) %>
+                  {dismiss_button_text(item)}
                 </button>
               <% end %>
             </div>
@@ -235,15 +237,27 @@ defmodule AnkaaWeb.AlertBanner do
       <%= case @severity do %>
         <% "info" -> %>
           <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
           </svg>
         <% "high" -> %>
           <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
           </svg>
         <% "critical" -> %>
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
           </svg>
       <% end %>
     </div>

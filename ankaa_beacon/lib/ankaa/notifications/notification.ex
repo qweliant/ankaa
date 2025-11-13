@@ -1,4 +1,7 @@
 defmodule Ankaa.Notifications.Notification do
+  @moduledoc """
+  Ecto schema for user notifications and related changesets.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -11,15 +14,16 @@ defmodule Ankaa.Notifications.Notification do
     field(:status, :string, default: "unread")
     belongs_to(:user, User, type: :binary_id, foreign_key: :user_id)
     belongs_to(:alert, Alert, type: :binary_id, foreign_key: :alert_id)
-
+    field(:notifiable_id, :binary_id)
+    field(:notifiable_type, :string)
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(notification, attrs) do
     notification
-    |> cast(attrs, [:user_id, :alert_id, :status])
-    |> validate_required([:user_id, :alert_id, :status])
+    |> cast(attrs, [:user_id, :status, :notifiable_id, :notifiable_type])
+    |> validate_required([:user_id, :status, :notifiable_id, :notifiable_type])
     |> validate_inclusion(:status, @statuses)
   end
 end

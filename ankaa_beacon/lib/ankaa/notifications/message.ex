@@ -1,4 +1,4 @@
-defmodule Ankaa.Notifications.Messages do
+defmodule Ankaa.Notifications.Message do
   @moduledoc """
   The Messages schema and changeset.
   """
@@ -14,6 +14,10 @@ defmodule Ankaa.Notifications.Messages do
     field(:read, :boolean, default: false)
     belongs_to(:sender, User, foreign_key: :sender_id)
     belongs_to(:patient, Patient, foreign_key: :patient_id)
+    has_many(:notifications, Notification,
+      foreign_key: :notifiable_id,
+      where: [notifiable_type: "Message"]
+    )
     timestamps()
   end
 

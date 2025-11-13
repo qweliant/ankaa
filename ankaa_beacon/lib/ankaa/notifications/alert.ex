@@ -26,7 +26,10 @@ defmodule Ankaa.Notifications.Alert do
     belongs_to(:patient, Patient, foreign_key: :patient_id, type: :binary_id)
     belongs_to(:resolved_by, User, foreign_key: :resolved_by_id, type: :binary_id)
 
-    has_many(:notifications, Notification)
+    has_many(:notifications, Notification,
+      foreign_key: :notifiable_id,
+      where: [notifiable_type: "Alert"]
+    )
 
     timestamps()
   end

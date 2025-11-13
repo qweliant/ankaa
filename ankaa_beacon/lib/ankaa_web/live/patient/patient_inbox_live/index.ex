@@ -1,7 +1,7 @@
 defmodule AnkaaWeb.PatientInboxListLive.Index do
   use AnkaaWeb, :patient_layout
 
-  alias Ankaa.Message
+  alias Ankaa.Messages
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,7 +13,7 @@ defmodule AnkaaWeb.PatientInboxListLive.Index do
     end
 
     # Fetch all existing messages
-    messages = Message.list_messages_for_patient(patient.id)
+    messages = Messages.list_messages_for_patient(patient.id)
 
     {:ok,
      assign(socket,

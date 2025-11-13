@@ -23,14 +23,13 @@ defmodule Ankaa.Alerts do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:alert, Alert.changeset(%Alert{}, attrs))
       |> Ecto.Multi.run(:notifications, fn repo, %{alert: alert} ->
-        # This step runs after the alert is successfully inserted.
-        # We create a list of notification structs to be inserted all at once.
         now = DateTime.utc_now() |> DateTime.truncate(:second)
 
         notifications =
           Enum.map(care_network_user_ids, fn user_id ->
             %{
-              alert_id: alert.id,
+              notifiable_id: alert.id,
+              notifiable_type: "Alert",
               user_id: user_id,
               status: "unread",
               inserted_at: now,
@@ -113,7 +112,7 @@ defmodule Ankaa.Alerts do
             where: n.user_id == ^user.id,
             where: n.status in ["unread", "acknowledged"],
             join: a in Alert,
-            on: n.alert_id == a.id,
+            on: n.notifiable_id == a.id and n.notifiable_type == "Alert",
             where: a.status == "active",
             join: p in assoc(a, :patient),
             order_by: [desc: a.inserted_at],
