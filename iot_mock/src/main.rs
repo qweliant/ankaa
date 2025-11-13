@@ -122,8 +122,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     mqtt_options.set_clean_session(true);
     mqtt_options.set_max_packet_size(10 * 1024 * 1024, 10 * 1024 * 1024); // Allow larger packets for batching
     mqtt_options.set_inflight(100); // Increase in-flight messages
-    mqtt_options.set_transport(Transport::tls_with_default_config()); // Use TLS from with sys
+    let use_tls = env::var("MQTT_USE_TLS")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse::<bool>()
+        .unwrap_or(false);
 
+    if use_tls {
+        info!("Using TLS for MQTT connection.");
+        // This will now ONLY run if MQTT_USE_TLS is set to true
+        mqtt_options.set_transport(Transport::tls_with_default_config()); 
+    } else {
+        info!("Using plain-text (TCP) for MQTT connection.");
+        // Do nothing, rumqttc defaults to plain TCP
+    }
     // Create client with larger capacities
     let (client, mut eventloop) = AsyncClient::new(mqtt_options, 1000);
     let client = Arc::new(client);

@@ -114,15 +114,17 @@ defmodule Ankaa.Alerts do
             where: n.status in ["unread", "acknowledged"],
             join: a in Alert,
             on: n.alert_id == a.id,
+            where: a.status == "active",
+            join: p in assoc(a, :patient),
             order_by: [desc: a.inserted_at],
-            preload: [alert: :patient],
-            select: n
+            select: {n, a, p}
           )
 
-        notifications = Repo.all(query)
+        results = Repo.all(query)
 
-        Enum.map(notifications, fn notification ->
-          %{alert: notification.alert, notification: notification}
+        Enum.map(results, fn {notification, alert, patient} ->
+          alert_with_patient = %{alert | patient: patient}
+          %{alert: alert_with_patient, notification: notification}
         end)
 
       Accounts.User.patient?(user) ->
@@ -132,18 +134,21 @@ defmodule Ankaa.Alerts do
 
         query =
           from(a in Alert,
+            join: p in assoc(a, :patient),
             where:
               a.patient_id == ^user.patient.id and
                 a.status == "active" and
                 a.severity in ["high", "critical"],
             order_by: [desc: a.inserted_at],
-            preload: [:patient]
+            select: {a, p}
           )
 
-        alerts = Repo.all(query)
+        results = Repo.all(query)
 
-        Enum.map(alerts, fn alert ->
-          %{alert: alert, notification: nil}
+        Enum.map(results, fn {alert, patient} ->
+          # Manually build struct
+          alert_with_patient = %{alert | patient: patient}
+          %{alert: alert_with_patient, notification: nil}
         end)
 
       true ->
@@ -185,10 +190,8 @@ defmodule Ankaa.Alerts do
   Acknowledges a critical alert, creating an audit trail and stopping the EMS timer.
   """
   def acknowledge_critical_alert(%Alert{} = alert, user_id) do
-    # 1. Cancel the countdown timer process
     EMSAlertTimer.cancel(alert.id)
 
-    # 2. Update the alert in the database
     attrs = %{
       acknowledged: true,
       dismissed_at: DateTime.utc_now(),
@@ -199,7 +202,6 @@ defmodule Ankaa.Alerts do
 
     case alert |> Alert.changeset(attrs) |> Repo.update() do
       {:ok, ack_alert} ->
-        # 3. Broadcast that the alert was updated
         broadcast_alert_updated(ack_alert)
         {:ok, ack_alert}
 

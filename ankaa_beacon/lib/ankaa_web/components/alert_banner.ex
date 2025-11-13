@@ -105,18 +105,6 @@ defmodule AnkaaWeb.AlertBanner do
   def render(assigns) do
     ~H"""
     <div id="alert-banner-portal">
-      <%!-- PATIENT'S VIEW --%>
-      <p class="text-sm text-red-800 mb-2">
-        <strong>⚠️ Critical Alert:</strong> A critical issue was detected.
-        Please check your device and contact your care team immediately.
-      </p>
-      <button
-        phx-click="patient_acknowledge"
-        phx-target={@myself}
-        class="bg-red-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-red-700"
-      >
-        ✓ I see this alert.
-      </button>
       <%= for item <- @active_alerts do %>
         <%!-- `item` is a map like %{alert: alert, notification: notification} --%>
         <div

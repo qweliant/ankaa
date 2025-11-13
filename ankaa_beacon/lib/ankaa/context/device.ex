@@ -52,7 +52,7 @@ defmodule Ankaa.Devices do
       ** (Ecto.NoResultsError)
 
   """
-  def get_device(id), do: Repo.get!(Device, id)
+  def get_device(id), do: Repo.get(Device, id)
 
   @doc """
   Creates a device.
