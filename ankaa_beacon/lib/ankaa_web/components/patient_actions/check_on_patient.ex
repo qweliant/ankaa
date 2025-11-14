@@ -7,6 +7,7 @@ defmodule AnkaaWeb.CheckInButton do
   use AnkaaWeb, :live_component
 
   alias Ankaa.Messages
+  alias Ankaa.Patients
 
   require Logger
 
@@ -31,8 +32,17 @@ defmodule AnkaaWeb.CheckInButton do
     <div>
       <%= if @sent do %>
         <span class="inline-flex items-center rounded-lg bg-green-100 px-4 py-2 font-semibold text-green-700">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 mr-2">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="h-5 w-5 mr-2"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+              clip-rule="evenodd"
+            />
           </svg>
           Check-in sent!
         </span>
@@ -44,7 +54,12 @@ defmodule AnkaaWeb.CheckInButton do
           phx-target={@myself}
           phx-disable-with="Sending..."
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 mr-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="h-5 w-5 mr-2"
+          >
             <path d="M3.105 2.288a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.087l-1.414 4.925a.75.75 0 00.95.826l16-5.25a.75.75 0 000-1.352l-16-5.25z" />
           </svg>
           Send "Checking In" Ping
@@ -59,8 +74,9 @@ defmodule AnkaaWeb.CheckInButton do
   """
   @impl true
   def handle_event("send_check_in", _params, socket) do
-    patient = socket.assigns.patient
     caregiver = socket.assigns.current_user
+    patient_id = socket.assigns.patient.id
+    patient = Patients.get_patient!(patient_id)
 
     case Messages.send_passive_check_in(patient, caregiver) do
       {:ok, _} ->

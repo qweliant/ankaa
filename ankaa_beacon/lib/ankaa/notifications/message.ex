@@ -5,7 +5,7 @@ defmodule Ankaa.Notifications.Message do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ankaa.{Accounts.User, Patients.Patient}
+  alias Ankaa.{Accounts.User, Patients.Patient, Notifications.Notification}
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -14,6 +14,7 @@ defmodule Ankaa.Notifications.Message do
     field(:read, :boolean, default: false)
     belongs_to(:sender, User, foreign_key: :sender_id)
     belongs_to(:patient, Patient, foreign_key: :patient_id)
+
     has_many(:notifications, Notification,
       foreign_key: :notifiable_id,
       where: [notifiable_type: "Message"]

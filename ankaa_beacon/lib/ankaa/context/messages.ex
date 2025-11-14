@@ -13,7 +13,7 @@ defmodule Ankaa.Messages do
   alias Ankaa.Accounts.User
 
   require Logger
-  
+
   @doc "Lists all messages for a given patient."
   def list_messages_for_patient(patient_id) do
     from(m in Message,
@@ -48,7 +48,6 @@ defmodule Ankaa.Messages do
       # Create a notification for the *patient* that points
       # to the new message.
       notification_attrs = %{
-        # The patient's own user ID
         user_id: patient.user_id,
         notifiable_id: message.id,
         notifiable_type: "Message",

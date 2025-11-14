@@ -71,7 +71,7 @@ defmodule AnkaaWeb.AlertBanner do
           {:ok, _} ->
             patient = Ankaa.Patients.get_patient!(patient_id)
             Messages.send_checked_on_message(patient, user)
-            Notifications.dismiss_notification(user.id, alert_id)
+            Notifications.dismiss_all_notifications_for_alert(alert_id)
             send(self(), {:alert_dismissed, alert_id})
             {:noreply, socket}
 
