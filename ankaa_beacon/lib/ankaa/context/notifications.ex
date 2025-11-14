@@ -18,6 +18,7 @@ defmodule Ankaa.Notifications do
     |> Repo.insert()
   end
 
+  
   @doc """
   Finds a specific notification for a user and marks it as dismissed.
   """

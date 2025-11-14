@@ -9,7 +9,11 @@ defmodule Ankaa.Messages do
   alias Ankaa.Notifications.Message
   alias Ankaa.Notifications.SMS
   alias Ankaa.Notifications
+  alias Ankaa.Patients.Patient
+  alias Ankaa.Accounts.User
 
+  require Logger
+  
   @doc "Lists all messages for a given patient."
   def list_messages_for_patient(patient_id) do
     from(m in Message,
@@ -69,6 +73,52 @@ defmodule Ankaa.Messages do
         {:ok, message}
 
       {:error, _failed_op, failed_value, _changes} ->
+        {:error, failed_value}
+    end
+  end
+
+  @doc """
+  Creates a passive "check-in" message and a notification for the patient.
+  """
+  def send_passive_check_in(%Patient{} = patient, %User{} = caregiver) do
+    provider_name =
+      if caregiver.first_name,
+        do: "#{caregiver.first_name} #{caregiver.last_name}",
+        else: "Your Care Team"
+
+    content = "#{provider_name} is checking in to see how you're doing!"
+
+    attrs = %{
+      content: content,
+      sender_id: caregiver.id,
+      patient_id: patient.id
+    }
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:message, Message.changeset(%Message{}, attrs))
+    |> Ecto.Multi.run(:notification, fn _repo, %{message: message} ->
+        notification_attrs = %{
+          user_id: patient.user_id,
+          notifiable_id: message.id,
+          notifiable_type: "Message",
+          status: "unread"
+        }
+        # Use the function we created yesterday!
+        Notifications.create_notification(notification_attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{message: message, notification: _notification}} ->
+        # Broadcast to the patient so they see it in real-time
+        Phoenix.PubSub.broadcast(
+          Ankaa.PubSub,
+          "patient:#{patient.id}:messages",
+          {:new_message, message}
+        )
+        {:ok, message}
+
+      {:error, _failed_op, failed_value, _changes} ->
+        Logger.error("Failed to create passive check-in: #{inspect(failed_value)}")
         {:error, failed_value}
     end
   end

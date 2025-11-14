@@ -6,14 +6,12 @@ defmodule Ankaa.Notifications.Notification do
   import Ecto.Changeset
 
   alias Ankaa.Accounts.User
-  alias Ankaa.Notifications.Alert
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @statuses ["unread", "read", "dismissed", "acknowledged"]
   schema "notifications" do
     field(:status, :string, default: "unread")
     belongs_to(:user, User, type: :binary_id, foreign_key: :user_id)
-    belongs_to(:alert, Alert, type: :binary_id, foreign_key: :alert_id)
     field(:notifiable_id, :binary_id)
     field(:notifiable_type, :string)
     timestamps(type: :utc_datetime)

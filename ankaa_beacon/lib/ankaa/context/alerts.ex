@@ -118,14 +118,11 @@ defmodule Ankaa.Alerts do
             order_by: [desc: a.inserted_at],
             select: {n, a, p}
           )
-
         results = Repo.all(query)
-
         Enum.map(results, fn {notification, alert, patient} ->
           alert_with_patient = %{alert | patient: patient}
           %{alert: alert_with_patient, notification: notification}
         end)
-
       Accounts.User.patient?(user) ->
         Logger.info(
           "INFO: Fetching active alerts for patient user #{inspect(user.email)} who is the patient #{user.patient.id}"

@@ -1,4 +1,7 @@
 defmodule AnkaaWeb.PatientNav do
+  @moduledoc """
+  Patient navigation bar component.
+  """
   use AnkaaWeb, :live_component
 
   def render(assigns) do
