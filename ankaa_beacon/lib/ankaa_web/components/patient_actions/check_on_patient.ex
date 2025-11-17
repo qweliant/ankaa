@@ -18,7 +18,6 @@ defmodule AnkaaWeb.CheckInButton do
   def mount(socket) do
     {:ok,
      assign(socket,
-       # We'll set :sent to true after the event is handled
        sent: false
      )}
   end

@@ -9,17 +9,18 @@ defmodule AnkaaWeb.CaringForLive.Show do
   alias Ankaa.Patients
   alias Ankaa.Sessions
 
+  require Logger
   @impl true
   def mount(%{"id" => patient_id}, _session, socket) do
     current_user = socket.assigns.current_user
 
-    # 1. Fetch all the real data from your contexts
     patient = Patients.get_patient!(patient_id)
     relationship = Patients.get_relationship(current_user, patient)
     latest_session = Sessions.get_latest_session_for_patient(patient)
     recent_sessions = Sessions.list_sessions_for_patient(patient.id)
+    care_network_entry = Patients.get_care_network_entry(current_user.id, patient.id)
+    Logger.info("Care network entry is #{care_network_entry |> inspect()}")
 
-    # 2. Derive the status and last_check time from the latest session
     {status, last_check} =
       case latest_session do
         %Sessions.Session{status: s, start_time: st} -> {String.capitalize(s), st}
@@ -33,7 +34,8 @@ defmodule AnkaaWeb.CaringForLive.Show do
        status: status,
        last_check: last_check,
        recent_sessions: recent_sessions,
-       show_chat: false
+       show_chat: false,
+       care_network_entry: care_network_entry
      )}
   end
 
@@ -147,6 +149,13 @@ defmodule AnkaaWeb.CaringForLive.Show do
             </div>
           </div>
         </div>
+       <.live_component
+          module={AnkaaWeb.FridgeCardComponent}
+          id={"fridge-card-for-#{@patient.id}"}
+          care_network_entry={@care_network_entry}
+          patient={@patient}
+          current_user={@current_user}
+        />
       </div>
 
       <%= if @show_chat do %>

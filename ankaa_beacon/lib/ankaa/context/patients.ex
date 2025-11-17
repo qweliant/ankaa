@@ -204,6 +204,7 @@ defmodule Ankaa.Patients do
   """
   def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
     default_permissions = ["receive_alerts"]
+
     if User.doctor?(user) || User.nurse?(user) || User.caresupport?(user) do
       %CareNetwork{}
       |> CareNetwork.changeset(%{
@@ -387,6 +388,44 @@ defmodule Ankaa.Patients do
     end
   end
 
+  @doc """
+  Gets the specific CareNetwork entry for a given user and patient.
+  """
+  def get_care_network_entry(user_id, patient_id) do
+    Repo.get_by(CareNetwork, user_id: user_id, patient_id: patient_id)
+  end
+
+  @doc """
+  Tries to find a CareNetwork entry, or creates one if it doesn't exist.
+  """
+  def get_or_create_care_network_entry(user_id, patient_id) do
+    case get_care_network_entry(user_id, patient_id) do
+      nil ->
+        # Doesn't exist, let's create a new one
+        attrs = %{
+          user_id: user_id,
+          patient_id: patient_id,
+          relationship: "Care Support"
+        }
+
+        %CareNetwork{}
+        |> CareNetwork.changeset(attrs)
+        |> Repo.insert()
+
+      entry ->
+        {:ok, entry}
+    end
+  end
+
+  @doc """
+  Updates the fridge card notes for a specific CareNetwork entry.
+  """
+  def update_fridge_card_notes(%CareNetwork{} = entry, notes) do
+    entry
+    |> CareNetwork.changeset(%{fridge_card_notes: notes})
+    |> Repo.update()
+  end
+
   # Private helpers
   defp list_care_provider_patients(user) do
     CareNetwork
@@ -402,6 +441,7 @@ defmodule Ankaa.Patients do
         where: cn.patient_id == ^patient.id and cn.relationship == "peer_support",
         select: cn.user_id
       )
+
     from(p in Patient,
       where: p.user_id in subquery(peer_user_ids_query)
     )
@@ -440,17 +480,17 @@ defmodule Ankaa.Patients do
 
   defp list_pending_members(%Patient{} = patient) do
     from(i in Invite,
-          where: i.patient_id == ^patient.id and i.status == "pending",
-          select: i
-        )
-        |> Repo.all()
-        |> Enum.map(fn invite ->
-          %{
-            id: invite.id,
-            name: "Invitation to #{invite.invitee_email}",
-            role: invite.invitee_role,
-            status: "pending"
-          }
-        end)
+      where: i.patient_id == ^patient.id and i.status == "pending",
+      select: i
+    )
+    |> Repo.all()
+    |> Enum.map(fn invite ->
+      %{
+        id: invite.id,
+        name: "Invitation to #{invite.invitee_email}",
+        role: invite.invitee_role,
+        status: "pending"
+      }
+    end)
   end
 end
