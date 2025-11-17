@@ -290,7 +290,12 @@ defmodule AnkaaWeb.AlertBanner do
     do: "text-red-800 hover:text-red-900 text-sm font-medium"
 
   defp dismiss_button_text(%{alert: alert, notification: notification}) do
-    if alert.severity in ["high", "critical"] and notification.status == "unread" do
+    is_unread_critical =
+      !is_nil(notification) and
+        alert.severity in ["high", "critical"] and
+        notification.status == "unread"
+
+    if is_unread_critical do
       "Acknowledge"
     else
       "Dismiss"

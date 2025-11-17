@@ -6,26 +6,22 @@ defmodule AnkaaWeb.PatientInboxListLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     patient = socket.assigns.current_user.patient
-
-    # Subscribe to new message broadcasts
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient:#{patient.id}:messages")
-    end
-
     # Fetch all existing messages
-    messages = Messages.list_messages_for_patient(patient.id)
+    conversations = Messages.list_conversations_for_patient(patient.id)
 
     {:ok,
      assign(socket,
-       messages: messages,
+       conversations: conversations,
        current_path: "/patient/inbox"
      )}
   end
 
   # When a new message is broadcast, add it to the top of the list
   @impl true
-  def handle_info({:new_message, message}, socket) do
-    {:noreply, update(socket, :messages, &[message | &1])}
+  def handle_info({:new_message, _message}, socket) do
+    patient = socket.assigns.current_user.patient
+    conversations = Messages.list_conversations_for_patient(patient.id)
+    {:noreply, assign(socket, :conversations, conversations)}
   end
 
   @impl true
@@ -36,27 +32,48 @@ defmodule AnkaaWeb.PatientInboxListLive.Index do
 
       <div class="bg-white shadow overflow-hidden sm:rounded-md">
         <ul role="list" class="divide-y divide-gray-200">
-          <%= for message <- @messages do %>
-            <li class="p-4 sm:p-6">
-              <div class="flex items-start">
-                <div class="shrink-0">
-                  <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                    <.icon name="hero-chat-bubble-left-right" class="h-6 w-6 text-blue-600" />
-                  </span>
+          <%= for convo <- @conversations do %>
+            <.link
+              navigate={~p"/patient/inbox/#{convo.sender.id}"}
+              class="block hover:bg-gray-50 cursor-pointer"
+            >
+              <li class="p-4 sm:p-6 block hover:bg-gray-50 cursor-pointer">
+                <div class="flex items-center">
+                  <div class="w-8 shrink-0">
+                    <%= if convo.unread_count > 0 do %>
+                      <span class="inline-block h-3 w-3 rounded-full bg-blue-500" title="Unread">
+                      </span>
+                    <% end %>
+                  </div>
+
+                  <div class="ml-0 flex-1">
+                    <div class="flex justify-between items-center">
+                      <p class="text-sm font-medium text-gray-900">
+                        {convo.sender.first_name} {convo.sender.last_name}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        {Timex.format!(convo.latest_message.inserted_at, "{Mfull} {D}")}
+                      </p>
+                    </div>
+
+                    <p class="mt-1 text-sm text-gray-700 truncate">
+                      {convo.latest_message.content}
+                    </p>
+                  </div>
+
+                  <%= if convo.unread_count > 0 do %>
+                    <div class="ml-4">
+                      <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-500 text-xs font-medium text-white">
+                        {convo.unread_count}
+                      </span>
+                    </div>
+                  <% end %>
                 </div>
-                <div class="ml-4">
-                  <p class="text-sm font-medium text-gray-900">
-                    New message from your Care Team
-                  </p>
-                  <p class="mt-1 text-sm text-gray-700"><%= message.content %></p>
-                  <p class="mt-2 text-xs text-gray-500">
-                    <%= Timex.format!(message.inserted_at, "{Mfull} {D}, {h12}:{m} {AM}") %>
-                  </p>
-                </div>
-              </div>
-            </li>
+              </li>
+            </.link>
           <% end %>
-          <%= if Enum.empty?(@messages) do %>
+
+          <%= if Enum.empty?(@conversations) do %>
             <li class="p-4 sm:p-6 text-center text-gray-500">
               You have no messages.
             </li>

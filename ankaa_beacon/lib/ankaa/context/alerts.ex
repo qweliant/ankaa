@@ -59,13 +59,10 @@ defmodule Ankaa.Alerts do
             {:new_alert, alert}
           )
 
-          Logger.info(
-            "INFO: Sent critical #{inspect(alert)} notification to patient user #{patient_user_id}"
-          )
+
         end
 
         broadcast_alert_created(alert)
-        Logger.info("INFO: Broadcasted alert #{alert.id} to care team.")
         {:ok, alert}
 
       {:error, _failed_operation, failed_value, _changes_so_far} ->
@@ -124,10 +121,6 @@ defmodule Ankaa.Alerts do
           %{alert: alert_with_patient, notification: notification}
         end)
       Accounts.User.patient?(user) ->
-        Logger.info(
-          "INFO: Fetching active alerts for patient user #{inspect(user.email)} who is the patient #{user.patient.id}"
-        )
-
         query =
           from(a in Alert,
             join: p in assoc(a, :patient),
