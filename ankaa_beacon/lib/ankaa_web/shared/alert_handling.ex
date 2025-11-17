@@ -5,6 +5,8 @@ defmodule AnkaaWeb.Live.Shared.AlertHandling do
   defmacro __using__(_opts) do
     quote do
       alias Ankaa.Alerts
+      alias Ankaa.Messages
+      require Logger
 
       # Handle new alert broadcasts
       @impl true
@@ -49,12 +51,54 @@ defmodule AnkaaWeb.Live.Shared.AlertHandling do
                  | ems_contacted: true,
                    ems_contact_time: DateTime.utc_now()
                }
+
                %{item | alert: updated_nested_alert}
              else
                item
              end
            end)
          end)}
+      end
+
+      @impl true
+      def handle_info({:new_message, message}, socket) do
+        current_user = socket.assigns.current_user
+        Logger.info("Received new message for user #{current_user.id}: #{inspect(message)}")
+
+        socket =
+          cond do
+            !is_nil(current_user.patient) and
+                String.contains?(message.content, "checking in") ->
+              Logger.info("Assigning toast for patient #{current_user.id}")
+              assign(socket, :toast_message, message)
+
+            is_nil(current_user.patient) and
+                String.contains?(message.content, "I'm OK!") ->
+              Logger.info("Assigning toast for caregiver #{current_user.id}")
+              assign(socket, :toast_message, message)
+
+            true ->
+              socket
+          end
+
+        {:noreply, socket}
+      end
+
+      @impl true
+      def handle_event("send_check_in_reply", %{"message_id" => message_id}, socket) do
+        patient = socket.assigns.current_user.patient
+        original_message = socket.assigns.toast_message
+
+        if original_message && original_message.id == message_id do
+          Messages.send_check_in_reply(patient, original_message)
+        end
+
+        {:noreply, assign(socket, :toast_message, nil)}
+      end
+
+      @impl true
+      def handle_event("dismiss_toast", _, socket) do
+        {:noreply, assign(socket, :toast_message, nil)}
       end
     end
   end

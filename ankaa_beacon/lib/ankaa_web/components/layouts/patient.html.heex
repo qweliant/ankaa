@@ -9,6 +9,12 @@
       current_user={@current_user} />
   <% end %>
 </div>
+<.live_component
+  module={AnkaaWeb.ToastNotification}
+  id="toast-notification-component"
+  toast_message={@toast_message}
+  current_user={@current_user}
+/>
 <.live_component module={AnkaaWeb.PatientNav} id="patient-nav"
 current_path={@current_path} current_user={@current_user} />
 <div class="py-10">

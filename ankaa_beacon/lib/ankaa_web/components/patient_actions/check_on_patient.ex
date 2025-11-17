@@ -80,12 +80,10 @@ defmodule AnkaaWeb.CheckInButton do
 
     case Messages.send_passive_check_in(patient, caregiver) do
       {:ok, _} ->
-        # It worked! Update this component's state to "sent"
         {:noreply, assign(socket, :sent, true)}
 
       {:error, _} ->
-        # If it fails, we could push a toast here for npow just log it and don't change the button.
-        Logger.error("Failed to send passive check-in")
+        put_flash(socket, :error, "Failed to send passive check-in")
         {:noreply, socket}
     end
   end
