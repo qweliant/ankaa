@@ -9,12 +9,14 @@
       current_user={@current_user} />
   <% end %>
 </div>
-<.live_component
-  module={AnkaaWeb.ToastNotification}
-  id="toast-notification-component"
-  toast_message={@toast_message}
-  current_user={@current_user}
-/>
+<%= if @current_user do %>
+  <.live_component
+    module={AnkaaWeb.ToastNotification}
+    id="toast-notification-component"
+    toast_message={@toast_message}
+    current_user={@current_user}
+  />
+<% end %>
 <main class="px-4 py-20 sm:px-6 lg:px-8">
   <div class="mx-auto"><.flash_group flash={@flash} /> {@inner_content}</div>
 </main>

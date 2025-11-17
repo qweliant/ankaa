@@ -69,12 +69,10 @@ defmodule AnkaaWeb.Live.Shared.AlertHandling do
           cond do
             !is_nil(current_user.patient) and
                 String.contains?(message.content, "checking in") ->
-              Logger.info("Assigning toast for patient #{current_user.id}")
               assign(socket, :toast_message, message)
 
             is_nil(current_user.patient) and
                 String.contains?(message.content, "I'm OK!") ->
-              Logger.info("Assigning toast for caregiver #{current_user.id}")
               assign(socket, :toast_message, message)
 
             true ->
