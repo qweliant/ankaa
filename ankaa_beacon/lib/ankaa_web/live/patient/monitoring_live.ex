@@ -39,7 +39,6 @@ defmodule AnkaaWeb.MonitoringLive do
            session_started: false,
            session_start_time: nil,
            active_session: nil,
-           devices: devices,
            active_devices_in_session: []
          )}
 
@@ -56,7 +55,6 @@ defmodule AnkaaWeb.MonitoringLive do
            session_started: true,
            session_start_time: session.start_time,
            active_session: session,
-           devices: devices,
            active_devices_in_session: active_devices_in_session
          )}
     end
@@ -175,7 +173,7 @@ defmodule AnkaaWeb.MonitoringLive do
     if Enum.any?(socket.assigns.devices, &(&1.id == reading.device_id)) do
       {:noreply,
        socket
-       |> update(:bp_readings, fn readings -> [reading | Enum.take(readings, 9)] end)
+       |> update(:bp_readings, fn readings -> [reading | Enum.take(readings, 4)] end)
        |> update(:bp_violations, fn _ -> violations end)}
     else
       {:noreply, socket}
@@ -188,7 +186,7 @@ defmodule AnkaaWeb.MonitoringLive do
     if Enum.any?(socket.assigns.devices, &(&1.device_id == reading.device_id)) do
       {:noreply,
        socket
-       |> update(:dialysis_readings, fn readings -> [reading | Enum.take(readings, 9)] end)
+       |> update(:dialysis_readings, fn readings -> [reading | Enum.take(readings, 4)] end)
        |> update(:dialysis_violations, fn _ -> violations end)}
     else
       {:noreply, socket}

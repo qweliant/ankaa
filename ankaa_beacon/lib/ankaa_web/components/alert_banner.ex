@@ -47,7 +47,7 @@ defmodule AnkaaWeb.AlertBanner do
       {:noreply, socket}
     else
       # Non-clinical users cannot
-      Logger.warn("Non-clinical user #{user.id} attempted to acknowledge alert #{alert_id}")
+      Logger.warning("Non-clinical user #{user.id} attempted to acknowledge alert #{alert_id}")
       {:noreply, put_flash(socket, :error, "You are not authorized to perform this action.")}
     end
   end

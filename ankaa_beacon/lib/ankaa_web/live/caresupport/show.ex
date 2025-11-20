@@ -8,8 +8,13 @@ defmodule AnkaaWeb.CaringForLive.Show do
 
   alias Ankaa.Patients
   alias Ankaa.Sessions
+  alias Ankaa.Devices
 
+  alias AnkaaWeb.FridgeCardComponent
+  alias AnkaaWeb.Monitoring.BPComponent
+  alias AnkaaWeb.Monitoring.DialysisComponent
   require Logger
+
   @impl true
   def mount(%{"id" => patient_id}, _session, socket) do
     current_user = socket.assigns.current_user
@@ -19,7 +24,21 @@ defmodule AnkaaWeb.CaringForLive.Show do
     latest_session = Sessions.get_latest_session_for_patient(patient)
     recent_sessions = Sessions.list_sessions_for_patient(patient.id)
     care_network_entry = Patients.get_care_network_entry(current_user.id, patient.id)
-    Logger.info("Care network entry is #{care_network_entry |> inspect()}")
+    devices = Devices.list_devices_for_patient(patient.id)
+
+    has_vitals_permission =
+      if care_network_entry do
+        "share_vitals" in care_network_entry.permissions
+      else
+        false
+      end
+    Logger.debug("Has vitals permission: #{inspect(has_vitals_permission)}")
+
+    if connected?(socket) && has_vitals_permission do
+      Logger.info("Subscribing to vitals topics for patient #{patient.id}")
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "bpdevicereading_readings")
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "dialysisdevicereading_readings")
+    end
 
     {status, last_check} =
       case latest_session do
@@ -35,8 +54,48 @@ defmodule AnkaaWeb.CaringForLive.Show do
        last_check: last_check,
        recent_sessions: recent_sessions,
        show_chat: false,
-       care_network_entry: care_network_entry
+       care_network_entry: care_network_entry,
+       has_vitals_permission: has_vitals_permission,
+       bp_readings: [],
+       dialysis_readings: [],
+       bp_violations: [],
+       dialysis_violations: [],
+       devices: devices
      )}
+  end
+
+  @impl true
+  def handle_info({:new_reading, reading, violations}, socket)
+      when is_map_key(reading, :systolic) do
+    if socket.assigns.has_vitals_permission do
+      Logger.info("Received new BP reading: #{inspect(reading)}")
+      if Enum.any?(socket.assigns.devices, &(&1.id == reading.device_id)) do
+        {:noreply,
+         socket
+         |> update(:bp_readings, fn readings -> [reading | Enum.take(readings, 2)] end)
+         |> update(:bp_violations, fn _ -> violations end)}
+      else
+        {:noreply, socket}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:new_reading, reading, violations}, socket) when is_map_key(reading, :bfr) do
+    if socket.assigns.has_vitals_permission do
+      if Enum.any?(socket.assigns.devices, &(&1.device_id == reading.device_id)) do
+        {:noreply,
+         socket
+         |> update(:dialysis_readings, fn readings -> [reading | Enum.take(readings, 2)] end)
+         |> update(:dialysis_violations, fn _ -> violations end)}
+      else
+        {:noreply, socket}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -81,7 +140,38 @@ defmodule AnkaaWeb.CaringForLive.Show do
           </button>
         </div>
       </div>
+      <div class="mt-8 grid grid-cols-1 gap-6">
+        <%= if @has_vitals_permission do %>
+          <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <span class="flex h-3 w-3 relative mr-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75">
+                </span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              Live Vitals Stream
+            </h2>
 
+            <div class="space-y-8">
+              <.live_component
+                module={BPComponent}
+                id="caregiver-bp-monitor"
+                devices={@devices}
+                readings={@bp_readings}
+              />
+
+              <hr class="border-gray-200" />
+
+              <.live_component
+                module={DialysisComponent}
+                id="caregiver-dialysis-monitor"
+                devices={@devices}
+                readings={@dialysis_readings}
+              />
+            </div>
+          </div>
+        <% end %>
+      </div>
       <div class="mt-8 grid grid-cols-1 gap-6">
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-medium text-gray-900">Overview</h2>
@@ -149,8 +239,8 @@ defmodule AnkaaWeb.CaringForLive.Show do
             </div>
           </div>
         </div>
-       <.live_component
-          module={AnkaaWeb.FridgeCardComponent}
+        <.live_component
+          module={FridgeCardComponent}
           id={"fridge-card-for-#{@patient.id}"}
           care_network_entry={@care_network_entry}
           patient={@patient}
