@@ -200,7 +200,9 @@ defmodule Ankaa.Patients do
 
     from(m in MoodTracker,
       where: m.patient_id == ^patient_id,
-      where: m.inserted_at >= ^start_of_day and m.inserted_at < ^end_of_day
+      where: m.inserted_at >= ^start_of_day and m.inserted_at < ^end_of_day,
+      order_by: [desc: m.inserted_at],
+      limit: 1
     )
     |> Ankaa.Repo.one()
   end

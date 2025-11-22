@@ -41,8 +41,6 @@ defmodule AnkaaWeb.AlertBanner do
 
       Alerts.acknowledge_critical_alert(alert.alert, user.id)
       Messages.send_checked_on_message(patient, user)
-
-      Logger.info("Check on patient #{patient_id} initiated by clinical user #{user.id}")
       {:noreply, socket}
     else
       # Non-clinical users cannot

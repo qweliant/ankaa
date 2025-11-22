@@ -36,7 +36,6 @@ defmodule AnkaaWeb.CaringForLive.Show do
     Logger.debug("Has vitals permission: #{inspect(has_vitals_permission)}")
 
     if connected?(socket) && has_vitals_permission do
-      Logger.info("Subscribing to vitals topics for patient #{patient.id}")
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "bpdevicereading_readings")
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "dialysisdevicereading_readings")
     end

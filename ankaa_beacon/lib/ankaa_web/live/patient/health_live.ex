@@ -21,7 +21,6 @@ defmodule AnkaaWeb.HealthLive do
         Patients.create_mood_tracker_changeset(patient)
       end
 
-
     dummy_data = %{
       patient_info: %{
         name: "John Doe",
@@ -106,16 +105,12 @@ defmodule AnkaaWeb.HealthLive do
   @impl true
   def handle_info({:mood_updated, _entry}, socket) do
     patient = socket.assigns.current_user.patient
-
     todays_mood_entry = Patients.get_mood_entry_for_today(patient.id)
     mood_form = Patients.get_mood_tracker_changeset(todays_mood_entry)
-
     {:noreply,
-     assign(socket,
-       todays_mood_entry: todays_mood_entry,
-       mood_form: mood_form,
-       flash: %{"info" => "Mood check-in saved successfully!"}
-     )}
+     socket
+     |> assign(todays_mood_entry: todays_mood_entry, mood_form: mood_form)
+     |> put_flash(:info, "Mood check-in saved successfully!")}
   end
 
   @impl true
@@ -132,7 +127,7 @@ defmodule AnkaaWeb.HealthLive do
       <!-- Patient Information -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
         <div class="px-4 py-5 sm:px-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Patient Information</h3>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">My Session Information</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">Treatment schedule and targets</p>
         </div>
         <div class="border-t border-gray-200 px-4 py-5 sm:px-6">

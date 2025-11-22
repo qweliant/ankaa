@@ -23,12 +23,3 @@ config :ankaa, :start_mqtt_consumer, true
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
 
-# # Configure your primary PostgreSQL database
-# config :ankaa, Ankaa.Repo,
-#   username: System.get_env("PROD_POSTGRES_USER"),
-#   password: System.get_env("PROD_POSTGRES_PASSWORD"),
-#   hostname: System.get_env("PROD_POSTGRES_HOST"),
-#   # Updated to match .env
-#   database: System.get_env("PROD_POSTGRES_DB"),
-#   port: String.to_integer(System.get_env("PROD_POSTGRES_PORT") || "5432"),
-#   ssl: true

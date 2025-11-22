@@ -63,7 +63,6 @@ defmodule AnkaaWeb.Live.Shared.AlertHandling do
       @impl true
       def handle_info({:new_message, message}, socket) do
         current_user = socket.assigns.current_user
-        Logger.info("Received new message for user #{current_user.id}: #{inspect(message)}")
 
         socket =
           cond do

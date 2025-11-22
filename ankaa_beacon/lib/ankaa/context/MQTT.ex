@@ -14,7 +14,6 @@ defmodule Ankaa.MQTT do
         {:error, :not_started}
 
       client_pid ->
-        Logger.info("MQTT.publish: Sending message to topic '#{topic}'")
         :emqtt.publish(client_pid, topic, payload)
     end
   end
