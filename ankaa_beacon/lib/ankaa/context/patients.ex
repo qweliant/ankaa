@@ -7,7 +7,7 @@ defmodule Ankaa.Patients do
   import Ecto.Query
 
   alias Ankaa.Repo
-  alias Ankaa.Patients.{Patient, CareNetwork}
+  alias Ankaa.Patients.{Patient, CareNetwork, MoodTracker}
   alias Ankaa.Accounts.User
   alias Ankaa.Notifications.Invite
   alias Ankaa.Sessions
@@ -189,6 +189,41 @@ defmodule Ankaa.Patients do
     end
   end
 
+  @doc """
+  Retrieves the MoodTracker entry for the given patient for the current day.
+  """
+  def get_mood_entry_for_today(patient_id) do
+    current_date = Date.utc_today()
+    {:ok, start_of_day} = NaiveDateTime.new(current_date, ~T[00:00:00])
+    tomorrow_date = Date.add(current_date, 1)
+    {:ok, end_of_day} = NaiveDateTime.new(tomorrow_date, ~T[00:00:00])
+
+    from(m in MoodTracker,
+      where: m.patient_id == ^patient_id,
+      where: m.inserted_at >= ^start_of_day and m.inserted_at < ^end_of_day
+    )
+    |> Ankaa.Repo.one()
+  end
+
+  @doc """
+  Returns a changeset for creating a new MoodTracker entry.
+  """
+  def create_mood_tracker_changeset(%Patient{} = patient) do
+    %MoodTracker{}
+    |> MoodTracker.changeset(%{mood: "Okay", patient_id: patient.id})
+  end
+
+  @doc """
+  Saves a new MoodTracker entry.
+  """
+  def save_mood_tracker_entry(%Patient{} = patient, params) do
+    params = Map.put(params, "patient_id", patient.id)
+
+    %MoodTracker{}
+    |> MoodTracker.changeset(params)
+    |> Repo.insert()
+  end
+
   # Patient Association functions
 
   @doc """
@@ -276,6 +311,13 @@ defmodule Ankaa.Patients do
   end
 
   @doc """
+  Returns a changeset for updating an existing MoodTracker entry.
+  """
+  def get_mood_tracker_changeset(%MoodTracker{} = mood_tracker) do
+    MoodTracker.changeset(mood_tracker, %{})
+  end
+
+  @doc """
   Gets the full care network for a patient, including active and pending members.
   """
   def get_care_network_for_patient(%Patient{} = patient) do
@@ -313,10 +355,7 @@ defmodule Ankaa.Patients do
         relationship: cn.relationship |> String.capitalize(),
         status: status,
         last_session: last_session_start,
-        # Adding placeholders for data that doesn't exist in the DB yet
-        # Placeholder: in 2 days
         next_session: Date.add(Date.utc_today(), 2),
-        # Placeholder
         alerts: 0
       }
     end)

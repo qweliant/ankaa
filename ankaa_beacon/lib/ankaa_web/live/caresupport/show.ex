@@ -32,6 +32,7 @@ defmodule AnkaaWeb.CaringForLive.Show do
       else
         false
       end
+
     Logger.debug("Has vitals permission: #{inspect(has_vitals_permission)}")
 
     if connected?(socket) && has_vitals_permission do
@@ -68,7 +69,6 @@ defmodule AnkaaWeb.CaringForLive.Show do
   def handle_info({:new_reading, reading, violations}, socket)
       when is_map_key(reading, :systolic) do
     if socket.assigns.has_vitals_permission do
-      Logger.info("Received new BP reading: #{inspect(reading)}")
       if Enum.any?(socket.assigns.devices, &(&1.id == reading.device_id)) do
         {:noreply,
          socket

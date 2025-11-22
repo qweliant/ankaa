@@ -2,8 +2,26 @@ defmodule AnkaaWeb.HealthLive do
   use AnkaaWeb, :patient_layout
   use AnkaaWeb, :alert_handling
 
+  alias Ankaa.Patients
+
+  require Logger
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns.current_user
+    # Assuming patient is pre-loaded on user
+    patient = user.patient
+
+    # Fetch today's mood entry, if it exists
+    todays_mood_entry = Patients.get_mood_entry_for_today(patient.id)
+
+    mood_form =
+      if todays_mood_entry do
+        Patients.get_mood_tracker_changeset(todays_mood_entry)
+      else
+        Patients.create_mood_tracker_changeset(patient)
+      end
+
+
     dummy_data = %{
       patient_info: %{
         name: "John Doe",
@@ -79,7 +97,24 @@ defmodule AnkaaWeb.HealthLive do
     {:ok,
      assign(socket,
        data: dummy_data,
-       current_path: "/patient/health"
+       current_path: "/patient/health",
+       todays_mood_entry: todays_mood_entry,
+       mood_form: mood_form
+     )}
+  end
+
+  @impl true
+  def handle_info({:mood_updated, _entry}, socket) do
+    patient = socket.assigns.current_user.patient
+
+    todays_mood_entry = Patients.get_mood_entry_for_today(patient.id)
+    mood_form = Patients.get_mood_tracker_changeset(todays_mood_entry)
+
+    {:noreply,
+     assign(socket,
+       todays_mood_entry: todays_mood_entry,
+       mood_form: mood_form,
+       flash: %{"info" => "Mood check-in saved successfully!"}
      )}
   end
 
@@ -87,6 +122,13 @@ defmodule AnkaaWeb.HealthLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <.live_component
+        module={AnkaaWeb.DailyTrackerComponent}
+        id="daily-mood-tracker"
+        current_user={@current_user}
+        entry={@todays_mood_entry}
+        form={@mood_form}
+      />
       <!-- Patient Information -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
         <div class="px-4 py-5 sm:px-6">
@@ -97,29 +139,29 @@ defmodule AnkaaWeb.HealthLive do
           <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Dialysis Schedule</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.patient_info.dialysis_schedule %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.dialysis_schedule}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Treatment Duration</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.patient_info.treatment_duration %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.treatment_duration}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Access Type</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.patient_info.access_type %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.access_type}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Dry Weight</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.patient_info.dry_weight %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.dry_weight}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Target UF</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.patient_info.target_uf %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.target_uf}</dd>
             </div>
           </dl>
         </div>
       </div>
 
-      <!-- Monthly Statistics -->
+    <!-- Monthly Statistics -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
         <div class="px-4 py-5 sm:px-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Monthly Statistics</h3>
@@ -129,29 +171,31 @@ defmodule AnkaaWeb.HealthLive do
           <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Treatments Completed</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.monthly_stats.treatments_completed %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.monthly_stats.treatments_completed}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Average UF Removed</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.monthly_stats.average_uf_removed %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.monthly_stats.average_uf_removed}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Average Session Duration</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.monthly_stats.average_session_duration %></dd>
+              <dd class="mt-1 text-sm text-gray-900">
+                {@data.monthly_stats.average_session_duration}
+              </dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Kt/V Ratio</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.monthly_stats.kt_v_ratio %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.monthly_stats.kt_v_ratio}</dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Urea Reduction Ratio</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @data.monthly_stats.urea_reduction_ratio %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@data.monthly_stats.urea_reduction_ratio}</dd>
             </div>
           </dl>
         </div>
       </div>
 
-      <!-- Treatment History -->
+    <!-- Treatment History -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Treatment History</h3>
@@ -164,19 +208,19 @@ defmodule AnkaaWeb.HealthLive do
                 <div class="flex items-center justify-between">
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-900 truncate">
-                      <%= treatment.date %>
+                      {treatment.date}
                     </p>
                     <div class="mt-2 grid grid-cols-2 gap-4">
                       <div>
-                        <p class="text-sm text-gray-500">Duration: <%= treatment.duration %></p>
-                        <p class="text-sm text-gray-500">UF Removed: <%= treatment.uf_removed %></p>
+                        <p class="text-sm text-gray-500">Duration: {treatment.duration}</p>
+                        <p class="text-sm text-gray-500">UF Removed: {treatment.uf_removed}</p>
                       </div>
                       <div>
-                        <p class="text-sm text-gray-500">Access: <%= treatment.access_type %></p>
-                        <p class="text-sm text-gray-500">Complications: <%= treatment.complications %></p>
+                        <p class="text-sm text-gray-500">Access: {treatment.access_type}</p>
+                        <p class="text-sm text-gray-500">Complications: {treatment.complications}</p>
                       </div>
                     </div>
-                    <p class="mt-2 text-sm text-gray-500"><%= treatment.notes %></p>
+                    <p class="mt-2 text-sm text-gray-500">{treatment.notes}</p>
                   </div>
                 </div>
               </li>

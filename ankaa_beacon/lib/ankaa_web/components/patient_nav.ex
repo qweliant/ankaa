@@ -23,7 +23,7 @@ defmodule AnkaaWeb.PatientNav do
               >
                 Session Monitoring
               </.link>
-              <%!-- <.link
+              <.link
                 navigate={~p"/patient/health"}
                 class={[
                   "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium",
@@ -34,7 +34,7 @@ defmodule AnkaaWeb.PatientNav do
                 ]}
               >
                 Health
-              </.link> --%>
+              </.link>
               <.link
                 navigate={~p"/patient/carenetwork"}
                 class={[
