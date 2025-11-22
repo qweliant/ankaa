@@ -39,6 +39,7 @@ if config_env() == :prod do
   ca_cert = System.get_env("MQTT_CA_CERT") || raise("MQTT_CA_CERT is not set")
   client_cert = System.get_env("MQTT_CLIENT_CERT") || raise("MQTT_CLIENT_CERT is not set")
   client_key = System.get_env("MQTT_CLIENT_KEY") || raise("MQTT_CLIENT_KEY is not set")
+
   config :ankaa, :mqtt,
     host: host,
     port: System.get_env("MQTT_PORT") || "8883",
@@ -50,7 +51,7 @@ if config_env() == :prod do
       cacert: ca_cert,
       cert: client_cert,
       key: client_key,
-      server_name_indication: host,
+      server_name_indication: host
     ]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -66,14 +67,15 @@ if config_env() == :prod do
 
   config :ankaa, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # https://elixirforum.com/t/could-not-check-origin-phoenix-liveview/34031/9
   config :ankaa, AnkaaWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
+    check_origin: ["//safehemo.com", "//ankaa-beacon.fly.dev"],
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
     secret_key_base: secret_key_base
-
 
   # ## SSL Support
   #
@@ -117,6 +119,7 @@ if config_env() == :prod do
     adapter: Swoosh.Adapters.Mailgun,
     api_key: System.get_env("MAILGUN_API_KEY"),
     domain: System.get_env("MAILGUN_DOMAIN")
+
   #
   # For this example you need include a HTTP client required by Swoosh API client.
   # Swoosh supports Hackney and Finch out of the box:
