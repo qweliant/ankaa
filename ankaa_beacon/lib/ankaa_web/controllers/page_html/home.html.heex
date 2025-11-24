@@ -1,18 +1,25 @@
 <.flash_group flash={@flash} />
-<div class="bg-gradient-to-br from-orange-50 to-pink-50 pt-36 pb-24 px-4 sm:px-6 lg:px-8">
+<div class="bg-linear-to-br from-orange-50 to-pink-50 pt-36 pb-24 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto">
     <div class="flex flex-col md:flex-row items-center gap-12">
       <!-- Hero Text -->
       <div class="md:w-1/2">
         <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
-          Safe Home Hemodialysis with <span class="text-purple-600">Community Support</span>
+          Build Your Hemodialysis <span class="text-purple-600">Care Network</span>
         </h1>
         <p class="text-lg text-gray-600 mb-6">
           Home hemodialysis offers greater flexibility, but comes with <span class="text-red-600 font-semibold">critical
-            risks</span>. These include lack of immediate medical assistance, vascular complications, and life-threatening emergencies.
+            risks</span>. These include lack of immediate medical assistance, vascular complications, and
+          life-threatening emergencies.
         </p>
         <p class="text-lg text-gray-600 mb-8">
-          Our platform combines <span class="text-purple-600 font-semibold">real-time health monitoring</span> with <span class="text-purple-600 font-semibold">community-powered support</span>, ensuring you're never alone during treatment. Whether through automated alerts or direct communication with your care network, help is always within reach.
+          Our platform lets you <span class="text-purple-600 font-semibold">build a robust care network</span> today to
+          manage the risks of home dialysis. Currently,
+          the system supports <span class="text-purple-600 font-semibold">simulated health data</span> and community
+          alerts to your network. While <span class=" font-semibold">automated
+            emergency responses are disabled</span> in this preview, the platform ensures direct communication with your
+          care
+          team, so help is always within reach.
         </p>
         <div class="flex flex-col sm:flex-row gap-4">
           <.link href="/users/register"
@@ -27,13 +34,12 @@
       </div>
 
       <!-- Hero Image -->
-      <div >
-        <div class="relative bg-gradient-to-b from-orange-50 to-green-50 rounded-2xl p-8">
+      <div>
+        <div class="relative bg-linear-to-b from-orange-50 to-green-50 rounded-2xl p-8">
           <div class="absolute -top-4 -left-4 w-24 h-24 bg-pink-100 rounded-full opacity-50"></div>
           <div class="absolute -bottom-4 -right-4 w-32 h-32 bg-purple-100 rounded-full opacity-30"></div>
-          <img
-            src={~p"/images/community-support.avif"}
-            alt="Diverse group celebrating together with person in wheelchair" 
+          <img src={~p"/images/community-support.avif"}
+            alt="Diverse group celebrating together with person in wheelchair"
             class="relative w-full h-auto object-contain max-h-[400px] lg:max-h-[500px] xl:max-h-[600px]" />
         </div>
       </div>
@@ -41,33 +47,34 @@
   </div>
 </div>
 
-<!-- Features Section -->
 <div class="py-24 px-4 sm:px-6 lg:px-8 bg-stone-50" id="features">
   <div class="max-w-7xl mx-auto">
     <div class="text-center mb-20">
-      <h2 class="text-4xl font-bold text-stone-800 mb-4">Comprehensive Safety Features</h2>
+      <h2 class="text-4xl font-bold text-stone-800 mb-4">Core Care Network Features (Pre-Alpha Preview)</h2>
       <p class="text-xl text-stone-600 max-w-3xl mx-auto">
-        Our solution integrates with existing NxStage home dialysis setups and other dialysis APIs to provide complete
-        protection
+        Start building your network today. Our current focus is testing the core Care Network, Mocking IoT Devices, and
+        our Simulated Alert pipeline.
       </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Feature 1 - Care Network -->
-      <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
+      <div
+        class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
         <div class="bg-amber-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
           <svg class="w-8 h-8 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
         </div>
         <h3 class="text-2xl font-bold text-stone-800 mb-4">Care Network</h3>
         <p class="text-stone-600 text-lg">
-          Build your support network of caresupports, family members, and healthcare providers for comprehensive care coordination.
+          Build your support network of family members and healthcare providers for comprehensive care
+          coordination.
         </p>
       </div>
 
-      <!-- Feature 2 - Real-time Health -->
-      <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
+      <div
+        class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
         <div class="bg-emerald-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
           <svg class="w-8 h-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -75,15 +82,15 @@
             </path>
           </svg>
         </div>
-        <h3 class="text-2xl font-bold text-stone-800 mb-4">Real-time Health Tracking</h3>
+        <h3 class="text-2xl font-bold text-stone-800 mb-4">Simulated Health Tracking (Preview)</h3>
         <p class="text-stone-600 text-lg">
-          Continuous monitoring of vital signs and dialysis parameters with anomaly detection to catch issues before
-          they become emergencies.
+          Test continuous monitoring of simulated vital signs and dialysis parameters. We use a mock server to
+          generate data and test anomaly detection before they become emergencies.
         </p>
       </div>
 
-      <!-- Feature 3 - Emergency Alerts -->
-      <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
+      <div
+        class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
         <div class="bg-orange-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
           <svg class="w-8 h-8 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -91,15 +98,15 @@
             </path>
           </svg>
         </div>
-        <h3 class="text-2xl font-bold text-stone-800 mb-4">Instant Emergency Alerts</h3>
+        <h3 class="text-2xl font-bold text-stone-800 mb-4">Instant Care Network Alerts (No EMS)</h3>
         <p class="text-stone-600 text-lg">
-          Automated detection of critical events like blood loss or severe hypotension with immediate alerts to
-          caresupports and medical professionals.
+          Automated detection of critical simulated events triggers immediate alerts to your care network.
+          Automated EMS calls are currently disabled in this preview build.
         </p>
       </div>
 
-      <!-- Feature 4 - Nocturnal Safety -->
-      <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
+      <div
+        class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
         <div class="bg-stone-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
           <svg class="w-8 h-8 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -113,31 +120,34 @@
         </p>
       </div>
 
-      <!-- Feature 5 - Integration -->
-      <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
+      <div
+        class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
         <div class="bg-teal-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
           <svg class="w-8 h-8 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
           </svg>
         </div>
-        <h3 class="text-2xl font-bold text-stone-800 mb-4">Seamless Integration</h3>
+        <h3 class="text-2xl font-bold text-stone-800 mb-4">Device Simulation & Integration Preview</h3>
         <p class="text-stone-600 text-lg">
-          Works with existing home dialysis equipment and EHR systems, minimizing setup complexity and maximizing
-          compatibility.
+          Currently connects to our mock IoT server for data simulation. We are optimizing the core architecture for
+          seamless future integration with home dialysis equipment and EHR systems.
         </p>
       </div>
 
-      <!-- Feature 6 - Analytics -->
-      <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
+      <div
+        class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300">
         <div class="bg-fuchsia-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
           <svg class="w-8 h-8 text-fuchsia-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
           </svg>
         </div>
         <h3 class="text-2xl font-bold text-stone-800 mb-4">Treatment Analytics</h3>
         <p class="text-stone-600 text-lg">
-          Detailed reporting and trend analysis to help providers optimize treatment plans and identify potential issues early.
+          Detailed reporting and trend analysis to help providers optimize treatment plans and identify potential issues
+          early.
         </p>
       </div>
     </div>
@@ -145,58 +155,60 @@
 </div>
 
 <!-- How It Works -->
-<div class="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-50 via-white to-pink-50" id="how-it-works">
+<div class="py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-purple-50 via-white to-pink-50" id="how-it-works">
   <div class="max-w-7xl mx-auto">
     <div class="text-center mb-20">
       <h2 class="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
       <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        Get started with Ankaa in three simple steps and experience peace of mind during home dialysis
+        Get started with Safe Hemo in three simple steps and help us test the care network and monitoring pipeline
       </p>
     </div>
 
     <div class="max-w-4xl mx-auto">
-      <!-- Step 1 -->
       <div class="relative flex flex-col sm:flex-row gap-8 mb-16">
         <div class="absolute left-6 top-24 bottom-0 w-0.5 bg-stone-200 hidden sm:block"></div>
-        <div class="flex-shrink-0 relative z-10">
-          <div class="bg-amber-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+        <div class="shrink-0 relative z-10">
+          <div
+            class="bg-amber-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
             1
           </div>
         </div>
         <div class="flex-1 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
-          <h3 class="text-2xl font-bold text-gray-900 mb-4">Connect Your Device</h3>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Connect a Mock Device</h3>
           <p class="text-lg text-gray-600 mb-4">
-            Our software seamlessly integrates with your existing home hemodialysis setup in minutes, requiring minimal technical knowledge.
+            To test the platform, connect the provided mock IoT device. This simulates real dialysis metrics,
+            allowing us to test monitoring and alerts.
           </p>
           <ul class="text-gray-600 space-y-2">
             <li class="flex items-center">
               <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              Compatible with NxStage and other major dialysis machines
+              Preview: Architecture compatible with wearables and any data streaming health device
             </li>
             <li class="flex items-center">
               <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              Simple plug-and-play setup
+              Simple setup for mock server connection
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Step 2 -->
       <div class="relative flex flex-col sm:flex-row gap-8 mb-16">
         <div class="absolute left-6 top-24 bottom-0 w-0.5 bg-stone-200 hidden sm:block"></div>
-        <div class="flex-shrink-0 relative z-10">
-          <div class="bg-stone-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+        <div class="shrink-0 relative z-10">
+          <div
+            class="bg-stone-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
             2
           </div>
         </div>
         <div class="flex-1 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
           <h3 class="text-2xl font-bold text-gray-900 mb-4">Build Your Care Network</h3>
           <p class="text-lg text-gray-600 mb-4">
-            Invite family members, caresupports, and healthcare providers to join your support network. Each member can be assigned different roles and permissions.
+            Invite family members, caresupports, and healthcare providers to join your support network. This core
+            feature allows you to define roles and permissions.
           </p>
           <ul class="text-gray-600 space-y-2">
             <li class="flex items-center">
@@ -209,36 +221,37 @@
               <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              Secure, HIPAA-compliant communication
+              Focus: Test secure network formation and communication
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Step 3 -->
       <div class="relative flex flex-col sm:flex-row gap-8">
-        <div class="flex-shrink-0 relative z-10">
-          <div class="bg-emerald-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+        <div class="shrink-0 relative z-10">
+          <div
+            class="bg-emerald-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
             3
           </div>
         </div>
         <div class="flex-1 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
-          <h3 class="text-2xl font-bold text-gray-900 mb-4">Start Your Treatment with Confidence</h3>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Start Simulation and Test Alerts</h3>
           <p class="text-lg text-gray-600 mb-4">
-            Begin your dialysis treatment knowing that our system is actively monitoring your safety and your care network is just a notification away.
+            Begin your simulated session. Our system will send mock data to test the anomaly detection logic and
+            confirm your care network receives the notifications correctly.
           </p>
           <ul class="text-gray-600 space-y-2">
             <li class="flex items-center">
               <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              24/7 automated monitoring
+              We simulate 24/7 automated monitoring for dialysis sessions any time
             </li>
             <li class="flex items-center">
               <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              Instant alerts for critical events
+              Instant alerts for major events (Note: Automated EMS calls are disabled**)
             </li>
           </ul>
         </div>
@@ -248,12 +261,12 @@
 </div>
 
 <!-- CTA Section -->
-<div class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-amber-50 to-stone-100" id="cta">
+<div class="py-20 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-amber-50 to-stone-100" id="cta">
   <div class="max-w-7xl mx-auto text-center">
     <h2 class="text-4xl font-bold text-stone-800 mb-6">Ready to Transform Home Dialysis Safety?</h2>
     <p class="text-xl text-stone-600 max-w-3xl mx-auto mb-10">
-      Ankaa addresses the biggest barriers to safe home dialysis adoption, positioning it as a must-have safety layer
-      for providers, insurers, and patients alike. 
+      Safe Hemo addresses the biggest barriers to safe home dialysis adoption, positioning it as a must-have safety layer
+      for providers, insurers, and patients alike.
     </p>
     <.link href="#request-demo"
       class="bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-lg text-lg inline-block transition duration-300 shadow-lg hover:shadow-xl">
@@ -267,14 +280,8 @@
   <div class="max-w-7xl mx-auto">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
       <!-- Column 1 -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Ankaa</h3>
-        <p class="text-gray-400">
-          Safety monitoring for home hemodialysis patients.
-        </p>
-      </div>
 
-      <!-- Column 2 -->
+      <!-- Column 2 
       <div>
         <h3 class="text-lg font-semibold mb-4">Product</h3>
         <ul class="space-y-2">
@@ -292,8 +299,8 @@
           </li>
         </ul>
       </div>
-
-      <!-- Column 3 -->
+      -->
+      <!-- Column 3 
       <div>
         <h3 class="text-lg font-semibold mb-4">Resources</h3>
         <ul class="space-y-2">
@@ -311,8 +318,8 @@
           </li>
         </ul>
       </div>
-
-      <!-- Column 4 -->
+      -->
+      <!-- Column 4 
       <div>
         <h3 class="text-lg font-semibold mb-4">Company</h3>
         <ul class="space-y-2">
@@ -327,10 +334,17 @@
           </li>
         </ul>
       </div>
+    -->
     </div>
 
     <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
-      <p>&copy; 2024 Ankaa. All rights reserved.</p>
+      <div>
+        <h3 class="text-lg font-semibold mb-4">Safe Hemo</h3>
+      </div>
+      <p class="text-gray-400">
+        Safety monitoring for hemodialysis patients.
+      </p>
+      <p>&copy; 2024 Qwelian Tanner. All rights reserved.</p>
     </div>
   </div>
 </footer>
