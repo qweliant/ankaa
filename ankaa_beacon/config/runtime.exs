@@ -70,7 +70,7 @@ if config_env() == :prod do
   # https://elixirforum.com/t/could-not-check-origin-phoenix-liveview/34031/9
   config :ankaa, AnkaaWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
-    check_origin: ["https://safehemo.com"],
+    check_origin: ["https://safehemo.com", "https://ankaa-beacon.fly.dev"],
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
