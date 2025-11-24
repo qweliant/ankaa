@@ -9,7 +9,7 @@
       current_user={@current_user} />
   <% end %>
 </div>
-<%= if @current_user do %>
+<%= if @current_user && Map.get(assigns, :toast_message)do %>
   <.live_component
     module={AnkaaWeb.ToastNotification}
     id="toast-notification-component"

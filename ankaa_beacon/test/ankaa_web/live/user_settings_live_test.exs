@@ -1,4 +1,7 @@
 defmodule AnkaaWeb.UserSettingsLiveTest do
+  @moduledoc """
+  Tests for user settings LiveView.
+  """
   use AnkaaWeb.ConnCase, async: true
 
   alias Ankaa.Accounts
