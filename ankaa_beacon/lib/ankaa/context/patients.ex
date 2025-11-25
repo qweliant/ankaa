@@ -242,7 +242,16 @@ defmodule Ankaa.Patients do
   def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
     default_permissions = ["receive_alerts"]
 
-    if User.doctor?(user) || User.nurse?(user) || User.caresupport?(user) do
+    is_authorized_provider =
+      User.doctor?(user) ||
+        User.nurse?(user) ||
+        User.clinic_technician?(user) ||
+        User.social_worker?(user) ||
+        User.community_coordinator?(user) ||
+        User.caresupport?(user) ||
+        User.admin?(user)
+
+    if is_authorized_provider do
       %CareNetwork{}
       |> CareNetwork.changeset(%{
         user_id: user.id,

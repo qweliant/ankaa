@@ -30,7 +30,6 @@ create_provider = fn attrs, role ->
   end
 end
 
-
 IO.puts("   -> Creating care team...")
 
 {:ok, dr_daedalus} =
@@ -66,20 +65,58 @@ IO.puts("   -> Creating care team...")
     "caresupport"
   )
 
+{:ok, tech_raul} =
+  create_staff.(
+    %{
+      email: "raul.creed@example.com",
+      password: "password1234",
+      first_name: "Raul",
+      last_name: "Creed"
+    },
+    "clinic_technician"
+  )
+
+{:ok, coord_hoody} =
+  create_staff.(
+    %{
+      email: "hoody.commune@example.com",
+      password: "password1234",
+      first_name: "Hoody",
+      last_name: "Commune"
+    },
+    "community_coordinator"
+  )
+
+{:ok, worker_pino} =
+  create_staff.(
+    %{
+      email: "pino.companion@example.com",
+      password: "password1234",
+      first_name: "Pino",
+      last_name: "Cast"
+    },
+    "social_worker"
+  )
 
 IO.puts("   -> Creating patients...")
-{:ok, user_rel} = Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234"})
+
+{:ok, user_rel} =
+  Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234", first_name: "Re-l", last_name: "Mayer"})
 patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezone: "Etc/UTC"}
 {:ok, patient_rel} = Patients.create_patient(patient_attrs_rel, user_rel)
 
-{:ok, user_vincent} = Accounts.register_user(%{email: "vincent.law@example.com", password: "password1234"})
+{:ok, user_vincent} =
+  Accounts.register_user(%{email: "vincent.law@example.com", password: "password1234", first_name: "Vincent", last_name: "Law"})
 patient_attrs_vincent = %{name: "Vincent Law", date_of_birth: ~D[1995-05-05], timezone: "Etc/UTC"}
 {:ok, patient_vincent} = Patients.create_patient(patient_attrs_vincent, user_vincent)
 
 IO.puts("   -> Building care networks...")
 Patients.create_patient_association(dr_daedalus, patient_rel, "doctor")
+Patients.create_patient_association(support_iggy, patient_rel, "caresupport")
+Patients.create_patient_association(tech_raul, patient_rel, "clinic_technician")
+
 Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor")
 Patients.create_patient_association(nurse_kristeva, patient_vincent, "nurse")
-Patients.create_patient_association(support_iggy, patient_rel, "caresupport")
-
+Patients.create_patient_association(coord_hoody, patient_vincent, "community_coordinator")
+Patients.create_patient_association(worker_pino, patient_vincent, "social_worker")
 IO.puts("✅ Database seeding complete.")

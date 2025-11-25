@@ -125,6 +125,7 @@ defmodule AnkaaWeb.Router do
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
         {AnkaaWeb.RoleAuth, :require_doctor_or_nurse},
+        {AnkaaWeb.RoleAuth, :require_clinical_staff},
         {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/patients", CareProvider.PatientsLive.Index, :index)
@@ -149,36 +150,30 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # Technical Support routes
-  # scope "/support", AnkaaWeb do
-  #   pipe_through([:browser, :require_authenticated_user])
-  #   live_session :technical_support,
-  #     on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated},{AnkaaWeb.RoleAuth, :require_technical_support}] do
-  #     live("/home", SupportDashboardLive.Index, :index)
-  #     live("/devices", DeviceSupportLive.Index, :index)
-  #     live("/device/:id", DeviceSupportLive.Show, :show)
-  #     live("/device/tickets", DeviceSupportLive.Tickets, :index)
-  #     live("/device/ticket/:id", DeviceSupportLive.Show, :show)
-  #     live("/alerts", AlertSupportLive.Index, :index)
-  #     live("/alert/:id", AlertSupportLive.Show, :show)
-  #     live("/alert/tickets", AlertSupportLive.Tickets, :index)
-  #     live("/alert/ticket/:id", AlertSupportLive.Show, :show)
-  #   end
-  # end
+  scope "/community", AnkaaWeb do
+    pipe_through([:browser, :require_authenticated_user])
 
-  # Admin routes
-  # scope "/admin", AnkaaWeb do
-  #   pipe_through([:browser, :require_authenticated_user])
-  #   live_session :admin,
-  #     on_mount: [
-  #       {AnkaaWeb.UserAuth, :ensure_authenticated},
-  #       {AnkaaWeb.RoleAuth, :require_role, ["admin"]}
-  #     ] do
-  #     live("/users", Admin.UserLive.Index, :index)
-  #     # live("/users/new", Admin.UserLive.Index, :new)
-  #     # live("/users/:id/edit", Admin.UserLive.Index, :edit)
-  #     # live("/users/:id", Admin.UserLive.Show, :show)
-  #     # live("/users/:id/show/edit", Admin.UserLive.Show, :edit)
-  #   end
-  # end
+    live_session :community,
+      on_mount: [
+        {AnkaaWeb.UserAuth, :ensure_authenticated},
+        {AnkaaWeb.RoleAuth, :require_community_coordinator},
+        {AnkaaWeb.AlertHook, :subscribe_alerts}
+      ] do
+      live("/dashboard", Community.DashboardLive, :index)
+    end
+  end
+
+  # 3. NEW: Social Worker routes
+  scope "/case", AnkaaWeb do
+    pipe_through([:browser, :require_authenticated_user])
+
+    live_session :social,
+      on_mount: [
+        {AnkaaWeb.UserAuth, :ensure_authenticated},
+        {AnkaaWeb.RoleAuth, :require_social_worker},
+        {AnkaaWeb.AlertHook, :subscribe_alerts}
+      ] do
+      live("/dashboard", SocialWorker.DashboardLive, :index)
+    end
+  end
 end

@@ -18,7 +18,7 @@ defmodule AnkaaWeb.RoleAuth do
     end
   end
 
-  def on_mount(:require_doctor, _params, _session, socket) do
+def on_mount(:require_doctor, _params, _session, socket) do
     on_mount(:require_role, ["doctor", "admin"], nil, nil, socket)
   end
 
@@ -26,8 +26,12 @@ defmodule AnkaaWeb.RoleAuth do
     on_mount(:require_role, ["nurse", "admin"], nil, nil, socket)
   end
 
+  def on_mount(:require_clinical_staff, _params, _session, socket) do
+    on_mount(:require_role, ["doctor", "nurse", "clinic_technician", "admin"], nil, nil, socket)
+  end
+
   def on_mount(:require_doctor_or_nurse, _params, _session, socket) do
-    on_mount(:require_role, ["doctor", "nurse", "admin"], nil, nil, socket)
+     on_mount(:require_role, ["doctor", "nurse", "clinic_technician", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_caresupport, _params, _session, socket) do
@@ -36,6 +40,18 @@ defmodule AnkaaWeb.RoleAuth do
 
   def on_mount(:require_technical_support, _params, _session, socket) do
     on_mount(:require_role, ["technical_support", "admin"], nil, nil, socket)
+  end
+
+  def on_mount(:require_clinic_technician, _params, _session, socket) do
+    on_mount(:require_role, ["clinic_technician", "admin"], nil, nil, socket)
+  end
+
+  def on_mount(:require_community_coordinator, _params, _session, socket) do
+    on_mount(:require_role, ["community_coordinator", "admin"], nil, nil, socket)
+  end
+
+  def on_mount(:require_social_worker, _params, _session, socket) do
+    on_mount(:require_role, ["social_worker", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_patient, _params, _session, socket) do
