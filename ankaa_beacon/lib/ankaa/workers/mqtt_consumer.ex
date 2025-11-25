@@ -123,14 +123,14 @@ defmodule Ankaa.Workers.MQTTConsumer do
       conn_mod: self(),
       enable_ssl: true,
       clean_start: false,
-      ssl_opts: [
-        verify: :verify_peer,
-        server_name_indication: String.to_charlist(host_binary),
-        cacertfile: String.to_charlist(ca_cert_path),
-        certfile: String.to_charlist(client_cert_path),
-        keyfile: String.to_charlist(client_key_path),
-        tls_versions: [:"tlsv1.2", :"tlsv1.3"]
-      ] ++ ssl_opts,
+      # ssl_opts: [
+      #   verify: :verify_peer,
+      #   server_name_indication: String.to_charlist(host_binary),
+      #   cacertfile: String.to_charlist(ca_cert_path),
+      #   certfile: String.to_charlist(client_cert_path),
+      #   keyfile: String.to_charlist(client_key_path),
+      #   tls_versions: [:"tlsv1.2", :"tlsv1.3"]
+      # ] ++ ssl_opts,
       reconnect: true,
       reconnect_interval: 10_000
     ]
