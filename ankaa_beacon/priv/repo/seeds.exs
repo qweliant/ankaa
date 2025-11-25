@@ -16,7 +16,8 @@ alias Ankaa.Patients
 IO.puts("🌱 Seeding database...")
 
 # Define an anonymous function for creating providers
-create_provider = fn attrs, role ->
+# Generic helper to create a user (provider or staff)
+create_user = fn attrs, role ->
   with {:ok, user} <- Accounts.register_user(attrs),
        {:ok, user_with_name} <- Accounts.update_user_name(user, attrs),
        {:ok, user_with_role} <- Accounts.assign_role(user_with_name, role) do
@@ -33,7 +34,7 @@ end
 IO.puts("   -> Creating care team...")
 
 {:ok, dr_daedalus} =
-  create_provider.(
+  create_user.(
     %{
       email: "daedalus.yumeno@example.com",
       password: "password1234",
@@ -44,7 +45,7 @@ IO.puts("   -> Creating care team...")
   )
 
 {:ok, nurse_kristeva} =
-  create_provider.(
+  create_user.(
     %{
       email: "kristeva.unit@example.com",
       password: "password1234",
@@ -55,7 +56,7 @@ IO.puts("   -> Creating care team...")
   )
 
 {:ok, support_iggy} =
-  create_provider.(
+  create_user.(
     %{
       email: "iggy.autoreiv@example.com",
       password: "password1234",
@@ -66,7 +67,7 @@ IO.puts("   -> Creating care team...")
   )
 
 {:ok, tech_raul} =
-  create_staff.(
+  create_user.(
     %{
       email: "raul.creed@example.com",
       password: "password1234",
@@ -77,7 +78,7 @@ IO.puts("   -> Creating care team...")
   )
 
 {:ok, coord_hoody} =
-  create_staff.(
+  create_user.(
     %{
       email: "hoody.commune@example.com",
       password: "password1234",
@@ -88,7 +89,7 @@ IO.puts("   -> Creating care team...")
   )
 
 {:ok, worker_pino} =
-  create_staff.(
+  create_user.(
     %{
       email: "pino.companion@example.com",
       password: "password1234",
