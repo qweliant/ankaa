@@ -9,4 +9,8 @@ defmodule AnkaaWeb.PageController do
       render(conn, :home, layout: false)
     end
   end
+
+  def learn_more(conn, _params) do
+    render(conn, :learn_more)
+  end
 end

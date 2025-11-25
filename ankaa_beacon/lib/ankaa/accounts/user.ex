@@ -7,7 +7,16 @@ defmodule Ankaa.Accounts.User do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-  @roles ["admin", "doctor", "nurse", "caresupport", "technical_support"]
+  @roles [
+      "admin",
+      "doctor",
+      "nurse",
+      "caresupport",
+      "technical_support",
+      "clinic_technician",
+      "community_coordinator",
+      "social_worker"
+    ]
   schema "users" do
     field(:email, :string)
     field(:first_name, :string)
@@ -219,10 +228,10 @@ defmodule Ankaa.Accounts.User do
   def admin?(user), do: has_role?(user, "admin")
   def caresupport?(user), do: has_role?(user, "caresupport")
   def technical_support?(user), do: has_role?(user, "technical_support")
+  def clinic_technician?(user), do: has_role?(user, "clinic_technician")
+  def community_coordinator?(user), do: has_role?(user, "community_coordinator")
+  def social_worker?(user), do: has_role?(user, "social_worker")
 
-  @doc """
-  Checks if the user is associated with a patient record.
-  """
   def patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
   def patient?(_), do: false
 end

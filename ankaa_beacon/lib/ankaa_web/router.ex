@@ -22,6 +22,7 @@ defmodule AnkaaWeb.Router do
     pipe_through(:browser)
 
     get("/", PageController, :home)
+    get("/learn-more", PageController, :learn_more)
     live("/privacy-policy", StaticPageLive, :privacy)
     live("/disclaimer", StaticPageLive, :disclaimer)
     live("/cookie-policy", StaticPageLive, :cookies)
