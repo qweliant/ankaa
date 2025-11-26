@@ -115,7 +115,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
       password: String.to_charlist(password),
       ssl: ssl_enabled,
       ssl_opts: [
-        verify: :verify_peer,
+        verify: :verify_none,
         server_name_indication: String.to_charlist(host),
         cacertfile: CAStore.file_path(),
 
