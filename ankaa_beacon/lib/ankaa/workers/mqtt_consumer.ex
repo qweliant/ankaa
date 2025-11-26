@@ -98,39 +98,28 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
   defp client_options do
     mqtt_config = Application.get_env(:ankaa, :mqtt, [])
-    client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
 
+    host = Keyword.get(mqtt_config, :host, "localhost")
     port = Keyword.get(mqtt_config, :port, 1883)
     port = if is_binary(port), do: String.to_integer(port), else: port
-
-    host_binary = Keyword.get(mqtt_config, :host, "localhost")
-    ssl_opts = Keyword.get(mqtt_config, :ssl_options, [])
-
+    client_id = "ankaa_consumer_#{System.unique_integer([:positive])}"
     username = Keyword.get(mqtt_config, :username, "")
     password = Keyword.get(mqtt_config, :password, "")
-
-    ca_cert_path = Path.expand("certs/emqxsl-ca.crt")
-    client_cert_path = Path.expand("certs/client-cert.pem")
-    client_key_path = Path.expand("certs/client-key.pem")
+    ssl_enabled = Keyword.get(mqtt_config, :enable_ssl, false)
 
     [
-      name: :emqtt_client,
-      host: String.to_charlist(host_binary),
+      host: String.to_charlist(host),
       port: port,
       clientid: String.to_charlist(client_id),
       username: String.to_charlist(username),
       password: String.to_charlist(password),
-      conn_mod: self(),
-      enable_ssl: true,
-      clean_start: false,
-      # ssl_opts: [
-      #   verify: :verify_peer,
-      #   server_name_indication: String.to_charlist(host_binary),
-      #   cacertfile: String.to_charlist(ca_cert_path),
-      #   certfile: String.to_charlist(client_cert_path),
-      #   keyfile: String.to_charlist(client_key_path),
-      #   tls_versions: [:"tlsv1.2", :"tlsv1.3"]
-      # ] ++ ssl_opts,
+      ssl: ssl_enabled,
+      ssl_opts: [
+        verify: :verify_peer,
+        server_name_indication: String.to_charlist(host),
+        cacertfile: CAStore.file_path(),
+
+      ],
       reconnect: true,
       reconnect_interval: 10_000
     ]
