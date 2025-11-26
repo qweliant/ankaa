@@ -108,6 +108,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
     ssl_enabled = Keyword.get(mqtt_config, :enable_ssl, false)
 
     [
+      name: :emqtt_client,
       host: String.to_charlist(host),
       port: port,
       clientid: String.to_charlist(client_id),
