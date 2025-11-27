@@ -109,12 +109,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|_| "1883".to_string())
         .parse()
         .unwrap_or(1883);
-
     let mqtt_user = env::var("MQTT_USER").unwrap_or_else(|_| "".to_string());
     let mqtt_pass = env::var("MQTT_PASSWORD").unwrap_or_else(|_| "".to_string());
-    info!("Connecting to MQTT broker at {}", mqtt_host);
+    let mut rng = StdRng::seed_from_u64(42);
+    let random_id: u16 = rng.random();
+    let client_id = format!("iot_mock_server_{}", random_id);
 
-    let mut mqtt_options = MqttOptions::new("iot_device_simulator", mqtt_host, mqtt_port);
+    info!("🔌 Connecting to MQTT Broker: {}:{}", mqtt_host, mqtt_port);
+    info!("🔑 Client ID: {}", client_id);
+
+    let mut mqtt_options = MqttOptions::new(client_id, mqtt_host, mqtt_port);
 
     // Connection optimization
     mqtt_options.set_keep_alive(Duration::from_secs(30));
@@ -135,6 +139,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("Using plain-text (TCP) for MQTT connection.");
         // Do nothing, rumqttc defaults to plain TCP
     }
+
     // Create client with larger capacities
     let (client, mut eventloop) = AsyncClient::new(mqtt_options, 1000);
     let client = Arc::new(client);
