@@ -121,6 +121,6 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 
-  config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+  config :elixir, :time_zone_database, Tz.TimeZoneDatabase
   config :tzdata, :autoupdate, :disabled
 end

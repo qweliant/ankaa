@@ -269,7 +269,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
   end
 
   defp timezone_options do
-    Tzdata.zone_list()
+    TzExtra.time_zone_ids()
     |> Enum.map(&{&1, &1})
   end
 

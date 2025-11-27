@@ -67,6 +67,8 @@ defmodule Ankaa.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.0"},
+      {:tz, "~> 0.28"},
+      {:tz_extra, "~> 0.45"}
     ]
   end
 
