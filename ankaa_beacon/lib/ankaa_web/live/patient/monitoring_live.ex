@@ -82,7 +82,8 @@ defmodule AnkaaWeb.MonitoringLive do
           Enum.map(devices, fn device ->
             %{
               device_id: device.id,
-              scenario: device.simulation_scenario
+              scenario: device.simulation_scenario,
+              device_type: map_device_type(device.type)
             }
           end)
 
@@ -166,32 +167,35 @@ defmodule AnkaaWeb.MonitoringLive do
     end
   end
 
-  @impl true
-  def handle_info({:new_reading, reading, violations}, socket)
-      when is_map_key(reading, :systolic) do
-    # Only process readings from registered devices
-    if Enum.any?(socket.assigns.devices, &(&1.id == reading.device_id)) do
-      {:noreply,
-       socket
-       |> update(:bp_readings, fn readings -> [reading | Enum.take(readings, 2)] end)
-       |> update(:bp_violations, fn _ -> violations end)}
-    else
-      {:noreply, socket}
-    end
+  def handle_info(
+        {:new_reading, %Ankaa.Monitoring.BPDeviceReading{} = reading, violations},
+        socket
+      ) do
+    updated_socket =
+      socket
+      |> stream_insert(:bp_readings, reading)
+      |> assign(:bp_violations, violations)
+
+    {:noreply, updated_socket}
   end
 
-  @impl true
-  def handle_info({:new_reading, reading, violations}, socket) when is_map_key(reading, :bfr) do
-    # Only process readings from registered devices
-    if Enum.any?(socket.assigns.devices, &(&1.device_id == reading.device_id)) do
-      {:noreply,
-       socket
-       |> update(:dialysis_readings, fn readings -> [reading | Enum.take(readings, 2)] end)
-       |> update(:dialysis_violations, fn _ -> violations end)}
-    else
-      {:noreply, socket}
-    end
+  def handle_info(
+        {:new_reading, %Ankaa.Monitoring.DialysisDeviceReading{} = reading, violations},
+        socket
+      ) do
+    updated_socket =
+      socket
+      # Ensure you have this stream defined in mount!
+      |> stream_insert(:dialysis_readings, reading)
+      |> assign(:dialysis_violations, violations)
+
+    {:noreply, updated_socket}
   end
+
+  defp map_device_type("blood_pressure"), do: "bp"
+  defp map_device_type("dialysis"), do: "dialysis"
+  # Default to BP if type is unknown or nil
+  defp map_device_type(_), do: "bp"
 
   @impl true
   def render(assigns) do
@@ -274,9 +278,11 @@ defmodule AnkaaWeb.MonitoringLive do
           </div>
         </div>
       <% else %>
-        <% # NO SESSION ACTIVE  %>
+        <% # NO SESSION ACTIVE %>
         <div class="bg-white shadow rounded-lg p-6 mb-8 flex flex-col items-center justify-center">
-          <h2 class="text-lg font-medium text-gray-900 mb-4">Ready to Start Your Dialysis Session?</h2>
+          <h2 class="text-lg font-medium text-gray-900 mb-4">
+            Ready to Start Your Dialysis Session?
+          </h2>
           <p class="text-sm text-gray-500 mb-6 text-center">
             Notify your care team that you are beginning a new dialysis session.
           </p>
