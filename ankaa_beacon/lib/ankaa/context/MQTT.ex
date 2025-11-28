@@ -8,6 +8,8 @@ defmodule Ankaa.MQTT do
   Publishes a message to a given MQTT topic.
   """
   def publish(topic, payload) do
+    Logger.info("🚀 Sending Start Command json payload: #{payload}")
+
     case Process.whereis(:emqtt_client) do
       nil ->
         Logger.error("MQTT.publish: Could not find a running :emqtt_client process.")

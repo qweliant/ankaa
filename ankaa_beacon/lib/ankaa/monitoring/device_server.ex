@@ -40,7 +40,13 @@ defmodule Ankaa.Monitoring.DeviceServer do
 
     # 1. Parse & Structure the incoming data
     data = Jason.decode!(payload)
-    reading = Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
+    reading = case device.type do
+      "blood_pressure" -> Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
+      "dialysis" -> Ankaa.Monitoring.DialysisDeviceReading.from_mqtt(data)
+      _ ->
+        Logger.warning("Unknown device type: #{device.type}")
+        Ankaa.Monitoring.BPDeviceReading.from_mqtt(data) # Fallback
+    end
 
     # 2. Analyze the reading for any threshold violations
     violations = Ankaa.Monitoring.ThresholdChecker.check(reading, custom_thresholds)
@@ -82,5 +88,5 @@ defmodule Ankaa.Monitoring.DeviceServer do
 
   defp via_tuple(device_id), do: {:via, Registry, {Ankaa.Monitoring.DeviceRegistry, device_id}}
   defp pubsub_topic_for(%Ankaa.Monitoring.BPDeviceReading{}), do: "bpdevicereading_readings"
-  # defp pubsub_topic_for(%DialysisDeviceReading{}), do: "dialysisdevicereading_readings"
+  defp pubsub_topic_for(%Ankaa.Monitoring.DialysisDeviceReading{}), do: "dialysisdevicereading_readings"
 end

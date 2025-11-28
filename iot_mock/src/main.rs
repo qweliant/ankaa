@@ -62,10 +62,18 @@ enum Scenario {
     LowBFR,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
+enum DeviceType {
+    BP,
+    Dialysis,
+}
+
 #[derive(Debug, Deserialize)]
 struct DeviceConfig {
     device_id: String,
-    scenario: Scenario, // We'll just use a string for simplicity for now
+    scenario: Scenario,
+    device_type: DeviceType,
 }
 
 #[derive(Debug, Deserialize)]
@@ -133,11 +141,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if use_tls {
         info!("Using TLS for MQTT connection.");
-        // This will now ONLY run if MQTT_USE_TLS is set to true
         mqtt_options.set_transport(Transport::tls_with_default_config()); 
     } else {
         info!("Using plain-text (TCP) for MQTT connection.");
-        // Do nothing, rumqttc defaults to plain TCP
     }
 
     // Create client with larger capacities
@@ -179,8 +185,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             info!("Starting simulation for device: {}", &device_id);
 
                             let handle = task::spawn(async move {
-                                // We can expand this to handle different device types
-                                simulate_bp_device(client_clone, device_config, config_clone).await;
+                               match device_config.device_type {
+                                            DeviceType::BP => {
+                                                simulate_bp_device(client_clone, device_config, config_clone).await;
+                                            }
+                                            DeviceType::Dialysis => {
+                                                simulate_dialysis_device(client_clone, device_config, config_clone).await;
+                                            }
+                                        }
 
                             });
 
@@ -207,82 +219,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn simulate_dialysis_device(
     client: Arc<AsyncClient>,
-    device_id: String,
-    modes: Vec<&str>,
-    statuses: Vec<&str>,
+    device_config: DeviceConfig,
     config: SimulationConfig,
 ) {
-    let mut rng = StdRng::seed_from_u64(device_id.as_bytes().iter().map(|&b| b as u64).sum());
-
-    let topic = format!("devices/{}/telemetry", device_id);
+    let seed: u64 = device_config.device_id.bytes().map(|b| b as u64).sum();
+    let mut rng = StdRng::seed_from_u64(seed);
+    let topic = format!("devices/{}/telemetry", device_config.device_id);
     let mut interval = time::interval(Duration::from_millis(config.message_interval_ms));
-    let mut batch = Vec::with_capacity(config.batch_size);
 
-    // Initial states
-    let mut mode_idx = rng.random_range(0..modes.len());
-    let mut status_idx = rng.random_range(0..statuses.len());
-    let mut mode = modes[mode_idx].to_string();
-    let mut status = statuses[status_idx].to_string();
-    let mut time_in_treatment = rng.random_range(0..240);
+    // Initial Dialysis Values
+    let mut time_in_treatment = 0;
+    let mut vp_base = 150;
+    let mut bfr_base = 350;
+    let mut status_str = "normal";
+
+    match device_config.scenario {
+        Scenario::HighVP => {
+            vp_base = 280;
+            status_str = "critical";
+        },
+        Scenario::LowBFR => {
+            bfr_base = 150;
+            status_str = "warning";
+        },
+        _ => {}
+    }
 
     loop {
         interval.tick().await;
 
-        // Occasionally change mode or status to simulate real device behavior
-        if rng.random_range(0.0..1.0) < 0.05 {
-            mode_idx = rng.random_range(0..modes.len());
-            mode = modes[mode_idx].to_string();
-        }
-        if rng.random_range(0.0..1.0) < 0.03 {
-            status_idx = rng.random_range(0..statuses.len());
-            status = statuses[status_idx].to_string();
-        }
-
-        // Update time values to make them change realistically
-        let increment = (rng.random_range(1..3) as f32 * config.speed_multiplier) as i32;
-        time_in_treatment += increment;
-        let time_remaining = 240 - (time_in_treatment % 240);
+        let vp = vp_base + rng.random_range(-10..10);
+        let bfr = bfr_base + rng.random_range(-5..5);
+        let ap = rng.random_range(-150..-100);
+        time_in_treatment += 1;
+        let time_remaining = 240 - (time_in_treatment / 60);
 
         let data = DialysisDeviceData {
-            device_id: device_id.clone(),
+            device_id: device_config.device_id.clone(),
             timestamp: Utc::now().to_rfc3339(),
-            mode: mode.clone(),
-            status: status.clone(),
-            time_in_alarm: if status == "normal" {
-                None
-            } else {
-                Some(rng.random_range(1..60))
-            },
+            mode: "HD".to_string(),
+            status: status_str.to_string(),
+            time_in_alarm: if status_str != "normal" { Some(rng.random_range(1..30)) } else { None },
             time_in_treatment,
             time_remaining,
-            dfv: rng.random_range(0.0..100.0),
-            dfr: rng.random_range(0.0..500.0),
-            ufv: rng.random_range(0.0..10.0),
-            ufr: rng.random_range(0.0..1000.0),
-            bfr: rng.random_range(50..500),
-            ap: rng.random_range(-200..200),
-            vp: rng.random_range(-200..200),
-            ep: rng.random_range(-200..200),
+            dfv: 500.0, dfr: 500.0, ufv: 1.5, ufr: 0.5,
+            bfr, ap, vp, ep: rng.random_range(-50..50),
         };
 
         let payload = serde_json::to_string(&data).unwrap_or_default();
-
-        batch.push((topic.clone(), payload));
-
-        // When batch is full, publish all messages
-        if batch.len() >= config.batch_size {
-            for (topic, payload) in batch.drain(..) {
-                if let Err(e) = client
-                    .publish(&topic, QoS::AtLeastOnce, false, payload)
-                    .await
-                {
-                    error!("Failed to publish dialysis data: {}", e);
-                }
-            }
-            info!(
-                "Published batch of {} dialysis messages from {}",
-                config.batch_size, device_id
-            );
+        if let Err(e) = client.publish(&topic, QoS::AtLeastOnce, false, payload).await {
+            error!("Failed to publish Dialysis data: {}", e);
         }
     }
 }

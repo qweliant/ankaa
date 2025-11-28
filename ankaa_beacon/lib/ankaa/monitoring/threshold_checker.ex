@@ -11,6 +11,16 @@ defmodule Ankaa.Monitoring.ThresholdChecker do
   @hr_high 100
   @hr_low 50
 
+  # Venous Pressure (mmHg)
+  @vp_high_critical 250
+  @vp_low_critical 50
+
+  # Blood Flow Rate (ml/min)
+  @bfr_low_warning 200
+
+  # ============================================================================
+  # BP DEVICE CHECK
+  # ============================================================================
   def check(%Ankaa.Monitoring.BPDeviceReading{} = reading, custom_thresholds) do
     []
     |> check_systolic(reading, custom_thresholds)
@@ -19,6 +29,16 @@ defmodule Ankaa.Monitoring.ThresholdChecker do
     |> check_irregular_heartbeat(reading)
   end
 
+  # ============================================================================
+  # DIALYSIS DEVICE CHECK (NEW)
+  # ============================================================================
+  def check(%Ankaa.Monitoring.DialysisDeviceReading{} = reading, custom_thresholds) do
+    []
+    |> check_venous_pressure(reading, custom_thresholds)
+    |> check_blood_flow_rate(reading, custom_thresholds)
+  end
+
+  # BP CHECK HELPERS
   defp check_systolic(violations, reading, custom) do
     max_threshold = get_in(custom, ["systolic", "max_value"]) || @systolic_critical
     min_threshold = get_in(custom, ["systolic", "min_value"]) || @systolic_low
@@ -130,6 +150,67 @@ defmodule Ankaa.Monitoring.ThresholdChecker do
           threshold: false,
           severity: :high,
           message: "Irregular heartbeat detected"
+        }
+        | violations
+      ]
+    else
+      violations
+    end
+  end
+
+  # DIALYSIS CHECK HELPERS
+  defp check_venous_pressure(violations, reading, custom) do
+    # Venous Pressure (VP) indicates resistance returning blood to the patient.
+    # High VP = possible blockage/infiltration. Low VP = possible disconnection (dangerous).
+
+    max_threshold = get_in(custom, ["venous_pressure", "max_value"]) || @vp_high_critical
+    min_threshold = get_in(custom, ["venous_pressure", "min_value"]) || @vp_low_critical
+
+    cond do
+      reading.venous_pressure > max_threshold ->
+        [
+          %ThresholdViolation{
+            parameter: :venous_pressure,
+            value: reading.venous_pressure,
+            threshold: max_threshold,
+            severity: :critical,
+            message:
+              "⚠️ High Venous Pressure (#{reading.venous_pressure} mmHg) - Check access site"
+          }
+          | violations
+        ]
+
+      reading.venous_pressure < min_threshold ->
+        [
+          %ThresholdViolation{
+            parameter: :venous_pressure,
+            value: reading.venous_pressure,
+            threshold: min_threshold,
+            severity: :critical,
+            message:
+              "⚠️ Low Venous Pressure (#{reading.venous_pressure} mmHg) - Check for line disconnection"
+          }
+          | violations
+        ]
+
+      true ->
+        violations
+    end
+  end
+
+  defp check_blood_flow_rate(violations, reading, custom) do
+    # BFR ensures adequate cleaning. Too low means inefficient treatment.
+    min_threshold = get_in(custom, ["blood_flow_rate", "min_value"]) || @bfr_low_warning
+
+    if reading.blood_flow_rate < min_threshold do
+      [
+        %ThresholdViolation{
+          parameter: :blood_flow_rate,
+          value: reading.blood_flow_rate,
+          threshold: min_threshold,
+          # Or :warning depending on your severity levels
+          severity: :high,
+          message: "📉 Low Blood Flow Rate (#{reading.blood_flow_rate} ml/min)"
         }
         | violations
       ]
