@@ -8,15 +8,15 @@ defmodule Ankaa.Accounts.User do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @roles [
-      "admin",
-      "doctor",
-      "nurse",
-      "caresupport",
-      "technical_support",
-      "clinic_technician",
-      "community_coordinator",
-      "social_worker"
-    ]
+    "admin",
+    "doctor",
+    "nurse",
+    "caresupport",
+    "technical_support",
+    "clinic_technician",
+    "community_coordinator",
+    "social_worker"
+  ]
   schema "users" do
     field(:email, :string)
     field(:first_name, :string)
@@ -240,7 +240,7 @@ defmodule Ankaa.Accounts.User do
   @doc """
   Changeset for updating provider profile details (Name + NPI).
   """
-def provider_profile_changeset(user, attrs) do
+  def provider_profile_changeset(user, attrs) do
     user
     |> cast(attrs, [:first_name, :last_name, :npi_number, :practice_state])
     |> validate_required([:first_name, :last_name])

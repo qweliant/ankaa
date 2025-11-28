@@ -1,4 +1,7 @@
 defmodule Ankaa.AccountsTest do
+  @moduledoc """
+  Test suite for the Accounts context.
+  """
   use Ankaa.DataCase, async: true
 
   alias Ankaa.Accounts
