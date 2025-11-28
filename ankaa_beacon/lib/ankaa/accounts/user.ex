@@ -26,6 +26,8 @@ defmodule Ankaa.Accounts.User do
     field(:current_password, :string, virtual: true, redact: true)
     field(:confirmed_at, :utc_datetime)
     field(:role, :string)
+    field(:npi_number, :string)
+    field(:practice_state, :string)
 
     has_one(:patient, Ankaa.Patients.Patient)
     has_many(:care_network, Ankaa.Patients.CareNetwork)
@@ -234,4 +236,15 @@ defmodule Ankaa.Accounts.User do
 
   def patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
   def patient?(_), do: false
+
+  @doc """
+  Changeset for updating provider profile details (Name + NPI).
+  """
+def provider_profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:first_name, :last_name, :npi_number, :practice_state])
+    |> validate_required([:first_name, :last_name])
+    |> validate_format(:npi_number, ~r/^\d{10}$/, message: "must be a valid 10-digit NPI")
+    |> unique_constraint(:npi_number, message: "this NPI is already registered")
+  end
 end

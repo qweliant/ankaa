@@ -560,4 +560,62 @@ defmodule Ankaa.AccountsTest do
       refute User.technical_support?(user)
     end
   end
+
+  describe "update_user_profile/2" do
+    test "updates the user profile with valid attributes (including NPI)" do
+      user = user_fixture()
+
+      update_attrs = %{
+        "first_name" => "Updated First",
+        "last_name" => "Updated Last",
+        "npi_number" => "1234567890",
+        "practice_state" => "NY"
+      }
+
+      assert {:ok, %User{} = updated_user} = Accounts.update_user_profile(user, update_attrs)
+      assert updated_user.first_name == "Updated First"
+      assert updated_user.last_name == "Updated Last"
+      assert updated_user.npi_number == "1234567890"
+      assert updated_user.practice_state == "NY"
+    end
+
+    test "validates NPI format" do
+      user = user_fixture()
+
+      invalid_attrs_short = %{"first_name" => "Dr", "last_name" => "Test", "npi_number" => "123"}
+      assert {:error, changeset} = Accounts.update_user_profile(user, invalid_attrs_short)
+      assert "must be a valid 10-digit NPI" in errors_on(changeset).npi_number
+
+      invalid_attrs_alpha = %{
+        "first_name" => "Dr",
+        "last_name" => "Test",
+        "npi_number" => "ABC1234567"
+      }
+
+      assert {:error, changeset} = Accounts.update_user_profile(user, invalid_attrs_alpha)
+      assert "must be a valid 10-digit NPI" in errors_on(changeset).npi_number
+    end
+
+    test "enforces NPI uniqueness" do
+      existing_user = user_fixture()
+
+      {:ok, _} =
+        Accounts.update_user_profile(existing_user, %{
+          "first_name" => "Dr",
+          "last_name" => "One",
+          "npi_number" => "9876543210"
+        })
+
+      new_user = user_fixture()
+
+      {:error, changeset} =
+        Accounts.update_user_profile(new_user, %{
+          "first_name" => "Dr",
+          "last_name" => "Two",
+          "npi_number" => "9876543210"
+        })
+
+      assert "this NPI is already registered" in errors_on(changeset).npi_number
+    end
+  end
 end

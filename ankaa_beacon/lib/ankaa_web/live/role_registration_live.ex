@@ -8,6 +8,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
   alias Ankaa.Patients.Patient
   alias Ecto.Multi
   alias Ankaa.Repo
+  alias Ankaa.Accounts.NPI
 
   @roles [
     {"patient", "Patient", "I am receiving home hemodialysis treatment"},
@@ -22,27 +23,30 @@ defmodule AnkaaWeb.RoleRegistrationLive do
      "I provide psychosocial support and non-medical resources."}
   ]
 
+  @npi_roles ["doctor", "nurse", "social_worker"]
+
   @impl true
   def mount(_params, _session, socket) do
-    # Redirects if user has already completed this step
     if socket.assigns.current_user.role || socket.assigns.current_user.patient do
       {:ok,
        push_navigate(socket,
          to: signed_in_path(%Plug.Conn{assigns: %{current_user: socket.assigns.current_user}})
        )}
     else
-      # The form for the final step is now for a Patient changeset
-      patient_form = to_form(Patient.changeset(%Patient{}, %{}))
+      user_cs = Accounts.User.name_changeset(socket.assigns.current_user, %{})
+      patient_cs = Patient.changeset(%Patient{}, %{})
 
       {:ok,
        assign(socket,
          step: :role_selection,
          selected_role: nil,
          roles: @roles,
+         npi_roles: @npi_roles,
          token_form: to_form(%{"token" => ""}, as: :token),
          show_final_form: false,
-         patient_form: patient_form,
-         name_form: to_form(Accounts.User.name_changeset(socket.assigns.current_user, %{}))
+         patient_form: to_form(patient_cs),
+         name_form: to_form(user_cs),
+         npi_data: nil
        )}
     end
   end
@@ -54,14 +58,18 @@ defmodule AnkaaWeb.RoleRegistrationLive do
 
   @impl true
   def handle_event("back_to_roles", _params, socket) do
+    user_cs = Accounts.User.name_changeset(socket.assigns.current_user, %{})
+    patient_cs = Patient.changeset(%Patient{}, %{})
+
     {:noreply,
      assign(socket,
        step: :role_selection,
        selected_role: nil,
        show_final_form: false,
        token_form: to_form(%{"token" => ""}, as: :token),
-       patient_form: to_form(Patient.changeset(%Patient{}, %{})),
-       provider_name_form: to_form(Accounts.User.name_changeset(socket.assigns.current_user, %{}))
+       patient_form: to_form(patient_cs),
+       name_form: to_form(user_cs),
+       npi_roles: @npi_roles
      )}
   end
 
@@ -69,16 +77,19 @@ defmodule AnkaaWeb.RoleRegistrationLive do
   def handle_event("save_role", %{"token" => %{"token" => token}}, socket) do
     role = socket.assigns.selected_role
 
-    if role == "patient" and token == "patient" do
-      {:noreply, assign(socket, show_final_form: true)}
-    else
-      is_valid_token = token == role
-
-      if is_valid_token do
+    cond do
+      role == "patient" ->
         {:noreply, assign(socket, show_final_form: true)}
-      else
-        {:noreply, put_flash(socket, :error, "Invalid token for selected role.")}
-      end
+
+      # test doctor: 1871706713, nurse: 1558084590, social_worker: 1023639283
+      role in @npi_roles ->
+        perform_npi_lookup(socket, token)
+
+      token == role ->
+        {:noreply, assign(socket, show_final_form: true)}
+
+      true ->
+        {:noreply, put_flash(socket, :error, "Invalid Code. Please check and try again.")}
     end
   end
 
@@ -87,13 +98,22 @@ defmodule AnkaaWeb.RoleRegistrationLive do
     user = socket.assigns.current_user
     role = socket.assigns.selected_role
 
+    final_params =
+      if socket.assigns.npi_data do
+        name_params
+        |> Map.put("npi_number", socket.assigns.npi_data.number)
+        |> Map.put("practice_state", socket.assigns.npi_data.practice_state)
+      else
+        name_params
+      end
+
     result =
       Multi.new()
       |> Multi.run(:user_role, fn _repo, _changes ->
         Accounts.assign_role(user, role)
       end)
       |> Multi.run(:user_name, fn _repo, %{user_role: updated_user} ->
-        Accounts.update_user_name(updated_user, name_params)
+        Accounts.update_user_profile(updated_user, final_params)
       end)
       |> Repo.transaction()
 
@@ -110,16 +130,29 @@ defmodule AnkaaWeb.RoleRegistrationLive do
   end
 
   @impl true
-  def handle_event("save_patient_profile", %{"patient" => patient_params}, socket) do
+  def handle_event(
+        "save_patient_profile",
+        %{"patient" => patient_params, "user" => user_params},
+        socket
+      ) do
     user = socket.assigns.current_user
 
-    case Patients.create_patient(patient_params, user) do
-      {:ok, _patient} ->
-        fresh_user = Accounts.get_user!(user.id)
-        redirect_to_dashboard(socket, fresh_user)
+    case Accounts.update_user_name(user, user_params) do
+      {:ok, updated_user} ->
+        full_name = "#{updated_user.first_name} #{updated_user.last_name}"
+        final_patient_params = Map.put(patient_params, "name", full_name)
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, patient_form: to_form(changeset))}
+        case Patients.create_patient(final_patient_params, updated_user) do
+          {:ok, _patient} ->
+            fresh_user = Accounts.get_user!(updated_user.id)
+            redirect_to_dashboard(socket, fresh_user)
+
+          {:error, changeset} ->
+            {:noreply, assign(socket, patient_form: to_form(changeset))}
+        end
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, name_form: to_form(changeset))}
     end
   end
 
@@ -137,57 +170,43 @@ defmodule AnkaaWeb.RoleRegistrationLive do
           <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <%= for {role_id, label, description} <- @roles do %>
               <button
-                type="button"
                 phx-click="select_role"
                 phx-value-role={role_id}
-                class={
-                  [
-                    "relative flex flex-col items-start p-5 w-full text-left rounded-xl border-2 transition-all duration-200 ease-in-out shadow-sm group",
-                    # Conditional Styling for Active vs Inactive state
-                    if role_id == @selected_role do
-                      "border-purple-600 bg-purple-50 ring-1 ring-purple-600 shadow-purple-100"
-                    else
+                class={[
+                  "relative flex flex-col items-start p-5 w-full text-left rounded-xl border-2 transition-all duration-200 ease-in-out shadow-sm group",
+                  if(role_id == @selected_role,
+                    do: "border-purple-600 bg-purple-50 ring-1 ring-purple-600 shadow-purple-100",
+                    else:
                       "border-stone-200 bg-white hover:border-purple-300 hover:bg-stone-50 hover:shadow-md"
-                    end
-                  ]
-                }
+                  )
+                ]}
               >
                 <div class="flex items-center w-full mb-2">
                   <div class={[
                     "p-2 rounded-lg shrink-0 mr-3 transition-colors",
-                    if role_id == @selected_role do
-                      "bg-purple-600 text-white"
-                    else
-                      "bg-stone-100 text-stone-500 group-hover:bg-purple-100 group-hover:text-purple-600"
-                    end
+                    if(role_id == @selected_role,
+                      do: "bg-purple-600 text-white",
+                      else:
+                        "bg-stone-100 text-stone-500 group-hover:bg-purple-100 group-hover:text-purple-600"
+                    )
                   ]}>
                     <.icon name={role_icon(role_id)} class="w-6 h-6" />
                   </div>
                   <div class={[
                     "font-bold text-lg",
-                    if role_id == @selected_role do
-                      "text-purple-900"
-                    else
-                      "text-stone-900"
-                    end
+                    if(role_id == @selected_role, do: "text-purple-900", else: "text-stone-900")
                   ]}>
                     {label}
                   </div>
-
                   <%= if role_id == @selected_role do %>
                     <div class="ml-auto text-purple-600">
                       <.icon name="hero-check-circle-solid" class="w-6 h-6" />
                     </div>
                   <% end %>
                 </div>
-
                 <p class={[
                   "text-sm leading-relaxed",
-                  if role_id == @selected_role do
-                    "text-purple-800"
-                  else
-                    "text-stone-500"
-                  end
+                  if(role_id == @selected_role, do: "text-purple-800", else: "text-stone-500")
                 ]}>
                   {description}
                 </p>
@@ -196,8 +215,11 @@ defmodule AnkaaWeb.RoleRegistrationLive do
           </div>
         <% :token_input -> %>
           <div class="mt-8">
-            <button phx-click="back_to_roles" class="mb-4 ...">
-              <.icon name="hero-arrow-left-mini" class="w-5 h-5" /> Back to Role Selection
+            <button
+              phx-click="back_to_roles"
+              class="mb-4 text-sm text-stone-600 hover:text-purple-600 flex items-center"
+            >
+              <.icon name="hero-arrow-left-mini" class="w-5 h-5 mr-1" /> Back to Role Selection
             </button>
 
             <%= if !@show_final_form do %>
@@ -209,14 +231,36 @@ defmodule AnkaaWeb.RoleRegistrationLive do
                   required
                 />
                 <:actions>
-                  <.button phx-disable-with="Verifying..." class="w-full">Continue</.button>
+                  <.button phx-disable-with="Verifying..." class="w-full">
+                    {if @selected_role in @npi_roles, do: "Verify NPI & Continue", else: "Continue"}
+                  </.button>
                 </:actions>
               </.simple_form>
             <% else %>
               <%= if @selected_role == "patient" do %>
                 <.header class="text-center mt-8">Create Your Patient Profile</.header>
                 <.simple_form for={@patient_form} id="patient_form" phx-submit="save_patient_profile">
-                  <.input field={@patient_form[:name]} type="text" label="Full Name" required />
+                  <div class="grid grid-cols-2 gap-4">
+                    <.input
+                      field={@name_form[:first_name]}
+                      name="user[first_name]"
+                      type="text"
+                      label="First Name"
+                      required
+                      value={@name_form.params["first_name"] || @name_form.data.first_name}
+                      errors={@name_form.errors[:first_name]}
+                    />
+                    <.input
+                      field={@name_form[:last_name]}
+                      name="user[last_name]"
+                      type="text"
+                      label="Last Name"
+                      required
+                      value={@name_form.params["last_name"] || @name_form.data.last_name}
+                      errors={@name_form.errors[:last_name]}
+                    />
+                  </div>
+
                   <.input
                     field={@patient_form[:date_of_birth]}
                     type="date"
@@ -237,7 +281,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
                   </:actions>
                 </.simple_form>
               <% else %>
-                <.header class="text-center mt-8">Enter Your Name</.header>
+                <.header class="text-center mt-8">Confirm Your Details</.header>
                 <.simple_form for={@name_form} id="name_form" phx-submit="save_name">
                   <.input field={@name_form[:first_name]} type="text" label="First Name" required />
                   <.input field={@name_form[:last_name]} type="text" label="Last Name" required />
@@ -257,14 +301,13 @@ defmodule AnkaaWeb.RoleRegistrationLive do
 
   defp token_label(role) do
     case role do
-      "patient" -> "Patient Registration Code"
-      "doctor" -> "Medical License Number"
-      "nurse" -> "Nursing License Number"
-      "caresupport" -> "Invitation Code"
-      "clinic_technician" -> "Clinic Technician ID"
-      "community_coordinator" -> "Community Admin Code"
-      "social_worker" -> "Professional License Number"
-      _ -> "Registration Code"
+      "doctor" -> "NPI Number"
+      "nurse" -> "NPI Number (or License #)"
+      "social_worker" -> "NPI Number (or License #)"
+      "patient" -> "Registration Code (Optional)"
+      "clinic_technician" -> "Clinic Access Code"
+      "community_coordinator" -> "Community Code"
+      _ -> "Invitation Code"
     end
   end
 
@@ -288,6 +331,46 @@ defmodule AnkaaWeb.RoleRegistrationLive do
       "community_coordinator" -> "hero-chat-bubble-left-right"
       "social_worker" -> "hero-lifebuoy"
       _ -> "hero-user"
+    end
+  end
+
+  defp perform_npi_lookup(socket, npi_number) do
+    # Basic format check (NPI is 10 digits)
+    if String.match?(npi_number, ~r/^\d{10}$/) do
+      case NPI.lookup(npi_number) do
+        {:ok, data} ->
+          # PRE-FILL THE NAME FORM
+          user = socket.assigns.current_user
+
+          prefilled_params = %{
+            "first_name" => data.first_name,
+            "last_name" => data.last_name
+          }
+
+          # Create a changeset with the data to display in the form
+          changeset = Accounts.User.name_changeset(user, prefilled_params)
+
+          socket =
+            socket
+            |> put_flash(
+              :info,
+              "Verified: #{data.first_name} #{data.last_name} - #{data.taxonomy_desc}"
+            )
+            |> assign(name_form: to_form(changeset))
+            |> assign(show_final_form: true)
+
+          {:noreply, socket}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "NPI Number not found in registry.")}
+      end
+    else
+      # If they entered a mock code "doctor" instead of numbers, let them pass for Pre-Alpha dev
+      if npi_number == socket.assigns.selected_role do
+        {:noreply, assign(socket, show_final_form: true)}
+      else
+        {:noreply, put_flash(socket, :error, "Invalid NPI Format (Must be 10 digits).")}
+      end
     end
   end
 end

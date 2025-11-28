@@ -481,4 +481,10 @@ defmodule Ankaa.Accounts do
       _ -> {:error, :not_found}
     end
   end
+
+  def update_user_profile(%User{} = user, attrs) do
+    user
+    |> User.provider_profile_changeset(attrs)
+    |> Repo.update()
+  end
 end
