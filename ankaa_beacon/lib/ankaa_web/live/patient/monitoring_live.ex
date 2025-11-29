@@ -1,4 +1,7 @@
 defmodule AnkaaWeb.MonitoringLive do
+  @moduledoc """
+  LiveView dashboard to display real-time BP and dialysis data.
+  """
   use AnkaaWeb, :patient_layout
   use AnkaaWeb, :alert_handling
 
@@ -7,9 +10,6 @@ defmodule AnkaaWeb.MonitoringLive do
   alias Ankaa.Sessions
   alias Ankaa.MQTT
 
-  @moduledoc """
-  LiveView dashboard to display real-time BP and dialysis data.
-  """
 
   @impl true
   def mount(_params, _session, socket) do
@@ -173,8 +173,6 @@ defmodule AnkaaWeb.MonitoringLive do
 
   @impl true
   def handle_info({:new_reading, reading, _opts}, socket) do
-    # 1. Generate a unique ID (required for Streams)
-    # We convert the struct to a Map and add a random UUID as the :id
     reading_for_stream =
       reading
       |> Map.from_struct()
@@ -182,16 +180,15 @@ defmodule AnkaaWeb.MonitoringLive do
 
     socket =
       case reading do
-        # 2. Pattern match on the ORIGINAL struct to know which type it is
         %Ankaa.Monitoring.BPDeviceReading{} ->
           socket
-          |> assign(:latest_bp, reading) # Use original for the "Big Card"
-          |> stream_insert(:bp_readings, reading_for_stream, at: 0) # Use version with ID for list
+          |> assign(:latest_bp, reading)
+          |> stream_insert(:bp_readings, reading_for_stream, at: 0)
 
         %Ankaa.Monitoring.DialysisDeviceReading{} ->
           socket
-          |> assign(:latest_dialysis, reading) # Use original for the "Big Card"
-          |> stream_insert(:dialysis_readings, reading_for_stream, at: 0) # Use version with ID for list
+          |> assign(:latest_dialysis, reading)
+          |> stream_insert(:dialysis_readings, reading_for_stream, at: 0)
 
         _ ->
           socket
