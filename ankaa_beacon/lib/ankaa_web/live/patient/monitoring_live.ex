@@ -183,12 +183,12 @@ defmodule AnkaaWeb.MonitoringLive do
         %Ankaa.Monitoring.BPDeviceReading{} ->
           socket
           |> assign(:latest_bp, reading)
-          |> stream_insert(:bp_readings, reading_for_stream, at: 0)
+          |> stream_insert(:bp_readings, reading_for_stream, at: 0, limit: 4)
 
         %Ankaa.Monitoring.DialysisDeviceReading{} ->
           socket
           |> assign(:latest_dialysis, reading)
-          |> stream_insert(:dialysis_readings, reading_for_stream, at: 0)
+          |> stream_insert(:dialysis_readings, reading_for_stream, at: 0, limit: 4)
 
         _ ->
           socket

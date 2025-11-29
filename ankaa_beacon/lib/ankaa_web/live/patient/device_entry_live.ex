@@ -67,7 +67,10 @@ defmodule AnkaaWeb.DeviceEntryLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-3xl mx-auto py-8">
-      <.link navigate={~p"/patient/devices"} class="text-sm font-semibold text-indigo-600 mb-4 inline-block">
+      <.link
+        navigate={~p"/patient/devices"}
+        class="text-sm font-semibold text-indigo-600 mb-4 inline-block"
+      >
         &larr; Back to Device List
       </.link>
 
@@ -79,6 +82,40 @@ defmodule AnkaaWeb.DeviceEntryLive do
           <p class="mt-1 max-w-2xl text-sm text-gray-500">
             Choose a device type and a simulation scenario to add to your account. This will create a unique virtual device for you.
           </p>
+        </div>
+
+        <div class="px-4 sm:px-6 pt-2">
+          <div class="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg
+                  class="h-5 w-5 text-yellow-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800">Dashboard Limitation</h3>
+                <div class="mt-2 text-sm text-yellow-700">
+                  <p>
+                    Please note: The monitoring dashboard is currently optimized to display
+                    <strong>one Blood Pressure Monitor</strong>
+                    and <strong>one Dialysis Machine</strong>.
+                  </p>
+                  <p class="mt-1">
+                    It is strongly suggested that you add exactly one of each. Multiple devices of the same type are not yet handled in the UI.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
           <.simple_form for={@form} phx-submit="save" phx-change="validate">
