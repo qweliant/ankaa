@@ -18,46 +18,50 @@ defmodule AnkaaWeb.MonitoringLive do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "dialysisdevicereading_readings")
     end
 
-    devices = Devices.list_devices_for_patient(socket.assigns.current_user.patient.id)
+    patient_id = socket.assigns.current_user.patient.id
+    devices = Devices.list_devices_for_patient(patient_id)
 
     active_session =
-      Sessions.get_active_session_for_patient(socket.assigns.current_user.patient.id)
+      Sessions.get_active_session_for_patient(patient_id)
 
     active_devices_in_session = if active_session, do: devices, else: []
 
-    case Sessions.get_active_session_for_patient(socket.assigns.current_user.patient.id) do
-      nil ->
-        {:ok,
-         assign(socket,
-           active_tab: :blood_pressure,
-           bp_readings: [],
-           dialysis_readings: [],
-           bp_violations: [],
-           dialysis_violations: [],
-           devices: devices,
-           current_path: "/patient/monitoring",
-           session_started: false,
-           session_start_time: nil,
-           active_session: nil,
-           active_devices_in_session: []
-         )}
+    socket =
+      assign(socket,
+        active_tab: :blood_pressure,
+        bp_violations: [],
+        dialysis_violations: [],
+        devices: devices,
+        current_path: "/patient/monitoring",
+        latest_bp: nil,
+      latest_dialysis: nil
+      )
 
-      session ->
-        {:ok,
-         assign(socket,
-           active_tab: :blood_pressure,
-           bp_readings: [],
-           dialysis_readings: [],
-           bp_violations: [],
-           dialysis_violations: [],
-           devices: devices,
-           current_path: "/patient/monitoring",
-           session_started: true,
-           session_start_time: session.start_time,
-           active_session: session,
-           active_devices_in_session: active_devices_in_session
-         )}
-    end
+    socket =
+      case active_session do
+        nil ->
+          assign(socket,
+            session_started: false,
+            session_start_time: nil,
+            active_session: nil,
+            active_devices_in_session: []
+          )
+
+        session ->
+          assign(socket,
+            session_started: true,
+            session_start_time: session.start_time,
+            active_session: session,
+            active_devices_in_session: active_devices_in_session
+          )
+      end
+
+    socket =
+      socket
+      |> stream(:bp_readings, [])
+      |> stream(:dialysis_readings, [])
+
+    {:ok, socket}
   end
 
   @impl true
@@ -82,7 +86,7 @@ defmodule AnkaaWeb.MonitoringLive do
           Enum.map(devices, fn device ->
             %{
               device_id: device.id,
-              scenario: device.simulation_scenario,
+              scenario: Macro.underscore(device.simulation_scenario),
               device_type: map_device_type(device.type)
             }
           end)
@@ -167,29 +171,33 @@ defmodule AnkaaWeb.MonitoringLive do
     end
   end
 
-  def handle_info(
-        {:new_reading, %Ankaa.Monitoring.BPDeviceReading{} = reading, violations},
-        socket
-      ) do
-    updated_socket =
-      socket
-      |> stream_insert(:bp_readings, reading)
-      |> assign(:bp_violations, violations)
+  @impl true
+  def handle_info({:new_reading, reading, _opts}, socket) do
+    # 1. Generate a unique ID (required for Streams)
+    # We convert the struct to a Map and add a random UUID as the :id
+    reading_for_stream =
+      reading
+      |> Map.from_struct()
+      |> Map.put(:id, Ecto.UUID.generate())
 
-    {:noreply, updated_socket}
-  end
+    socket =
+      case reading do
+        # 2. Pattern match on the ORIGINAL struct to know which type it is
+        %Ankaa.Monitoring.BPDeviceReading{} ->
+          socket
+          |> assign(:latest_bp, reading) # Use original for the "Big Card"
+          |> stream_insert(:bp_readings, reading_for_stream, at: 0) # Use version with ID for list
 
-  def handle_info(
-        {:new_reading, %Ankaa.Monitoring.DialysisDeviceReading{} = reading, violations},
-        socket
-      ) do
-    updated_socket =
-      socket
-      # Ensure you have this stream defined in mount!
-      |> stream_insert(:dialysis_readings, reading)
-      |> assign(:dialysis_violations, violations)
+        %Ankaa.Monitoring.DialysisDeviceReading{} ->
+          socket
+          |> assign(:latest_dialysis, reading) # Use original for the "Big Card"
+          |> stream_insert(:dialysis_readings, reading_for_stream, at: 0) # Use version with ID for list
 
-    {:noreply, updated_socket}
+        _ ->
+          socket
+      end
+
+    {:noreply, socket}
   end
 
   defp map_device_type("blood_pressure"), do: "bp"
@@ -268,12 +276,17 @@ defmodule AnkaaWeb.MonitoringLive do
                   module={AnkaaWeb.Monitoring.BPComponent}
                   id="bp-monitor"
                   devices={@devices}
-                  readings={@bp_readings}
+                  latest={@latest_bp}
+                  readings={@streams.bp_readings}
                 />
               <% :dialysis -> %>
-                <div class="text-center py-12">
-                  <p class="text-slate-500">Dialysis monitoring component coming soon.</p>
-                </div>
+                <.live_component
+                  module={AnkaaWeb.Monitoring.DialysisComponent}
+                  id="dialysis-monitor"
+                  devices={@devices}
+                  latest={@latest_dialysis}
+                  readings={@streams.dialysis_readings}
+                />
             <% end %>
           </div>
         </div>

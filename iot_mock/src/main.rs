@@ -53,6 +53,7 @@ struct SimulationConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
 enum Scenario {
     Normal,
     HighSystolic,
@@ -65,6 +66,7 @@ enum Scenario {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 enum DeviceType {
+    #[serde(rename = "bp")]
     BP,
     Dialysis,
 }
@@ -141,7 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if use_tls {
         info!("Using TLS for MQTT connection.");
-        mqtt_options.set_transport(Transport::tls_with_default_config()); 
+        mqtt_options.set_transport(Transport::tls_with_default_config());
     } else {
         info!("Using plain-text (TCP) for MQTT connection.");
     }
@@ -165,6 +167,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let command: SimulatorCommand = match serde_json::from_slice(&publish.payload) {
                     Ok(cmd) => cmd,
                     Err(e) => {
+                        info!(
+                            "Received malformed command JSON {}",
+                            String::from_utf8_lossy(&publish.payload)
+                        );
                         error!("Failed to parse command JSON: {}", e);
                         continue; // Ignore malformed commands
                     }
@@ -185,15 +191,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             info!("Starting simulation for device: {}", &device_id);
 
                             let handle = task::spawn(async move {
-                               match device_config.device_type {
-                                            DeviceType::BP => {
-                                                simulate_bp_device(client_clone, device_config, config_clone).await;
-                                            }
-                                            DeviceType::Dialysis => {
-                                                simulate_dialysis_device(client_clone, device_config, config_clone).await;
-                                            }
-                                        }
-
+                                match device_config.device_type {
+                                    DeviceType::BP => {
+                                        simulate_bp_device(
+                                            client_clone,
+                                            device_config,
+                                            config_clone,
+                                        )
+                                        .await;
+                                    }
+                                    DeviceType::Dialysis => {
+                                        simulate_dialysis_device(
+                                            client_clone,
+                                            device_config,
+                                            config_clone,
+                                        )
+                                        .await;
+                                    }
+                                }
                             });
 
                             sims_map_clone.insert(device_id, handle);
@@ -237,11 +252,11 @@ async fn simulate_dialysis_device(
         Scenario::HighVP => {
             vp_base = 280;
             status_str = "critical";
-        },
+        }
         Scenario::LowBFR => {
             bfr_base = 150;
             status_str = "warning";
-        },
+        }
         _ => {}
     }
 
@@ -259,15 +274,28 @@ async fn simulate_dialysis_device(
             timestamp: Utc::now().to_rfc3339(),
             mode: "HD".to_string(),
             status: status_str.to_string(),
-            time_in_alarm: if status_str != "normal" { Some(rng.random_range(1..30)) } else { None },
+            time_in_alarm: if status_str != "normal" {
+                Some(rng.random_range(1..30))
+            } else {
+                None
+            },
             time_in_treatment,
             time_remaining,
-            dfv: 500.0, dfr: 500.0, ufv: 1.5, ufr: 0.5,
-            bfr, ap, vp, ep: rng.random_range(-50..50),
+            dfv: 500.0,
+            dfr: 500.0,
+            ufv: 1.5,
+            ufr: 0.5,
+            bfr,
+            ap,
+            vp,
+            ep: rng.random_range(-50..50),
         };
 
         let payload = serde_json::to_string(&data).unwrap_or_default();
-        if let Err(e) = client.publish(&topic, QoS::AtLeastOnce, false, payload).await {
+        if let Err(e) = client
+            .publish(&topic, QoS::AtLeastOnce, false, payload)
+            .await
+        {
             error!("Failed to publish Dialysis data: {}", e);
         }
     }
@@ -292,7 +320,7 @@ async fn simulate_bp_device(
     let mut is_irregular_rhythm = false;
     let mut status_str: &str = "normal";
 
-   match device_config.scenario {
+    match device_config.scenario {
         Scenario::Normal => { /* Use defaults */ }
         Scenario::HighSystolic => {
             systolic_base = 185;
