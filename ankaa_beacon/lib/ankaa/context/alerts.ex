@@ -7,7 +7,7 @@ defmodule Ankaa.Alerts do
 
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.Notifications.Alert
-  alias Ankaa.Notifications.EMSAlertTimer
+  alias Ankaa.Emergency.EMSAlertTimer
   alias Ankaa.Notifications.Notification
   alias Ankaa.Patients
   alias Ankaa.Accounts

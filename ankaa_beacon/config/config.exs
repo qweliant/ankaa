@@ -66,3 +66,5 @@ config :phoenix, :json_library, Jason
 import_config "#{config_env()}.exs"
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
+config :ankaa, :emergency_adapter, Ankaa.Emergency.MockDispatcher
