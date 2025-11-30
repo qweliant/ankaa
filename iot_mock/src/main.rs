@@ -59,7 +59,9 @@ enum Scenario {
     HighSystolic,
     LowDiastolic,
     IrregularHeartbeat,
+    #[serde(rename = "high_vp")]
     HighVP,
+    #[serde(rename = "low_bfr")]
     LowBFR,
 }
 

@@ -126,7 +126,6 @@ defmodule AnkaaWeb.MonitoringLive do
     stop_payload = %{stop_simulations: device_ids}
     MQTT.publish("simulator/control", Jason.encode!(stop_payload))
 
-
     case socket.assigns.active_session do
       nil ->
         {:noreply, put_flash(socket, :error, "No active session to end.")}
