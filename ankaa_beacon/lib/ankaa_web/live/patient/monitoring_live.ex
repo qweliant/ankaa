@@ -120,6 +120,12 @@ defmodule AnkaaWeb.MonitoringLive do
   def handle_event("end_session", _params, socket) do
     patient_name = socket.assigns.current_user.patient.name || "Your patient"
     patient_id = socket.assigns.current_user.patient.id
+    devices = socket.assigns.active_devices_in_session || []
+    device_ids = Enum.map(devices, & &1.id)
+
+    stop_payload = %{stop_simulations: device_ids}
+    MQTT.publish("simulator/control", Jason.encode!(stop_payload))
+
 
     case socket.assigns.active_session do
       nil ->
@@ -128,16 +134,8 @@ defmodule AnkaaWeb.MonitoringLive do
       session ->
         case Sessions.end_session(session) do
           {:ok, ended_session} ->
-            devices_to_stop = socket.assigns.active_devices_in_session || []
-            device_ids_to_stop = Enum.map(devices_to_stop, & &1.id)
-
             duration_in_minutes =
               Timex.diff(ended_session.end_time, ended_session.start_time, :minutes)
-
-            MQTT.publish(
-              "simulator/control",
-              Jason.encode!(%{stop_simulations: device_ids_to_stop})
-            )
 
             alert_message =
               "✅ #{patient_name}'s session ended successfully after #{duration_in_minutes} minutes."
@@ -168,7 +166,8 @@ defmodule AnkaaWeb.MonitoringLive do
           {:error, _changeset} ->
             {:noreply, put_flash(socket, :error, "Failed to end session.")}
         end
-    end
+
+      end
   end
 
   @impl true

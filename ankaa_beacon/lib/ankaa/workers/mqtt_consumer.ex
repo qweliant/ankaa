@@ -86,26 +86,6 @@ defmodule Ankaa.Workers.MQTTConsumer do
     {:noreply, state}
   end
 
-  def on_publish(_client, %{topic: topic, payload: payload}) do
-    topic_str = to_string(topic)
-    [_, device_uuid, _] = String.split(topic_str, "/")
-
-    # 1. Find the full Device struct in the database using its UUID.
-    case Ankaa.Devices.get_device!(device_uuid) do
-      %Ankaa.Patients.Device{} = device ->
-        # 2. Find-or-start the specialist process, passing the whole struct.
-        {:ok, _pid} = Ankaa.Monitoring.DeviceServer.start_link(device)
-
-        # 3. Dispatch the message to the specialist.
-        Ankaa.Monitoring.DeviceServer.handle_reading(device.id, payload)
-
-      nil ->
-        # No patient has registered this device. Ignore the message.
-        Logger.warning("Received message for unregistered device: #{device_uuid}")
-        :ok
-    end
-  end
-
   defp client_options do
     mqtt_config = Application.get_env(:ankaa, :mqtt, [])
 
