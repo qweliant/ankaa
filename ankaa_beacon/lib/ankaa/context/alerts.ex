@@ -122,14 +122,15 @@ defmodule Ankaa.Alerts do
         end)
       Accounts.User.patient?(user) ->
         query =
-          from(a in Alert,
+          from(n in Notification,
+            where: n.user_id == ^user.id,
+            where: n.status in ["unread", "acknowledged"],
+            join: a in Alert,
+            on: n.notifiable_id == a.id and n.notifiable_type == "Alert",
+            where: a.status == "active" and a.severity in ["high", "critical"],
             join: p in assoc(a, :patient),
-            where:
-              a.patient_id == ^user.patient.id and
-                a.status == "active" and
-                a.severity in ["high", "critical"],
             order_by: [desc: a.inserted_at],
-            select: {a, p}
+            select: {n, a, p}
           )
 
         results = Repo.all(query)
