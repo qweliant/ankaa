@@ -4,15 +4,21 @@ defmodule Ankaa.Monitoring.DeviceServer do
   It processes incoming readings, checks for threshold violations,
   triggers alerts, broadcasts updates, and persists data.
   """
-  use GenServer
+  use GenServer, restart: :transient
   require Logger
 
   def start_link(%Ankaa.Patients.Device{} = device) do
     GenServer.start_link(__MODULE__, device, name: via_tuple(device.id))
   end
 
+  @impl true
   def handle_reading(device_id, payload) do
     GenServer.cast(via_tuple(device_id), {:new_reading, payload})
+  end
+
+  @impl true
+  def handle_reading(pid, payload) when is_pid(pid) do
+    GenServer.cast(pid, {:new_reading, payload})
   end
 
   @impl true

@@ -28,7 +28,6 @@ defmodule Ankaa.Workers.MQTTConsumer do
     Logger.info("MQTTConsumer: Client options: #{inspect(client_options())}")
     Logger.info("MQTTConsumer: Attempting to connect to broker...")
 
-
     case :emqtt.connect(state.client) do
       {:ok, _properties} ->
         Logger.info("MQTTConsumer: Successfully connected to broker!")
@@ -52,19 +51,30 @@ defmodule Ankaa.Workers.MQTTConsumer do
     topic_str = to_string(topic)
     [_, device_uuid, _] = String.split(topic_str, "/")
 
-    case Ankaa.Devices.get_device(device_uuid) do
-      %Ankaa.Patients.Device{} = device ->
-        case Ankaa.Monitoring.DeviceServer.start_link(device) do
-          {:ok, _} -> :ok
-          {:error, {:already_started, _}} -> :ok
-          {:error, reason} -> Logger.error("Failed to start DeviceServer: #{inspect(reason)}")
+    case Registry.lookup(Ankaa.Monitoring.DeviceRegistry, device_uuid) do
+      [{pid, _}] ->
+        Ankaa.Monitoring.DeviceServer.handle_reading(device_uuid, payload)
+
+      [] ->
+        case Ankaa.Devices.get_device(device_uuid) do
+          %Ankaa.Patients.Device{} = device ->
+            case DynamicSupervisor.start_child(
+                   Ankaa.Monitoring.DeviceSupervisor,
+                   {Ankaa.Monitoring.DeviceServer, device}
+                 ) do
+              {:ok, _pid} ->
+                Ankaa.Monitoring.DeviceServer.handle_reading(device_uuid, payload)
+
+              {:error, {:already_started, _pid}} ->
+                Ankaa.Monitoring.DeviceServer.handle_reading(device_uuid, payload)
+
+              {:error, reason} ->
+                Logger.error("Failed to start worker: #{inspect(reason)}")
+            end
+
+          nil ->
+            Logger.warning("Ignoring message for unregistered device: #{device_uuid}")
         end
-
-        Ankaa.Monitoring.DeviceServer.handle_reading(device.id, payload)
-
-      nil ->
-        Logger.warning("Ignoring message for unregistered device: #{device_uuid}")
-        :ok
     end
 
     {:noreply, state}
@@ -118,8 +128,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
       ssl_opts: [
         verify: :verify_none,
         server_name_indication: String.to_charlist(host),
-        cacertfile: CAStore.file_path(),
-
+        cacertfile: CAStore.file_path()
       ],
       reconnect: true,
       reconnect_interval: 10_000

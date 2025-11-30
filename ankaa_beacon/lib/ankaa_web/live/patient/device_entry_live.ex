@@ -87,7 +87,7 @@ defmodule AnkaaWeb.DeviceEntryLive do
         <div class="px-4 sm:px-6 pt-2">
           <div class="rounded-md bg-yellow-50 p-4 border border-yellow-200">
             <div class="flex">
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <svg
                   class="h-5 w-5 text-yellow-400"
                   viewBox="0 0 20 20"

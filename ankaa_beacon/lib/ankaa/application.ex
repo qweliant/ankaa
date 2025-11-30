@@ -21,7 +21,8 @@ defmodule Ankaa.Application do
       # Start the Registry for alerts
       {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry},
       # Start the Registry for
-      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry}
+      {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry},
+      {DynamicSupervisor, name: Ankaa.Monitoring.DeviceSupervisor, strategy: :one_for_one},
     ]
 
   children =
