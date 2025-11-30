@@ -11,14 +11,12 @@ defmodule Ankaa.Monitoring.DeviceServer do
     GenServer.start_link(__MODULE__, device, name: via_tuple(device.id))
   end
 
-  @impl true
-  def handle_reading(device_id, payload) do
-    GenServer.cast(via_tuple(device_id), {:new_reading, payload})
-  end
-
-  @impl true
   def handle_reading(pid, payload) when is_pid(pid) do
     GenServer.cast(pid, {:new_reading, payload})
+  end
+
+  def handle_reading(device_id, payload) do
+    GenServer.cast(via_tuple(device_id), {:new_reading, payload})
   end
 
   @impl true
@@ -46,13 +44,20 @@ defmodule Ankaa.Monitoring.DeviceServer do
 
     # 1. Parse & Structure the incoming data
     data = Jason.decode!(payload)
-    reading = case device.type do
-      "blood_pressure" -> Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
-      "dialysis" -> Ankaa.Monitoring.DialysisDeviceReading.from_mqtt(data)
-      _ ->
-        Logger.warning("Unknown device type: #{device.type}")
-        Ankaa.Monitoring.BPDeviceReading.from_mqtt(data) # Fallback
-    end
+
+    reading =
+      case device.type do
+        "blood_pressure" ->
+          Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
+
+        "dialysis" ->
+          Ankaa.Monitoring.DialysisDeviceReading.from_mqtt(data)
+
+        _ ->
+          Logger.warning("Unknown device type: #{device.type}")
+          # Fallback
+          Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
+      end
 
     # 2. Analyze the reading for any threshold violations
     violations = Ankaa.Monitoring.ThresholdChecker.check(reading, custom_thresholds)
@@ -69,6 +74,7 @@ defmodule Ankaa.Monitoring.DeviceServer do
         Logger.info(
           "[DeviceServer #{device.id}] New violation detected (was: #{inspect(last_key)}, is: #{inspect(current_key)}). Sending alert."
         )
+
         Ankaa.Alerts.create_alerts_for_violations(patient, violations)
       else
         Logger.info(
@@ -94,5 +100,7 @@ defmodule Ankaa.Monitoring.DeviceServer do
 
   defp via_tuple(device_id), do: {:via, Registry, {Ankaa.Monitoring.DeviceRegistry, device_id}}
   defp pubsub_topic_for(%Ankaa.Monitoring.BPDeviceReading{}), do: "bpdevicereading_readings"
-  defp pubsub_topic_for(%Ankaa.Monitoring.DialysisDeviceReading{}), do: "dialysisdevicereading_readings"
+
+  defp pubsub_topic_for(%Ankaa.Monitoring.DialysisDeviceReading{}),
+    do: "dialysisdevicereading_readings"
 end

@@ -53,7 +53,7 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
     case Registry.lookup(Ankaa.Monitoring.DeviceRegistry, device_uuid) do
       [{pid, _}] ->
-        Ankaa.Monitoring.DeviceServer.handle_reading(device_uuid, payload)
+        Ankaa.Monitoring.DeviceServer.handle_reading(pid, payload)
 
       [] ->
         case Ankaa.Devices.get_device(device_uuid) do
