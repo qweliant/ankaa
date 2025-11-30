@@ -59,7 +59,7 @@ defmodule AnkaaWeb.ToastNotification do
             phx-disable-with="Sending..."
           >
             <.icon name="hero-check" class="-ml-0.5 mr-2 h-5 w-5" />
-            Click
+            Im good, thanks!
           </button>
         </div>
       </div>
