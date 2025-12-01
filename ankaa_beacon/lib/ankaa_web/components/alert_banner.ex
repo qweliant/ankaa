@@ -63,7 +63,7 @@ defmodule AnkaaWeb.AlertBanner do
         {:noreply, socket}
 
       %{alert: found_alert} ->
-        # Stop the 15-minute EMS timer
+        # Stop the EMS timer
         case Alerts.acknowledge_critical_alert(found_alert, user.id) do
           {:ok, _} ->
             patient = Ankaa.Patients.get_patient!(patient_id)
@@ -126,7 +126,7 @@ defmodule AnkaaWeb.AlertBanner do
                           phx-hook="CountdownTimer"
                           data-end-time={ems_contact_time(item.alert)}
                         >
-                          15:00
+                          7:00
                         </span>
                       </span>
                     </div>
@@ -156,7 +156,7 @@ defmodule AnkaaWeb.AlertBanner do
                       <p class="text-sm text-red-800 mb-2">
                         <strong>⚠️ Critical Alert:</strong>
                         This alert requires immediate acknowledgment.
-                        EMS will be automatically contacted in 15 minutes.
+                        EMS will be automatically contacted in 7 minutes.
                       </p>
                       <button
                         phx-click="acknowledge_critical"
@@ -306,7 +306,7 @@ defmodule AnkaaWeb.AlertBanner do
     start_time = DateTime.from_naive!(alert.inserted_at, patient_timezone)
 
     start_time
-    |> DateTime.add(15, :minute)
+    |> DateTime.add(7, :minute)
     |> DateTime.to_iso8601()
   end
 end

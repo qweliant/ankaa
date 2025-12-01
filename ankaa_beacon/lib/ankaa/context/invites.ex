@@ -7,7 +7,7 @@ defmodule Ankaa.Invites do
   alias Ankaa.Repo
 
   alias Ankaa.Mailer
-  
+
   alias Ankaa.Notifications.Invite
   alias Ankaa.Patients
   alias Ankaa.Accounts
@@ -120,11 +120,12 @@ defmodule Ankaa.Invites do
       invite.invitee_role == "caresupport" ->
         accept_as_care_support(user, invite)
 
-      # Check if the role is either "doctor" OR "nurse"
       invite.invitee_role in ["doctor", "nurse"] ->
         accept_as_care_provider(user, invite)
 
-      # It's good practice to have a final "else" clause to catch anything unexpected.
+      invite.invitee_role in ["doctor", "nurse", "clinic_technician"] ->
+        accept_as_colleague(user, invite)
+
       true ->
         {:error, "Invalid or unhandled invite role: #{invite.invitee_role}"}
     end
@@ -140,14 +141,12 @@ defmodule Ankaa.Invites do
 
   defp accept_as_patient(user, invite) do
     Repo.transaction(fn ->
-      # This `with` block now handles both new and existing patients.
       with {:ok, patient_record} <- find_or_create_patient_for_user(user),
            inviter <- Accounts.get_user!(invite.inviter_id),
            {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
-        # This will catch any errors and roll back the transaction.
         {:error, reason} -> Repo.rollback({:error, reason})
       end
     end)
@@ -179,6 +178,31 @@ defmodule Ankaa.Invites do
         {:error, reason} -> Repo.rollback({:error, reason})
       end
     end)
+  end
+
+  defp accept_as_colleague(user, invite) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(
+      :invite,
+      Invite.changeset(invite, %{status: "accepted", accepted_at: DateTime.utc_now()})
+    )
+    |> Ecto.Multi.run(:assign_role, fn _repo, _changes ->
+      Ankaa.Accounts.assign_role(user, invite.invitee_role)
+    end)
+
+    # If the invite was sent by a Patient, link them.
+    # If it was sent by a Doctor to a colleague (patient_id is nil), skip this.
+    |> Ecto.Multi.run(:create_association, fn _repo, _changes ->
+      if invite.patient_id do
+        patient = Ankaa.Patients.get_patient!(invite.patient_id)
+        relationship = invite.invitee_role
+        Ankaa.Patients.create_patient_association(user, patient, relationship)
+      else
+        # No patient attached? It's a pure colleague invite. Do nothing.
+        {:ok, nil}
+      end
+    end)
+    |> Repo.transaction()
   end
 
   defp find_or_create_patient_for_user(user) do

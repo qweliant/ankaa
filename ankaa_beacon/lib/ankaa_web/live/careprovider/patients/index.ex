@@ -38,8 +38,8 @@ defmodule AnkaaWeb.CareProvider.PatientsLive.Index do
           <.link
             navigate={~p"/careprovider/patient/new"}
             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Add Patient
+            >
+            Add Patient or Care Team Member
           </.link>
         </div>
       </div>

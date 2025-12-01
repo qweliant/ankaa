@@ -6,14 +6,14 @@ defmodule Ankaa.Emergency.EMSAlertTimer do
   use GenServer
   require Logger
 
-  @ems_delay :timer.minutes(15)
+  @ems_delay :timer.minutes(7)
 
   def start_link(alert), do: GenServer.start_link(__MODULE__, alert, name: via_tuple(alert.id))
   def cancel(alert_id), do: GenServer.cast(via_tuple(alert_id), :cancel)
 
   @impl true
   def init(alert) do
-    timer_ref = Process.send_after(self(), :call_ems, 10_000)
+    timer_ref = Process.send_after(self(), :call_ems, @ems_delay)
     Logger.info("EMS timer started for alert #{alert.id}, will trigger in #{@ems_delay} ms")
     {:ok, %{alert: alert, timer_ref: timer_ref}}
   end

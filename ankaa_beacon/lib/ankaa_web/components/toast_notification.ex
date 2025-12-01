@@ -19,7 +19,13 @@ defmodule AnkaaWeb.ToastNotification do
         <div
           id="toast-notification"
           class="relative max-w-sm w-full rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-black ring-opacity-5 transition-all transform-gpu"
-          phx-mounted={JS.show(transition: {"ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95", "opacity-100 translate-y-0 sm:scale-100"})}
+          phx-mounted={
+            JS.show(
+              transition:
+                {"ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+                 "opacity-100 translate-y-0 sm:scale-100"}
+            )
+          }
           phx-remove={JS.hide(transition: {"ease-in duration-200", "opacity-100", "opacity-0"})}
         >
           <%= if @current_user.patient do %>
@@ -48,18 +54,30 @@ defmodule AnkaaWeb.ToastNotification do
           New Check-In
         </p>
         <p class="mt-1 text-sm text-gray-700">
-          <%= @toast_message.content %>
+          {@toast_message.content}
         </p>
-        <div class="mt-4 flex">
+
+        <div class="mt-4 flex gap-3">
           <button
             type="button"
-            class="inline-flex w-full items-center justify-center rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-600"
+            class="flex-1 inline-flex items-center justify-center rounded-lg bg-green-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-600"
             phx-click="send_check_in_reply"
             phx-value-message_id={@toast_message.id}
+            phx-value-status="ok"
             phx-disable-with="Sending..."
           >
-            <.icon name="hero-check" class="-ml-0.5 mr-2 h-5 w-5" />
-            Im good, thanks!
+            <.icon name="hero-check" class="-ml-0.5 mr-2 h-5 w-5" /> I'm Good
+          </button>
+
+          <button
+            type="button"
+            class="flex-1 inline-flex items-center justify-center rounded-lg bg-red-100 px-3 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-200"
+            phx-click="send_check_in_reply"
+            phx-value-message_id={@toast_message.id}
+            phx-value-status="not_ok"
+            phx-disable-with="Escalating..."
+          >
+            <.icon name="hero-exclamation-triangle" class="-ml-0.5 mr-2 h-5 w-5" /> Not Feeling Well
           </button>
         </div>
       </div>
@@ -83,7 +101,7 @@ defmodule AnkaaWeb.ToastNotification do
           Patient Replied
         </p>
         <p class="mt-1 text-sm text-gray-700">
-          <%= @toast_message.content %>
+          {@toast_message.content}
         </p>
         <div class="mt-4 flex">
           <button
@@ -91,7 +109,7 @@ defmodule AnkaaWeb.ToastNotification do
             class="inline-flex w-full items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-200"
             phx-click="dismiss_toast"
           >
-           Got it, thanks!
+            Got it, thanks!
           </button>
         </div>
       </div>
@@ -101,6 +119,7 @@ defmodule AnkaaWeb.ToastNotification do
   end
 
   attr :target, :any, required: true
+
   defp dismiss_button(assigns) do
     ~H"""
     <button

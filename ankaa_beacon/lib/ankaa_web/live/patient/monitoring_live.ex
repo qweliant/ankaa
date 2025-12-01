@@ -10,7 +10,6 @@ defmodule AnkaaWeb.MonitoringLive do
   alias Ankaa.Sessions
   alias Ankaa.MQTT
 
-
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -34,7 +33,7 @@ defmodule AnkaaWeb.MonitoringLive do
         devices: devices,
         current_path: "/patient/monitoring",
         latest_bp: nil,
-      latest_dialysis: nil
+        latest_dialysis: nil
       )
 
     socket =
@@ -165,8 +164,32 @@ defmodule AnkaaWeb.MonitoringLive do
           {:error, _changeset} ->
             {:noreply, put_flash(socket, :error, "Failed to end session.")}
         end
+    end
+  end
 
-      end
+  @impl true
+  def handle_event("trigger_panic", _params, socket) do
+    patient = socket.assigns.current_user.patient
+
+    {:ok, alert} =
+      Ankaa.Alerts.create_alert(%{
+        patient_id: patient.id,
+        type: "manual_panic",
+        severity: "critical",
+        message: "🚨 PATIENT TRIGGERED MANUAL PANIC BUTTON",
+        status: "active"
+      })
+
+    case Ankaa.Emergency.trigger_ems(patient, alert) do
+      {:ok, dispatch_id} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "EMERGENCY SERVICES CONTACTED. Dispatch ID: #{dispatch_id}")
+         |> push_event("panic_triggered", %{})}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to contact EMS. Call 911 manually!")}
+    end
   end
 
   @impl true
@@ -195,17 +218,23 @@ defmodule AnkaaWeb.MonitoringLive do
     {:noreply, socket}
   end
 
-  defp map_device_type("blood_pressure"), do: "bp"
-  defp map_device_type("dialysis"), do: "dialysis"
-  # Default to BP if type is unknown or nil
-  defp map_device_type(_), do: "bp"
-
   @impl true
   def render(assigns) do
     ~H"""
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-bold text-slate-900">Patient Monitoring</h1>
+        <div class="fixed bottom-6 left-6 z-50">
+          <button
+            phx-click="trigger_panic"
+            data-confirm="Are you sure? This will contact Emergency Services immediately."
+            class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-full shadow-xl border-4 border-red-800 flex items-center gap-2"
+          >
+            <.icon name="hero-exclamation-triangle-solid" class="w-8 h-8" />
+            <span>EMERGENCY HELP</span>
+          </button>
+        </div>
+        <h1 class=
+        "text-2xl font-bold text-slate-900">Patient Monitoring</h1>
         <div class="flex items-center space-x-4">
           <div class="flex items-center">
             <div class="h-3 w-3 rounded-full bg-emerald-500 mr-2"></div>
@@ -305,4 +334,9 @@ defmodule AnkaaWeb.MonitoringLive do
     </div>
     """
   end
+
+  defp map_device_type("blood_pressure"), do: "bp"
+  defp map_device_type("dialysis"), do: "dialysis"
+  # Default to BP if type is unknown or nil
+  defp map_device_type(_), do: "bp"
 end

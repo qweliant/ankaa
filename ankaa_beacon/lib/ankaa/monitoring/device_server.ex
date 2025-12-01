@@ -29,7 +29,8 @@ defmodule Ankaa.Monitoring.DeviceServer do
        device: device,
        patient: patient,
        thresholds: thresholds,
-       last_violation_key: []
+       last_violation_key: [],
+       violation_start_time: nil
      }}
   end
 
@@ -66,20 +67,29 @@ defmodule Ankaa.Monitoring.DeviceServer do
     #    For example: `[:high_systolic, :high_heart_rate]` or `[]` if normal.
     current_key = Enum.map(violations, & &1.parameter) |> Enum.sort()
 
-    # 4. Trigger alerts ONLY if the state has changed.
-    if current_key != last_key do
-      # The patient's condition has changed.
-      # Only create alerts if the new state is actually a violation.
+    # 4. Compare with the last known violation state
+    if current_key != state.last_violation_key do
+      # staete has changed
       if Enum.any?(violations) do
-        Logger.info(
-          "[DeviceServer #{device.id}] New violation detected (was: #{inspect(last_key)}, is: #{inspect(current_key)}). Sending alert."
-        )
-
+        # New Violation: Send Alert & Start Timer
         Ankaa.Alerts.create_alerts_for_violations(patient, violations)
+
+        {:noreply,
+         %{state | last_violation_key: current_key, violation_start_time: DateTime.utc_now()}}
       else
-        Logger.info(
-          "[DeviceServer #{device.id}] Violation state cleared (was: #{inspect(last_key)}, is: normal)."
-        )
+        # Cleared: Reset Timer
+        {:noreply, %{state | last_violation_key: [], violation_start_time: nil}}
+      end
+    else
+      # SAME STATE (High -> High)
+      # Check if we need to "Nag" (e.g., every 15 mins)
+      if state.violation_start_time && should_nudge?(state.violation_start_time) do
+        Logger.info("Re-sending alert for persistent violation")
+        Ankaa.Alerts.create_alerts_for_violations(patient, violations)
+        # Reset timer to nag again later
+        {:noreply, %{state | violation_start_time: DateTime.utc_now()}}
+      else
+        {:noreply, state}
       end
     end
 
@@ -103,4 +113,8 @@ defmodule Ankaa.Monitoring.DeviceServer do
 
   defp pubsub_topic_for(%Ankaa.Monitoring.DialysisDeviceReading{}),
     do: "dialysisdevicereading_readings"
+
+  defp should_nudge?(start_time) do
+    DateTime.diff(DateTime.utc_now(), start_time, :minute) >= 7
+  end
 end

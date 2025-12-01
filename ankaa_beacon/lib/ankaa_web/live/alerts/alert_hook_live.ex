@@ -16,7 +16,8 @@ defmodule AnkaaWeb.AlertHook do
 
       # Subscribe to user-specific alerts
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:alerts")
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient_alerts:#{user.id}:alerts") # possible bug where everyone gets patient alerts absent a guard.
+      # possible bug where everyone gets patient alerts absent a guard.
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient_alerts:#{user.id}:alerts")
 
       if user.patient do
         Phoenix.PubSub.subscribe(
@@ -31,6 +32,10 @@ defmodule AnkaaWeb.AlertHook do
       end
 
       active_alerts = Alerts.get_active_alerts_for_user(user)
+
+     user.patient && Logger.notice(
+        "Subscribed to alerts for p #{user.patient.id}, found #{length(active_alerts)} active alerts."
+      )
 
       {:cont,
        assign(socket,
