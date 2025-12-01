@@ -5,7 +5,6 @@ defmodule AnkaaWeb.ToastNotification do
   """
   use AnkaaWeb, :live_component
 
-  @doc "Renders the toast if a message is present."
   @impl true
   def render(assigns) do
     ~H"""
@@ -69,15 +68,16 @@ defmodule AnkaaWeb.ToastNotification do
             <.icon name="hero-check" class="-ml-0.5 mr-2 h-5 w-5" /> I'm Good
           </button>
 
-          <button
+         <button
             type="button"
             class="flex-1 inline-flex items-center justify-center rounded-lg bg-red-100 px-3 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-200"
             phx-click="send_check_in_reply"
             phx-value-message_id={@toast_message.id}
             phx-value-status="not_ok"
-            phx-disable-with="Escalating..."
+            phx-disable-with="Alerting..."
           >
-            <.icon name="hero-exclamation-triangle" class="-ml-0.5 mr-2 h-5 w-5" /> Not Feeling Well
+            <.icon name="hero-exclamation-triangle" class="-ml-0.5 mr-2 h-5 w-5" />
+            Not Well
           </button>
         </div>
       </div>

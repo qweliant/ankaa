@@ -89,7 +89,7 @@ IO.puts("   -> Creating care team...")
       email: "pino.companion@example.com",
       password: "password1234",
       first_name: "Pino",
-      last_name: "Cast",
+      last_name: "Creed",
       npi_number: "3333333333",
       practice_state: "Romdeau"
     },

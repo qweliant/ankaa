@@ -60,6 +60,7 @@ defmodule AnkaaWeb.Live.Shared.AlertHandling do
          end)}
       end
 
+      # Handle new message broadcasts for toast notifications
       @impl true
       def handle_info({:new_message, message}, socket) do
         current_user = socket.assigns.current_user
@@ -81,18 +82,59 @@ defmodule AnkaaWeb.Live.Shared.AlertHandling do
         {:noreply, socket}
       end
 
+      # Handle check-in reply from patient toast notification
       @impl true
-      def handle_event("send_check_in_reply", %{"message_id" => message_id}, socket) do
+      def handle_event(
+            "send_check_in_reply",
+            %{"message_id" => message_id, "status" => status},
+            socket
+          ) do
         patient = socket.assigns.current_user.patient
         original_message = socket.assigns.toast_message
 
         if original_message && original_message.id == message_id do
-          Messages.send_check_in_reply(patient, original_message)
-        end
+          if status == "not_ok" do
+            Ankaa.Messages.send_check_in_reply(
+              patient,
+              original_message,
+              "I am not feeling well."
+            )
 
-        {:noreply, assign(socket, :toast_message, nil)}
+            Ankaa.Alerts.create_alert(%{
+              patient_id: patient.id,
+              type: "checkin_distress",
+              severity: "high",
+              message: "Patient reported feeling unwell during check-in response.",
+              status: "active"
+            })
+
+            {:noreply,
+             socket
+             |> assign(:toast_message, nil)
+             |> put_flash(:error, "Your care team has been notified.")}
+          else
+            Ankaa.Messages.send_check_in_reply(
+              patient,
+              original_message,
+              "I'm OK! (Sent in reply to your check-in)"
+            )
+
+            {:noreply,
+             socket
+             |> assign(:toast_message, nil)
+             |> put_flash(:info, "Check-in sent!")}
+          end
+        else
+          # Handle edge case where message doesn't match
+          {:noreply, assign(socket, :toast_message, nil)}
+        end
       end
 
+      def handle_event("send_check_in_reply", %{"message_id" => id}, socket) do
+        handle_event("send_check_in_reply", %{"message_id" => id, "status" => "ok"}, socket)
+      end
+
+      # Handle toast dismissal
       @impl true
       def handle_event("dismiss_toast", _, socket) do
         {:noreply, assign(socket, :toast_message, nil)}

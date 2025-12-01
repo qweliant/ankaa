@@ -103,7 +103,6 @@ defmodule Ankaa.Messages do
         status: "unread"
       }
 
-      # Use the function we created yesterday!
       Notifications.create_notification(notification_attrs)
     end)
     |> Repo.transaction()
@@ -126,9 +125,7 @@ defmodule Ankaa.Messages do
   @doc """
   Creates a reply to a passive "check-in" message.
   """
-  def send_check_in_reply(%Patient{} = patient, %Message{} = original_message) do
-    content = "I'm OK! (Sent in reply to your check-in)"
-
+  def send_check_in_reply(%Patient{} = patient, %Message{} = original_message, content) do
     attrs = %{
       content: content,
       sender_id: patient.user_id, # The *patient* is the sender now
