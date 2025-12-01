@@ -101,9 +101,10 @@ defmodule Ankaa.Alerts do
   - For providers, it gets alerts for all their associated patients.
   - For patients, it gets alerts for themselves.
   """
-  def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
+def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
     cond do
-      user.role in ["doctor", "nurse", "caresupport"] ->
+      # --- PROVIDER LOGIC (Stays the same) ---
+      user.role in ["doctor", "nurse", "caresupport", "clinic_technician", "social_worker"] ->
         query =
           from(n in Notification,
             where: n.user_id == ^user.id,
@@ -120,25 +121,39 @@ defmodule Ankaa.Alerts do
           alert_with_patient = %{alert | patient: patient}
           %{alert: alert_with_patient, notification: notification}
         end)
+
+      # --- PATIENT LOGIC (FIXED) ---
       Accounts.User.patient?(user) ->
         query =
-          from(n in Notification,
-            where: n.user_id == ^user.id,
-            where: n.status in ["unread", "acknowledged"],
-            join: a in Alert,
-            on: n.notifiable_id == a.id and n.notifiable_type == "Alert",
-            where: a.status == "active" and a.severity in ["high", "critical"],
+          from(a in Alert,
+            # 1. Start with ALERTS (The source of truth)
             join: p in assoc(a, :patient),
+
+            # 2. Optional Join: Look for a notification for this user
+            left_join: n in Notification,
+            on: n.notifiable_id == a.id and n.notifiable_type == "Alert" and n.user_id == ^user.id,
+
+            # 3. Alert Filters
+            where: a.patient_id == ^user.patient.id,
+            where: a.status == "active",
+            where: a.severity in ["high", "critical"],
+
+            # 4. Notification Filter:
+            # Show if (No Notification Exists) OR (Notification exists AND is not dismissed)
+            where: is_nil(n.id) or n.status != "dismissed",
+
             order_by: [desc: a.inserted_at],
+            # Select all 3, even if 'n' is nil
             select: {n, a, p}
           )
 
         results = Repo.all(query)
 
-        Enum.map(results, fn {alert, patient} ->
-          # Manually build struct
+        # Fix the tuple match to handle 3 items
+        Enum.map(results, fn {notification, alert, patient} ->
           alert_with_patient = %{alert | patient: patient}
-          %{alert: alert_with_patient, notification: nil}
+          # Pass the notification (which might be nil, and that's okay!)
+          %{alert: alert_with_patient, notification: notification}
         end)
 
       true ->

@@ -594,10 +594,8 @@ defmodule Ankaa.Patients do
   (Used by the 'Add Colleague' dropdown)
   """
   def add_care_team_member_by_id(patient_id, user_id) do
-    # 1. Fetch User
     user = Repo.get(User, user_id)
 
-    # 2. Validate Role & Insert
     with %User{} <- user,
          true <- user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
 
@@ -622,6 +620,33 @@ defmodule Ankaa.Patients do
       {:error, changeset} -> {:error, changeset}
     end
   end
+
+  # Mock function to generate social flags for the UI
+  # In the future, this would query a `social_assessments` table
+  def get_social_status(patient) do
+    case :erlang.phash2(patient.id, 3) do
+      0 -> %{risk: "high", flags: ["Housing Instability", "Insurance Expiring"], assessment_due: true}
+      1 -> %{risk: "medium", flags: ["Caregiver Burnout"], assessment_due: false}
+      _ -> %{risk: "low", flags: [], assessment_due: false}
+    end
+  end
+
+  # lib/ankaa/patients.ex
+
+  @doc """
+  Returns a list of patients associated with the given user via the care network.
+  Used for Social Workers, Community Coordinators, and Technicians to see their caseload.
+  """
+  def list_assigned_patients(%Ankaa.Accounts.User{} = user) do
+    from(p in Patient,
+      join: c in assoc(p, :care_network),
+      where: c.user_id == ^user.id,
+      preload: [:user],
+      order_by: [asc: p.name]
+    )
+    |> Repo.all()
+  end
+
   # Private helpers
   defp list_care_provider_patients(user) do
     CareNetwork

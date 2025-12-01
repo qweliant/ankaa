@@ -172,7 +172,8 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.RoleAuth, :require_social_worker},
         {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
-      live("/dashboard", SocialWorker.DashboardLive, :index)
+      live("/dashboard", SocialWorker.Index, :index)
+      live("/patient/:id", SocialWorker.Show, :show)
     end
   end
 end
