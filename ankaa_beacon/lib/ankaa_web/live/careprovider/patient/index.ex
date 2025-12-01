@@ -4,13 +4,16 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
 
   alias Ankaa.Patients
   alias Ankaa.Sessions
+  alias Ankaa.Patients.TreatmentPlan
 
   @impl true
   def mount(%{"id" => patient_id}, _session, socket) do
+    current_user = socket.assigns.current_user
     patient = Patients.get_patient!(patient_id)
     latest_session = Sessions.get_latest_session_for_patient(patient)
     recent_sessions = Sessions.list_sessions_for_patient(patient.id)
-
+    available_colleagues = Patients.list_available_colleagues(current_user, patient.id)
+    care_team = Patients.list_care_team(patient.id)
     age = calculate_age(patient.date_of_birth)
 
     {status, last_session} =
@@ -19,19 +22,20 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
         nil -> {"No Sessions", nil}
       end
 
+    treatment_plan =
+      case Patients.get_treatment_plan(patient.id) do
+        nil -> %TreatmentPlan{patient_id: patient.id}
+        plan -> plan
+      end
+
+    plan_form = to_form(Patients.change_treatment_plan(treatment_plan))
+
+    # Placeholder Vitals (These should eventually come from DeviceReadings, but fine for now)
     vitals = %{
       blood_pressure: "135/88 mmHg",
       heart_rate: "82 bpm",
       oxygen_saturation: "97%",
       last_updated: DateTime.utc_now() |> DateTime.add(-15, :minute)
-    }
-
-    treatment_plan = %{
-      frequency: "3x per week (Mon, Wed, Fri)",
-      duration: "4 hours",
-      dialysate_flow: "500 mL/min",
-      blood_flow: "400 mL/min",
-      notes: "Patient is stable on current settings. Monitor for cramping."
     }
 
     {:ok,
@@ -43,7 +47,12 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
        recent_sessions: recent_sessions,
        vitals: vitals,
        treatment_plan: treatment_plan,
-       show_chat: false
+       plan_form: plan_form,
+       editing_plan: false,
+       show_chat: false,
+       care_team: care_team,
+       available_colleagues: available_colleagues,
+       team_form: to_form(%{"user_id" => ""})
      )}
   end
 
@@ -58,14 +67,24 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
             class="inline-flex items-center justify-center rounded-full bg-white p-2 text-gray-400 shadow-sm ring-1 ring-gray-900/10 hover:bg-gray-50 hover:text-gray-600 -ml-2"
           >
             <span class="sr-only">Go back</span>
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+              />
             </svg>
           </.link>
           <div>
-            <h1 class="text-xl font-semibold text-gray-900">Patient Details: <%= @patient.name %></h1>
+            <h1 class="text-xl font-semibold text-gray-900">Patient Details: {@patient.name}</h1>
             <p class="mt-2 text-sm text-gray-700">
-              Age: <%= @age %> | Status: <%= @status %>
+              Age: {@age} | Status: {@status}
             </p>
           </div>
         </div>
@@ -75,7 +94,7 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
             phx-click="toggle_chat"
             class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
           >
-            Chat with <%= @patient.name %>
+            Chat with {@patient.name}
           </button>
         </div>
       </div>
@@ -88,14 +107,14 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
               <dt class="text-sm font-medium text-gray-500">Last Session Status</dt>
               <dd class="mt-1">
                 <span class={status_badge_color(@status)}>
-                  <%= @status %>
+                  {@status}
                 </span>
               </dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Last Session Start</dt>
               <dd class="mt-1 text-sm text-gray-900">
-                <%= if @last_session, do: Calendar.strftime(@last_session, "%Y-%m-%d %H:%M"), else: "N/A" %>
+                {if @last_session, do: Calendar.strftime(@last_session, "%Y-%m-%d %H:%M"), else: "N/A"}
               </dd>
             </div>
           </dl>
@@ -103,47 +122,216 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
 
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-medium text-gray-900">Current Vitals</h2>
-          <p class="text-xs text-gray-400">Last updated: <%= Calendar.strftime(@vitals.last_updated, "%H:%M") %></p>
+          <p class="text-xs text-gray-400">
+            Last updated: {Calendar.strftime(@vitals.last_updated, "%H:%M")}
+          </p>
           <dl class="mt-4 grid grid-cols-3 gap-4">
             <div>
               <dt class="text-sm font-medium text-gray-500">Blood Pressure</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @vitals.blood_pressure %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@vitals.blood_pressure}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Heart Rate</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @vitals.heart_rate %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@vitals.heart_rate}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">O₂ Saturation</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @vitals.oxygen_saturation %></dd>
+              <dd class="mt-1 text-sm text-gray-900">{@vitals.oxygen_saturation}</dd>
             </div>
           </dl>
         </div>
 
-        <div class="bg-white shadow rounded-lg p-6 lg:col-span-2">
-          <h2 class="text-lg font-medium text-gray-900">Treatment Plan</h2>
-          <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt class="text-sm font-medium text-gray-500">Frequency</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @treatment_plan.frequency %></dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500">Duration</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @treatment_plan.duration %></dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500">Dialysate Flow</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @treatment_plan.dialysate_flow %></dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500">Blood Flow</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @treatment_plan.blood_flow %></dd>
-            </div>
-            <div class="sm:col-span-2 lg:col-span-4">
-              <dt class="text-sm font-medium text-gray-500">Notes</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @treatment_plan.notes %></dd>
-            </div>
-          </dl>
+        <div class="bg-white shadow rounded-lg p-6 lg:col-span-3 mt-8">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">Care Team</h2>
+
+          <div class="flow-root mb-6">
+            <ul role="list" class="-my-5 divide-y divide-gray-200">
+              <%= for member <- @care_team do %>
+                <li class="py-4">
+                  <div class="flex items-center space-x-4">
+                    <div class="shrink-0">
+                      <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                        {String.slice(member.user.email, 0, 2) |> String.upcase()}
+                      </span>
+                    </div>
+                    <%= if member.user.role in ["caresupport"] do %>
+                      <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                        Family
+                      </span>
+                    <% else %>
+                      <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                        Clinical
+                      </span>
+                    <% end %>
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-sm font-medium text-gray-900">
+                        {member.user.first_name} {member.user.last_name}
+                      </p>
+                      <p class="truncate text-sm text-gray-500">
+                        {String.capitalize(member.relationship || member.user.role)} • {member.user.email}
+                      </p>
+                    </div>
+                    <div>
+                      <button
+                        phx-click="remove_team_member"
+                        phx-value-id={member.id}
+                        class="text-sm text-red-600 hover:text-red-900"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+
+          <div class="bg-gray-50 p-4 rounded-md">
+            <h3 class="text-sm font-medium text-gray-900 mb-2">Add Colleague to Patient</h3>
+            <form phx-submit="add_team_member" class="flex gap-3">
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter colleague's email..."
+                required
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6"
+              />
+              <button
+                type="submit"
+                class="rounded-md bg-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500"
+              >
+                Add
+              </button>
+            </form>
+            <p class="text-xs text-gray-500 mt-2">
+              User must already have an account. If not, <.link
+                navigate={~p"/careprovider/patient/new"}
+                class="text-purple-600 underline"
+              >invite them first</.link>.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white shadow rounded-lg p-6 lg:col-span-2 relative">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-medium text-gray-900">Treatment Plan</h2>
+
+            <%= if !@editing_plan do %>
+              <button
+                phx-click="edit_plan"
+                class="text-sm text-purple-600 hover:text-purple-900 font-medium flex items-center"
+              >
+                <.icon name="hero-pencil-square" class="w-4 h-4 mr-1" /> Edit
+              </button>
+            <% end %>
+          </div>
+
+          <%= if @editing_plan do %>
+            <.simple_form for={@plan_form} phx-submit="save_plan" class="mt-0">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <.input field={@plan_form[:frequency]} label="Frequency" placeholder="e.g. 3x/week" />
+                <.input field={@plan_form[:duration_minutes]} label="Duration (min)" type="number" />
+                <.input
+                  field={@plan_form[:blood_flow_rate]}
+                  label="Blood Flow (ml/min)"
+                  type="number"
+                />
+                <.input
+                  field={@plan_form[:dialysate_flow_rate]}
+                  label="Dialysate Flow (ml/min)"
+                  type="number"
+                />
+                <.input
+                  field={@plan_form[:dry_weight]}
+                  label="Dry Weight (kg)"
+                  type="number"
+                  step="0.1"
+                />
+                <.input
+                  field={@plan_form[:target_ultrafiltration]}
+                  label="Target UF (L)"
+                  type="number"
+                  step="0.1"
+                />
+                <.input
+                  field={@plan_form[:access_type]}
+                  label="Access Type"
+                  type="select"
+                  options={["Fistula", "Graft", "CVC"]}
+                />
+              </div>
+
+              <div class="mt-4">
+                <.input field={@plan_form[:notes]} label="Clinical Notes" type="textarea" rows="3" />
+              </div>
+
+              <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                <button
+                  type="button"
+                  phx-click="cancel_edit"
+                  class="text-sm font-semibold text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <.button>Save Changes</.button>
+              </div>
+            </.simple_form>
+          <% else %>
+            <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Frequency</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900">
+                  {@treatment_plan.frequency || "-"}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Duration</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900">
+                  {if @treatment_plan.duration_minutes,
+                    do: "#{@treatment_plan.duration_minutes} min",
+                    else: "-"}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Dry Weight</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900">
+                  {if @treatment_plan.dry_weight, do: "#{@treatment_plan.dry_weight} kg", else: "-"}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Access Type</dt>
+                <dd class="mt-1 text-sm font-semibold text-gray-900">
+                  {@treatment_plan.access_type || "-"}
+                </dd>
+              </div>
+
+              <div class="pt-2 border-t sm:col-span-2 lg:col-span-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase">Blood Flow</dt>
+                  <dd class="text-sm text-gray-900">{@treatment_plan.blood_flow_rate || "-"}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase">Dialysate Flow</dt>
+                  <dd class="text-sm text-gray-900">{@treatment_plan.dialysate_flow_rate || "-"}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase">Target UF</dt>
+                  <dd class="text-sm text-gray-900">
+                    {@treatment_plan.target_ultrafiltration || "-"}
+                  </dd>
+                </div>
+              </div>
+
+              <div class="sm:col-span-2 lg:col-span-4 bg-gray-50 rounded-md p-3 mt-2">
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Clinical Notes
+                </dt>
+                <dd class="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {@treatment_plan.notes || "No notes added."}
+                </dd>
+              </div>
+            </dl>
+          <% end %>
         </div>
 
         <div class="bg-white shadow rounded-lg p-6 lg:col-span-2">
@@ -171,14 +359,14 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
                   <%= for session <- @recent_sessions do %>
                     <tr>
                       <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900 sm:pl-0">
-                        <%= Calendar.strftime(session.start_time, "%Y-%m-%d %H:%M") %>
+                        {Calendar.strftime(session.start_time, "%Y-%m-%d %H:%M")}
                       </td>
                       <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <%= format_session_duration(session) %>
+                        {format_session_duration(session)}
                       </td>
                       <td class="whitespace-nowrap px-3 py-4 text-sm">
                         <span class={status_badge_color(String.capitalize(session.status))}>
-                          <%= String.capitalize(session.status) %>
+                          {String.capitalize(session.status)}
                         </span>
                       </td>
                     </tr>
@@ -200,6 +388,71 @@ defmodule AnkaaWeb.CareProvider.PatientDetailsLive.Index do
   @impl true
   def handle_event("toggle_chat", _params, socket) do
     {:noreply, assign(socket, show_chat: !socket.assigns.show_chat)}
+  end
+
+  @impl true
+  def handle_event("edit_plan", _, socket) do
+    {:noreply, assign(socket, editing_plan: true)}
+  end
+
+  @impl true
+  def handle_event("cancel_edit", _, socket) do
+    {:noreply,
+     socket
+     |> assign(editing_plan: false)
+     |> assign(plan_form: to_form(TreatmentPlan.changeset(socket.assigns.treatment_plan, %{})))}
+  end
+
+  @impl true
+  def handle_event("save_plan", %{"treatment_plan" => params}, socket) do
+    # Logic to update/create the plan via Context
+    case Patients.update_treatment_plan(
+           socket.assigns.treatment_plan,
+           params,
+           socket.assigns.current_user
+         ) do
+      {:ok, updated_plan} ->
+        {:noreply,
+         socket
+         |> assign(treatment_plan: updated_plan)
+         |> assign(editing_plan: false)
+         |> put_flash(:info, "Treatment plan updated.")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, plan_form: to_form(changeset))}
+    end
+  end
+
+  @impl true
+  def handle_event("add_team_member", %{"email" => email}, socket) do
+    patient = socket.assigns.patient
+
+    case Patients.add_care_team_member_by_email(patient.id, email) do
+      {:ok, _association} ->
+        # Refresh list
+        updated_team = Patients.list_care_team(patient.id)
+
+        {:noreply,
+         socket
+         |> assign(care_team: updated_team)
+         |> put_flash(:info, "Team member added successfully.")
+         |> assign(team_form: to_form(%{"email" => ""}))}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, "This user is already on the team.")}
+
+      {:error, msg} ->
+        {:noreply, put_flash(socket, :error, msg)}
+    end
+  end
+
+  @impl true
+  def handle_event("remove_team_member", %{"id" => association_id}, socket) do
+    # You'll need to implement delete_care_network_member in Context if not exists
+    Patients.delete_care_network_member(association_id)
+
+    updated_team = Patients.list_care_team(socket.assigns.patient.id)
+    {:noreply, assign(socket, care_team: updated_team)}
   end
 
   defp calculate_age(nil), do: "N/A"

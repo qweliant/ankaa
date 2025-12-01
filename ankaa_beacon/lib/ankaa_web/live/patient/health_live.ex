@@ -5,6 +5,7 @@ defmodule AnkaaWeb.HealthLive do
   alias Ankaa.Patients
 
   require Logger
+
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
@@ -20,6 +21,8 @@ defmodule AnkaaWeb.HealthLive do
       else
         Patients.create_mood_tracker_changeset(patient)
       end
+
+    treatment_plan = Patients.get_treatment_plan(patient.id)
 
     dummy_data = %{
       patient_info: %{
@@ -98,7 +101,8 @@ defmodule AnkaaWeb.HealthLive do
        data: dummy_data,
        current_path: "/patient/health",
        todays_mood_entry: todays_mood_entry,
-       mood_form: mood_form
+       mood_form: mood_form,
+       treatment_plan: treatment_plan
      )}
   end
 
@@ -107,6 +111,7 @@ defmodule AnkaaWeb.HealthLive do
     patient = socket.assigns.current_user.patient
     todays_mood_entry = Patients.get_mood_entry_for_today(patient.id)
     mood_form = Patients.get_mood_tracker_changeset(todays_mood_entry)
+
     {:noreply,
      socket
      |> assign(todays_mood_entry: todays_mood_entry, mood_form: mood_form)
@@ -126,31 +131,58 @@ defmodule AnkaaWeb.HealthLive do
       />
       <!-- Patient Information -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
-        <div class="px-4 py-5 sm:px-6">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h3 class="text-lg leading-6 font-medium text-gray-900">My Session Information</h3>
-          <p class="mt-1 max-w-2xl text-sm text-gray-500">Treatment schedule and targets</p>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">Prescribed treatment targets</p>
         </div>
-        <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
-          <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+
+        <div class="px-4 py-5 sm:px-6">
+          <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Dialysis Schedule</dt>
-              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.dialysis_schedule}</dd>
+              <dd class="mt-1 text-lg font-semibold text-purple-700">
+                {if @treatment_plan, do: @treatment_plan.frequency, else: "--"}
+              </dd>
             </div>
+
             <div class="sm:col-span-1">
-              <dt class="text-sm font-medium text-gray-500">Treatment Duration</dt>
-              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.treatment_duration}</dd>
+              <dt class="text-sm font-medium text-gray-500">Duration</dt>
+              <dd class="mt-1 text-lg font-semibold text-gray-900">
+                <%= if @treatment_plan && @treatment_plan.duration_minutes do %>
+                  {@treatment_plan.duration_minutes} mins
+                <% else %>
+                  --
+                <% end %>
+              </dd>
             </div>
+
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Access Type</dt>
-              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.access_type}</dd>
+              <dd class="mt-1 text-lg font-semibold text-gray-900">
+                {if @treatment_plan, do: @treatment_plan.access_type, else: "--"}
+              </dd>
             </div>
+
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Dry Weight</dt>
-              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.dry_weight}</dd>
+              <dd class="mt-1 text-lg font-semibold text-gray-900">
+                <%= if @treatment_plan && @treatment_plan.dry_weight do %>
+                  {@treatment_plan.dry_weight} kg
+                <% else %>
+                  --
+                <% end %>
+              </dd>
             </div>
+
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Target UF</dt>
-              <dd class="mt-1 text-sm text-gray-900">{@data.patient_info.target_uf}</dd>
+              <dd class="mt-1 text-lg font-semibold text-gray-900">
+                <%= if @treatment_plan && @treatment_plan.target_ultrafiltration do %>
+                  {@treatment_plan.target_ultrafiltration} L
+                <% else %>
+                  --
+                <% end %>
+              </dd>
             </div>
           </dl>
         </div>

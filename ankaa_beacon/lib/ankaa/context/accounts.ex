@@ -487,4 +487,23 @@ defmodule Ankaa.Accounts do
     |> User.provider_profile_changeset(attrs)
     |> Repo.update()
   end
+
+  @doc """
+  Assigns an existing user to an organization.
+  """
+  def assign_organization(%User{} = user, organization_id) do
+    user
+    |> User.organization_changeset(%{organization_id: organization_id})
+    |> Repo.update()
+  end
+
+  @doc """
+  Creates a new organization.
+  (Useful for the first Doctor registering a clinic)
+  """
+  def create_organization(attrs \\ %{}) do
+    %Ankaa.Accounts.Organization{}
+    |> Ankaa.Accounts.Organization.changeset(attrs)
+    |> Repo.insert()
+  end
 end

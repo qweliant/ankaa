@@ -4,6 +4,7 @@ defmodule Ankaa.Accounts.User do
   """
   use Ecto.Schema
   import Ecto.Changeset
+  alias Ankaa.Accounts.Organization
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -36,7 +37,7 @@ defmodule Ankaa.Accounts.User do
     has_many(:alerts_dismissed, Ankaa.Notifications.Alert, foreign_key: :dismissed_by_user_id)
 
     has_many(:notifications, Ankaa.Notifications.Notification)
-
+    belongs_to(:organization, Organization)
     timestamps(type: :utc_datetime)
   end
 
@@ -246,5 +247,15 @@ defmodule Ankaa.Accounts.User do
     |> validate_required([:first_name, :last_name])
     |> validate_format(:npi_number, ~r/^\d{10}$/, message: "must be a valid 10-digit NPI")
     |> unique_constraint(:npi_number, message: "this NPI is already registered")
+  end
+
+  @doc """
+  Changeset for assigning a user to an organization.
+  """
+  def organization_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:organization_id])
+    |> validate_required([:organization_id])
+    |> foreign_key_constraint(:organization_id)
   end
 end

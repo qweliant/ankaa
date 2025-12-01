@@ -40,7 +40,6 @@ defmodule Ankaa.Invites do
   @doc """
   Creates a new invite, saves its hash, and delivers the invite email in a single transaction.
   """
-  @dialyzer {:nowarn_function, create_invite: 2}
   def create_invite(inviter_user, invite_attrs) do
     token = :crypto.strong_rand_bytes(@rand_size) |> Base.url_encode64(padding: false)
     expires_at = DateTime.add(DateTime.utc_now(), 7, :day)
@@ -48,6 +47,7 @@ defmodule Ankaa.Invites do
     final_attrs =
       invite_attrs
       |> Map.put("inviter_id", inviter_user.id)
+      |> Map.put("organization_id", inviter_user.organization_id)
       |> Map.put("token", token)
       |> Map.put("expires_at", expires_at)
       |> Map.put("status", "pending")
@@ -189,14 +189,21 @@ defmodule Ankaa.Invites do
     |> Ecto.Multi.run(:assign_role, fn _repo, _changes ->
       Ankaa.Accounts.assign_role(user, invite.invitee_role)
     end)
-
+    |> Ecto.Multi.run(:join_organization, fn _repo, _changes ->
+      if invite.organization_id do
+        Accounts.assign_organization(user, invite.organization_id)
+      else
+        # Inviter has no org, do nothing
+        {:ok, user}
+      end
+    end)
     # If the invite was sent by a Patient, link them.
     # If it was sent by a Doctor to a colleague (patient_id is nil), skip this.
     |> Ecto.Multi.run(:create_association, fn _repo, _changes ->
       if invite.patient_id do
-        patient = Ankaa.Patients.get_patient!(invite.patient_id)
+        patient = Patients.get_patient!(invite.patient_id)
         relationship = invite.invitee_role
-        Ankaa.Patients.create_patient_association(user, patient, relationship)
+        Patients.create_patient_association(user, patient, relationship)
       else
         # No patient attached? It's a pure colleague invite. Do nothing.
         {:ok, nil}

@@ -7,7 +7,7 @@ defmodule Ankaa.Patients do
   import Ecto.Query
 
   alias Ankaa.Repo
-  alias Ankaa.Patients.{Patient, CareNetwork, MoodTracker}
+  alias Ankaa.Patients.{Patient, CareNetwork, MoodTracker, TreatmentPlan}
   alias Ankaa.Accounts.User
   alias Ankaa.Notifications.Invite
   alias Ankaa.Sessions
@@ -224,6 +224,33 @@ defmodule Ankaa.Patients do
     %MoodTracker{}
     |> MoodTracker.changeset(params)
     |> Repo.insert()
+  end
+
+  @doc """
+  Gets the treatment plan for a specific patient.
+  Returns nil if no plan exists.
+  """
+  def get_treatment_plan(patient_id) do
+    Repo.get_by(TreatmentPlan, patient_id: patient_id)
+    |> Repo.preload(:prescribed_by)
+  end
+
+  @doc """
+  Updates an existing treatment plan or creates a new one if it doesn't exist.
+  Tracks which user made the change.
+  """
+  def update_treatment_plan(%TreatmentPlan{} = plan, attrs, user) do
+    plan
+    |> TreatmentPlan.changeset(attrs)
+    |> Ecto.Changeset.put_change(:prescribed_by_id, user.id)
+    |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Helper for the UI: Returns a changeset for the plan.
+  """
+  def change_treatment_plan(%TreatmentPlan{} = plan, attrs \\ %{}) do
+    TreatmentPlan.changeset(plan, attrs)
   end
 
   # Patient Association functions
@@ -476,6 +503,125 @@ defmodule Ankaa.Patients do
     |> Repo.update()
   end
 
+  @doc """
+  Lists available colleagues in the same organization who are not yet assigned to the patient's care network.
+
+  ## Examples
+
+      iex> list_available_colleagues(doctor_user, patient_id)
+      [%User{}, ...]
+
+  """
+  def list_available_colleagues(%User{} = doctor, patient_id) do
+    # If doctor has no org, they have no colleagues to pick from
+    if is_nil(doctor.organization_id) do
+      []
+    else
+      # Get all users in the same org
+      # Filter out those who are already in the care_network for this patient
+      # Filter out the doctor themselves
+
+      assigned_user_ids =
+        from(c in CareNetwork, where: c.patient_id == ^patient_id, select: c.user_id)
+
+      from(u in User,
+        where: u.organization_id == ^doctor.organization_id,
+        where: u.id != ^doctor.id,
+        where: u.id not in subquery(assigned_user_ids),
+        where: u.role in ["doctor", "nurse", "clinic_technician", "social_worker"],
+        order_by: [asc: u.last_name]
+      )
+      |> Repo.all()
+    end
+  end
+
+  @doc """
+  Adds an existing medical professional to a patient's care network by email.
+  """
+  def add_care_team_member_by_email(patient_id, email) do
+    with %User{} = user <- Ankaa.Accounts.get_user_by_email(email),
+         true <- user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
+      # Define permissions based on role
+      permissions =
+        case user.role do
+          "clinic_technician" -> ["read_vitals", "receive_alerts"]
+          _ -> ["read_vitals", "edit_plan", "receive_alerts"]
+        end
+
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: user.id,
+        patient_id: patient_id,
+        # Use their role as the relationship label
+        relationship: user.role,
+        permissions: permissions
+      })
+      |> Repo.insert()
+    else
+      nil -> {:error, "User not found with that email."}
+      false -> {:error, "User is not a medical professional."}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Lists all care network members for a patient who are NOT the patient themselves.
+  """
+  def list_care_team(patient_id) do
+    from(c in CareNetwork,
+      join: u in assoc(c, :user),
+      where: c.patient_id == ^patient_id,
+      # Exclude the patient record itself
+      where: u.role != "patient",
+      preload: [user: u]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Removes a member from the care network by the association ID.
+  """
+  def delete_care_network_member(association_id) do
+    # We use get here to avoid crashing if the user double-clicks delete
+    case Repo.get(CareNetwork, association_id) do
+      nil -> {:error, :not_found}
+      association -> Repo.delete(association)
+    end
+  end
+
+  @doc """
+  Adds an existing medical professional to a patient's care network by User ID.
+  (Used by the 'Add Colleague' dropdown)
+  """
+  def add_care_team_member_by_id(patient_id, user_id) do
+    # 1. Fetch User
+    user = Repo.get(User, user_id)
+
+    # 2. Validate Role & Insert
+    with %User{} <- user,
+         true <- user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
+
+      # Define permissions based on role
+      permissions = case user.role do
+        "clinic_technician" -> ["read_vitals", "receive_alerts"]
+        # Doctors, Nurses, Social Workers get edit access
+        _ -> ["read_vitals", "edit_plan", "receive_alerts"]
+      end
+
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: user.id,
+        patient_id: patient_id,
+        relationship: user.role,
+        permissions: permissions
+      })
+      |> Repo.insert()
+    else
+      nil -> {:error, "User not found."}
+      false -> {:error, "User is not a medical professional."}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
   # Private helpers
   defp list_care_provider_patients(user) do
     CareNetwork

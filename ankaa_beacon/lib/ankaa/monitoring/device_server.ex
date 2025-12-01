@@ -40,7 +40,7 @@ defmodule Ankaa.Monitoring.DeviceServer do
       device: device,
       patient: patient,
       thresholds: custom_thresholds,
-      last_violation_key: last_key
+      last_violation_key: last_violation_key
     } = state
 
     # 1. Parse & Structure the incoming data
@@ -68,7 +68,7 @@ defmodule Ankaa.Monitoring.DeviceServer do
     current_key = Enum.map(violations, & &1.parameter) |> Enum.sort()
 
     # 4. Compare with the last known violation state
-    if current_key != state.last_violation_key do
+    if current_key != last_violation_key do
       # staete has changed
       if Enum.any?(violations) do
         # New Violation: Send Alert & Start Timer
