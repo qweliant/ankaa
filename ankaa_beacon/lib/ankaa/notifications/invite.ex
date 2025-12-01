@@ -58,7 +58,7 @@ defmodule Ankaa.Notifications.Invite do
     |> validate_inclusion(:invitee_role, @roles)
     |> foreign_key_constraint(:inviter_id)
     |> foreign_key_constraint(:patient_id)
-    |> validate_organization_required_for_staff()
+    # |> validate_organization_required_for_staff()
   end
 
   defp validate_organization_required_for_staff(changeset) do

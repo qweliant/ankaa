@@ -96,4 +96,16 @@ defmodule Ankaa.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  def organization_fixture(attrs \\ %{}) do
+    {:ok, org} =
+      attrs
+      |> Enum.into(%{
+        name: "Test Clinic",
+        type: "clinic"
+      })
+      |> Ankaa.Accounts.create_organization()
+
+    org
+  end
 end

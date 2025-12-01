@@ -1,4 +1,7 @@
 defmodule Ankaa.InvitesTest do
+  @moduledoc """
+  Tests for the Invites context.
+  """
   use Ankaa.DataCase, async: true
 
   alias Ankaa.Invites
