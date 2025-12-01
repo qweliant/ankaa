@@ -32,13 +32,12 @@ defmodule AnkaaWeb.CareProvider.PatientLive.New do
       "invitee_role" => invitee_role, # <--- Dynamic Role
       "patient_id" => nil
     }
+    Logger.info("Invite attrs: #{inspect(attrs)}")
 
     cond do
-      # 1. Check if user exists AND matches the role we are trying to invite
       existing_user && invitee_role == "patient" && Accounts.User.patient?(existing_user) ->
         {:noreply, put_flash(socket, :error, "A user with this email is already registered as a patient.")}
 
-      # 2. Generic existing user check
       existing_user && existing_user.role != nil ->
          {:noreply, put_flash(socket, :error, "A user with this email is already registered.")}
 

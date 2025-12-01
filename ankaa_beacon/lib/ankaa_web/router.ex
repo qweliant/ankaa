@@ -163,7 +163,6 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # 3. NEW: Social Worker routes
   scope "/case", AnkaaWeb do
     pipe_through([:browser, :require_authenticated_user])
 

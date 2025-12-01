@@ -6,7 +6,15 @@ defmodule Ankaa.Notifications.Invite do
   import Ecto.Changeset
 
   @statuses ["pending", "accepted", "expired"]
-  @roles ["caresupport", "nurse", "doctor", "patient"]
+  @roles [
+    "caresupport",
+    "nurse",
+    "doctor",
+    "patient",
+    "clinic_technician",
+    "community_coordinator",
+    "social_worker"
+  ]
 
   schema "invites" do
     field(:invitee_email, :string)
