@@ -735,9 +735,8 @@ def disclaimer_banner(assigns) do
       class="relative z-50 bg-yellow-400 p-3 text-center text-sm font-medium text-yellow-900"
     >
       <p>
-        <span class="font-bold">Experimental App:</span>
-        This is a pre-alpha application and is NOT a medical device. In an emergency, always call 911.
-
+        <span class="font-bold">Safety Notice:</span>
+         Safehemo is a Pre-Alpha Demonstration. It is <span class="font-bold">NOT</span> a medical device and does not connect to emergency services. In an emergency, call 911 immediately.
         <.link href="/disclaimer" class="font-bold underline hover:text-yellow-700">
           Learn more
         </.link>

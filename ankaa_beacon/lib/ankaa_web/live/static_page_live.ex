@@ -7,8 +7,16 @@ defmodule AnkaaWeb.StaticPageLive do
 
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    socket = mount_current_user(socket, session)
     {:ok, assign(socket, :page_title, "Legal")}
+  end
+
+  defp mount_current_user(socket, session) do
+    user_token = session["user_token"]
+    user = user_token && Ankaa.Accounts.get_user_by_session_token(user_token)
+
+    assign(socket, :current_user, user) # Assigns user struct OR nil
   end
 
   # This render clause handles the :privacy action

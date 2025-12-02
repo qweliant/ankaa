@@ -61,15 +61,15 @@ defmodule Ankaa.Notifications.Invite do
     # |> validate_organization_required_for_staff()
   end
 
-  defp validate_organization_required_for_staff(changeset) do
-    role = get_field(changeset, :invitee_role)
-    org_id = get_field(changeset, :organization_id)
+  # defp validate_organization_required_for_staff(changeset) do
+  #   role = get_field(changeset, :invitee_role)
+  #   org_id = get_field(changeset, :organization_id)
 
-    # If inviting a staff member, Organization ID is required
-    if role in ["doctor", "nurse", "clinic_technician"] and is_nil(org_id) do
-      add_error(changeset, :organization_id, "must be present when inviting staff")
-    else
-      changeset
-    end
-  end
+  #   # If inviting a staff member, Organization ID is required
+  #   if role in ["doctor", "nurse", "clinic_technician"] and is_nil(org_id) do
+  #     add_error(changeset, :organization_id, "must be present when inviting staff")
+  #   else
+  #     changeset
+  #   end
+  # end
 end
