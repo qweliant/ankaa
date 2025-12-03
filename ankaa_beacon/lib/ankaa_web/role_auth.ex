@@ -69,6 +69,18 @@ def on_mount(:require_doctor, _params, _session, socket) do
     end
   end
 
+  def on_mount(:require_org_staff, _params, _session, socket) do
+    allowed_roles = [
+      "doctor",
+      "nurse",
+      "clinic_technician",
+      "social_worker",
+      "community_coordinator",
+      "admin"
+    ]
+    on_mount(:require_role, allowed_roles, nil, nil, socket)
+  end
+  
   defp mount_current_user(socket) do
     # Get the session from assigns if available
     session = socket.assigns[:session] || %{}

@@ -279,14 +279,27 @@ defmodule Ankaa.Patients do
         User.admin?(user)
 
     if is_authorized_provider do
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: user.id,
-        patient_id: patient.id,
-        relationship: relationship,
-        permissions: default_permissions
-      })
-      |> Repo.insert()
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(
+        :association,
+        CareNetwork.changeset(%CareNetwork{}, %{
+          user_id: user.id,
+          patient_id: patient.id,
+          relationship: relationship,
+          permissions: default_permissions
+        })
+      )
+
+      |> Ecto.Multi.run(:add_to_community, fn _repo, _changes ->
+        patient_user = Ankaa.Accounts.get_user!(patient.user_id)
+
+        if user.organization_id && is_nil(patient_user.organization_id) do
+          Ankaa.Accounts.assign_organization(patient_user, user.organization_id)
+        else
+          {:ok, patient_user}
+        end
+      end)
+      |> Repo.transaction()
     else
       {:error, :unauthorized_role}
     end
@@ -598,13 +611,13 @@ defmodule Ankaa.Patients do
 
     with %User{} <- user,
          true <- user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
-
       # Define permissions based on role
-      permissions = case user.role do
-        "clinic_technician" -> ["read_vitals", "receive_alerts"]
-        # Doctors, Nurses, Social Workers get edit access
-        _ -> ["read_vitals", "edit_plan", "receive_alerts"]
-      end
+      permissions =
+        case user.role do
+          "clinic_technician" -> ["read_vitals", "receive_alerts"]
+          # Doctors, Nurses, Social Workers get edit access
+          _ -> ["read_vitals", "edit_plan", "receive_alerts"]
+        end
 
       %CareNetwork{}
       |> CareNetwork.changeset(%{
@@ -625,9 +638,18 @@ defmodule Ankaa.Patients do
   # In the future, this would query a `social_assessments` table
   def get_social_status(patient) do
     case :erlang.phash2(patient.id, 3) do
-      0 -> %{risk: "high", flags: ["Housing Instability", "Insurance Expiring"], assessment_due: true}
-      1 -> %{risk: "medium", flags: ["Caregiver Burnout"], assessment_due: false}
-      _ -> %{risk: "low", flags: [], assessment_due: false}
+      0 ->
+        %{
+          risk: "high",
+          flags: ["Housing Instability", "Insurance Expiring"],
+          assessment_due: true
+        }
+
+      1 ->
+        %{risk: "medium", flags: ["Caregiver Burnout"], assessment_due: false}
+
+      _ ->
+        %{risk: "low", flags: [], assessment_due: false}
     end
   end
 

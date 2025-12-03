@@ -506,4 +506,31 @@ defmodule Ankaa.Accounts do
     |> Ankaa.Accounts.Organization.changeset(attrs)
     |> Repo.insert()
   end
+
+  def get_organization!(id), do: Repo.get!(Ankaa.Accounts.Organization, id)
+
+  alias Ankaa.Accounts.User
+
+  @doc """
+  Lists all users who belong to the given organization.
+  """
+  def list_members(organization_id) do
+    from(u in User,
+      where: u.organization_id == ^organization_id,
+      order_by: [asc: u.role, asc: u.last_name]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Removes a user from the community (sets organization_id to nil).
+  Does NOT delete the user account.
+  """
+  def remove_member(%User{} = user) do
+    user
+    |> User.organization_changeset(%{organization_id: nil})
+    |> Repo.update()
+  end
+
+  def get_member!(id), do: Repo.get!(User, id)
 end

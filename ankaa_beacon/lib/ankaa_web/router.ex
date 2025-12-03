@@ -114,6 +114,8 @@ defmodule AnkaaWeb.Router do
       live("/carenetwork/:id/edit", CareNetworkMemberLive.Edit, :edit)
       live("/inbox", PatientInboxListLive.Index, :index)
       live("/inbox/:id", PatientInboxListLive.Show, :show)
+      live("/feed", Community.Feed, :index)
+
     end
   end
 
@@ -156,10 +158,11 @@ defmodule AnkaaWeb.Router do
     live_session :community,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_community_coordinator},
-        {AnkaaWeb.AlertHook, :subscribe_alerts}
+        {AnkaaWeb.RoleAuth, :require_org_staff}
+        # {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/dashboard", Community.DashboardLive, :index)
+      live("/members", Community.MembersLive, :index)
     end
   end
 
