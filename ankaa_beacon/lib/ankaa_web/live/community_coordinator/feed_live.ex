@@ -4,10 +4,32 @@ defmodule AnkaaWeb.Community.Feed do
   """
   use AnkaaWeb, :live_view
   alias Ankaa.Community
+
   alias Ankaa.Accounts
 
+  @impl true
+  def mount(_params, _session, socket) do
+    user = socket.assigns.current_user
 
-  
+    if user.organization_id do
+      org = Accounts.get_organization!(user.organization_id)
+
+      {:ok,
+       assign(socket,
+         org: org,
+         # Fetch Data
+         posts: Community.list_posts(org.id),
+         resources: Community.list_resources(org.id),
+         board_items: Community.list_approved_board_items(org.id),
+         # Initialize Item Form
+         item_form: to_form(Community.change_board_item(%Ankaa.Community.BoardItem{})),
+         show_item_form: false
+       )}
+    else
+      # Handle users with no community
+      {:ok, assign(socket, org: nil)}
+    end
+  end
 
   @impl true
   def handle_event("save_item", %{"board_item" => params}, socket) do
@@ -59,7 +81,7 @@ defmodule AnkaaWeb.Community.Feed do
                     <% end %>
                    </div>
                    <p class="text-sm text-gray-700 mt-2">{post.body}</p>
-                   <p class="text-xs text-gray-400 mt-2">{Calendar.strftime(post.published_at, "%b %d")}</p>
+                   <p class="text-xs text-gray-400 mt-2">{Calendar.strftime(post.published_at || post.inserted_at, "%b %d")}</p>
                 </div>
               <% end %>
               <%= if Enum.empty?(@posts), do: empty_state("No announcements.") %>

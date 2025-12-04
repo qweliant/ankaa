@@ -14,13 +14,10 @@ defmodule AnkaaWeb.Community.DashboardLive do
     if user.organization_id do
       org = Accounts.get_organization!(user.organization_id)
 
-      # Load Dashboard Data
       posts = Community.list_posts(org.id)
       resources = Community.list_resources(org.id)
       board_items = Community.list_all_board_items(org.id)
 
-      # Initialize Forms
-      # Note: We default the post type to "announcement" to avoid nil errors in the form
       post_changeset = Community.change_post(%Post{type: "announcement"})
       resource_changeset = Community.change_resource(%Resource{})
 
@@ -30,10 +27,8 @@ defmodule AnkaaWeb.Community.DashboardLive do
          posts: posts,
          resources: resources,
          board_items: board_items,
-         # Forms
          post_form: to_form(post_changeset),
          resource_form: to_form(resource_changeset),
-         # Toggles
          show_post_form: false,
          show_resource_form: false
        )}

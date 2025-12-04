@@ -6,6 +6,7 @@ defmodule Ankaa.Patients do
   """
   import Ecto.Query
 
+  require Logger
   alias Ankaa.Repo
   alias Ankaa.Patients.{Patient, CareNetwork, MoodTracker, TreatmentPlan}
   alias Ankaa.Accounts.User
@@ -266,7 +267,8 @@ defmodule Ankaa.Patients do
       iex> create_patient_association(patient_user, other_patient, "peer")
       {:error, :unauthorized_role}
   """
-  def create_patient_association(%User{} = user, %Patient{} = patient, relationship) do
+  def create_patient_association(%User{} = user_struct, %Patient{} = patient, relationship) do
+    user = Ankaa.Accounts.get_user!(user_struct.id)
     default_permissions = ["receive_alerts"]
 
     is_authorized_provider =
@@ -279,27 +281,32 @@ defmodule Ankaa.Patients do
         User.admin?(user)
 
     if is_authorized_provider do
-      Ecto.Multi.new()
-      |> Ecto.Multi.insert(
-        :association,
-        CareNetwork.changeset(%CareNetwork{}, %{
-          user_id: user.id,
-          patient_id: patient.id,
-          relationship: relationship,
-          permissions: default_permissions
-        })
-      )
+      result =
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(
+          :association,
+          CareNetwork.changeset(%CareNetwork{}, %{
+            user_id: user.id,
+            patient_id: patient.id,
+            relationship: relationship,
+            permissions: default_permissions
+          })
+        )
+        |> Ecto.Multi.run(:add_to_community, fn _repo, _changes ->
+          patient_user = Ankaa.Accounts.get_user!(patient.user_id)
 
-      |> Ecto.Multi.run(:add_to_community, fn _repo, _changes ->
-        patient_user = Ankaa.Accounts.get_user!(patient.user_id)
+          if user.organization_id && is_nil(patient_user.organization_id) do
+            Ankaa.Accounts.assign_organization(patient_user, user.organization_id)
+          else
+            {:ok, patient_user}
+          end
+        end)
+        |> Repo.transaction()
 
-        if user.organization_id && is_nil(patient_user.organization_id) do
-          Ankaa.Accounts.assign_organization(patient_user, user.organization_id)
-        else
-          {:ok, patient_user}
-        end
-      end)
-      |> Repo.transaction()
+      case result do
+        {:ok, %{association: assoc}} -> {:ok, assoc}
+        error -> error
+      end
     else
       {:error, :unauthorized_role}
     end

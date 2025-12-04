@@ -17,7 +17,6 @@ IO.puts("   -> Creating organizations...")
   npi_number: nil
 })
 
-
 create_staff = fn attrs, role, org_id ->
   with {:ok, user} <- Accounts.register_user(attrs),
        {:ok, user_with_name} <- Accounts.update_user_profile(user, attrs),
@@ -27,7 +26,7 @@ create_staff = fn attrs, role, org_id ->
       Accounts.assign_organization(user_with_role, org_id)
     end
 
-    IO.puts("     - Created #{role}: #{user_with_role.email} (#{attrs[:first_name]})")
+    IO.puts("     - Created #{role}: #{user_with_role.email} (#{attrs[:first_name]}) who belongs to org ID #{inspect(org_id)}")
     {:ok, user_with_role}
   else
     {:error, reason} ->

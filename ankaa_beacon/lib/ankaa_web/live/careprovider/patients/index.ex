@@ -52,7 +52,7 @@ defmodule AnkaaWeb.CareProvider.PatientsLive.Index do
                 <div class="px-4 py-4 sm:px-6">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                      <div class="flex-shrink-0">
+                      <div class="shrink-0">
                         <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
                           <span class="text-indigo-600 font-medium"><%= String.slice(patient.name, 0, 2) %></span>
                         </div>

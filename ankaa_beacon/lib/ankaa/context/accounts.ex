@@ -509,8 +509,6 @@ defmodule Ankaa.Accounts do
 
   def get_organization!(id), do: Repo.get!(Ankaa.Accounts.Organization, id)
 
-  alias Ankaa.Accounts.User
-
   @doc """
   Lists all users who belong to the given organization.
   """
