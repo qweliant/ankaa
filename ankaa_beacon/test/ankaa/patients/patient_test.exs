@@ -1,9 +1,15 @@
 defmodule Ankaa.PatientsTest do
+  @moduledoc """
+  Test suite for Ankaa.Patients context.
+  """
+alias Swoosh.Adapters.Loops
   use Ankaa.DataCase
 
   alias Ankaa.Patients
-  alias Ankaa.Patients.{Patient, CareNetwork}
+  alias Ankaa.Patients.Patient
+  alias Ankaa.Patients.CareNetwork
   alias Ankaa.AccountsFixtures
+  require Logger
 
   describe "list_patients_for_user/1" do
     setup do
@@ -192,7 +198,7 @@ defmodule Ankaa.PatientsTest do
       patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
       regular_user = AccountsFixtures.user_fixture()
 
-      {:ok, member} = Patients.create_patient_association(nurse1, patient1.patient, "nurse")
+      {:ok, %{association: member}} =  Patients.create_patient_association(nurse1, patient1.patient, "nurse")
 
       %{
         doctor: doctor,
@@ -206,7 +212,8 @@ defmodule Ankaa.PatientsTest do
     end
 
     test "doctor can create association", %{doctor: doctor, patient1: patient} do
-      assert {:ok, assoc} = Patients.create_patient_association(doctor, patient.patient, "doctor")
+      assert {:ok, %{association: assoc}}  = Patients.create_patient_association(doctor, patient.patient, "doctor")
+
       assert assoc.user_id == doctor.id
       assert assoc.patient_id == patient.patient.id
       assert assoc.relationship == "doctor"
@@ -214,7 +221,8 @@ defmodule Ankaa.PatientsTest do
     end
 
     test "nurse can create association", %{nurse2: nurse2, patient1: patient} do
-      assert {:ok, assoc} = Patients.create_patient_association(nurse2, patient.patient, "nurse")
+      assert {:ok, %{association: assoc}} = Patients.create_patient_association(nurse2, patient.patient, "nurse")
+
       assert assoc.relationship == "nurse"
       assert assoc.permissions == ["receive_alerts"]
     end
@@ -245,6 +253,84 @@ defmodule Ankaa.PatientsTest do
       assert_raise Ecto.NoResultsError, fn ->
         Patients.get_care_network_member!(member.id)
       end
+    end
+  end
+  describe "organizations" do
+    test "create_organization/1 creates an organization" do
+      attrs = %{name: "Test Clinic", type: "clinic", npi_number: "1234567890"}
+      assert {:ok, %Ankaa.Accounts.Organization{} = org} = Ankaa.Accounts.create_organization(attrs)
+      assert org.name == "Test Clinic"
+      assert org.npi_number == "1234567890"
+    end
+
+    test "assign_organization/2 assigns a user to an organization" do
+      # 1. Setup
+      {:ok, org} = Ankaa.Accounts.create_organization(%{name: "Test Org"})
+      doctor = AccountsFixtures.doctor_fixture()
+
+      # 2. Verify initial state
+      assert is_nil(doctor.organization_id)
+
+      # 3. Execute
+      assert {:ok, updated_doctor} = Ankaa.Accounts.assign_organization(doctor, org.id)
+
+      # 4. Verify result
+      assert updated_doctor.organization_id == org.id
+    end
+
+    test "list_available_colleagues/2 returns colleagues in the same org" do
+      # 1. Setup Organization
+      {:ok, org} = Ankaa.Accounts.create_organization(%{name: "Davita Test"})
+
+      # 2. Setup Doctor A (The inviter/current user)
+      doctor_a = AccountsFixtures.doctor_fixture()
+      {:ok, doctor_a} = Ankaa.Accounts.assign_organization(doctor_a, org.id)
+
+      # 3. Setup Doctor B (The colleague to be found)
+      doctor_b = AccountsFixtures.doctor_fixture()
+      {:ok, _} = Ankaa.Accounts.assign_organization(doctor_b, org.id)
+
+      # 4. Setup Nurse C (Another colleague)
+      nurse_c = AccountsFixtures.nurse_fixture()
+      {:ok, _} = Ankaa.Accounts.assign_organization(nurse_c, org.id)
+
+      # 5. Setup Doctor D (Different Org - Should NOT be found)
+      {:ok, other_org} = Ankaa.Accounts.create_organization(%{name: "Competitor"})
+      doctor_d = AccountsFixtures.doctor_fixture()
+      {:ok, _} = Ankaa.Accounts.assign_organization(doctor_d, other_org.id)
+
+      # 6. Setup Patient (Target)
+      patient = AccountsFixtures.patient_fixture()
+
+      # 7. Test: List colleagues for Doctor A relative to this Patient
+      colleagues = Patients.list_available_colleagues(doctor_a, patient.patient.id)
+
+      # 8. Assertions
+      assert length(colleagues) == 2
+      assert Enum.any?(colleagues, & &1.id == doctor_b.id)
+      assert Enum.any?(colleagues, & &1.id == nurse_c.id)
+      refute Enum.any?(colleagues, & &1.id == doctor_d.id) # Wrong Org
+      refute Enum.any?(colleagues, & &1.id == doctor_a.id) # Self
+    end
+
+    test "list_available_colleagues/2 filters out already assigned members" do
+      {:ok, org} = Ankaa.Accounts.create_organization(%{name: "Clinic"})
+      doctor_a = AccountsFixtures.doctor_fixture()
+      doctor_b = AccountsFixtures.doctor_fixture()
+
+      Ankaa.Accounts.assign_organization(doctor_a, org.id)
+      Ankaa.Accounts.assign_organization(doctor_b, org.id)
+
+      patient = AccountsFixtures.patient_fixture()
+
+      # Assign Doctor B to the patient already
+      {:ok, _} = Patients.create_patient_association(doctor_b, patient.patient, "doctor")
+
+      # Now Doctor A looks for colleagues
+      colleagues = Patients.list_available_colleagues(doctor_a, patient.patient.id)
+
+      # Doctor B should NOT be in the list because they are already assigned
+      assert Enum.empty?(colleagues)
     end
   end
 end
