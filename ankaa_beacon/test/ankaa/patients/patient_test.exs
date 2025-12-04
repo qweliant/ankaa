@@ -2,14 +2,12 @@ defmodule Ankaa.PatientsTest do
   @moduledoc """
   Test suite for Ankaa.Patients context.
   """
-alias Swoosh.Adapters.Loops
   use Ankaa.DataCase
 
   alias Ankaa.Patients
   alias Ankaa.Patients.Patient
   alias Ankaa.Patients.CareNetwork
   alias Ankaa.AccountsFixtures
-  require Logger
 
   describe "list_patients_for_user/1" do
     setup do
