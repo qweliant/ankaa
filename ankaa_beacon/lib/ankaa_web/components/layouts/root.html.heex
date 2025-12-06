@@ -19,26 +19,27 @@
     <header class="bg-white shadow">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 justify-between">
-          <div class="flex">
+          <div class="flex">      
             <div class="flex shrink-0 items-center">
+              <img src={"/images/favicon.svg"} alt="Ankaa" class="h-8 w-8 mr-2" />
               <%= cond do %>
                 <% !@current_user -> %>
-                  <.link href={~p"/"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                  <.link href={~p"/"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                 <% !@current_user.role && !@current_user.patient -> %>
-                  <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                  <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                 <% @current_user.role && !@current_user.patient -> %>
                   <%= case @current_user.role do %>
                     <% "doctor" -> %>
-                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                     <% "nurse" -> %>
-                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                     <% "caresupport" -> %>
-                      <.link href={~p"/caresupport/caringfor"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/caresupport/caringfor"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                     <% _ -> %>
-                      <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                      <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                   <% end %>
                 <% @current_user.patient -> %>
-                  <.link href={~p"/patient/health"} class="text-xl font-bold text-gray-900">Ankaa</.link>
+                  <.link href={~p"/patient/health"} class="text-xl font-bold text-gray-900">Safehemo</.link>
               <% end %>
             </div>
           </div>

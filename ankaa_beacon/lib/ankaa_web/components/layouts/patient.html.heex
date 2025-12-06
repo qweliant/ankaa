@@ -1,28 +1,25 @@
 <header class="px-4 sm:px-6 lg:px-8"></header>
-<!-- Alert Banner Portal - Renders at top of page -->
 <div id="alert-portal">
   <%= if assigns[:active_alerts] && not Enum.empty?(@active_alerts) do %>
-    <.live_component 
-      module={AnkaaWeb.AlertBanner} 
-      id="alert-banner"
-      active_alerts={@active_alerts}
+    <.live_component module={AnkaaWeb.AlertBanner} id="alert-banner" active_alerts={@active_alerts}
       current_user={@current_user} />
-  <% end %>
+    <% end %>
 </div>
-<%= if @current_user do %>
-  <.live_component
-    module={AnkaaWeb.ToastNotification}
-    id="toast-notification-component"
-    toast_message={@toast_message}
-    current_user={@current_user}
-  />
-<% end %>
-<.live_component module={AnkaaWeb.PatientNav} id="patient-nav"
-current_path={@current_path} current_user={@current_user} />
+<div>
+  <%= if @current_user do %>
+    <.live_component module={AnkaaWeb.ToastNotification} id="toast-notification-component"
+      toast_message={@toast_message} current_user={@current_user} />
+    <% end %>
+</div>
+<div>
+  <.live_component module={AnkaaWeb.PatientNav} id="patient-nav" current_path={@current_path}
+    current_user={@current_user} />
+</div>
 <div class="py-10">
   <main>
-      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-      <.flash_group flash={@flash} /> <%= @inner_content %>
+    <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <.flash_group flash={@flash} />
+      <%= @inner_content %>
     </div>
   </main>
 </div>

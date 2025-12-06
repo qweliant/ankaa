@@ -1,22 +1,25 @@
 <header class="px-4 sm:px-6 lg:px-8"></header>
 <div id="alert-portal">
   <%= if assigns[:active_alerts] && not Enum.empty?(@active_alerts) do %>
-    <.live_component 
-      module={AnkaaWeb.AlertBanner} 
-      id="alert-banner"
-      active_alerts={@active_alerts}
+    <.live_component module={AnkaaWeb.AlertBanner} id="alert-banner" active_alerts={@active_alerts}
       current_user={@current_user} />
+    <% end %>
+</div>
+<div>
+  <%= if @current_user && Map.get(assigns, :toast_message)do %>
+    <.live_component module={AnkaaWeb.ToastNotification} id="toast-notification-component"
+      toast_message={@toast_message} current_user={@current_user} />
   <% end %>
 </div>
-<%= if @current_user && Map.get(assigns, :toast_message)do %>
-  <.live_component
-    module={AnkaaWeb.ToastNotification}
-    id="toast-notification-component"
-    toast_message={@toast_message}
-    current_user={@current_user}
-  />
-<% end %>
-<.live_component module={AnkaaWeb.AppNav} id="main-nav" current_user={@current_user} />
-<main class="px-4 py-20 sm:px-6 lg:px-8">
-  <div class="mx-auto"><.flash_group flash={@flash} /> {@inner_content}</div>
-</main>
+<div>
+  <%=if @current_user do %>
+    <.live_component module={AnkaaWeb.AppNav} id="main-nav" current_user={@current_user}  />
+  <% end %>
+</div>
+<div class="py-10">
+  <main class="px-4 py-20 sm:px-6 lg:px-8">
+    <div class="mx-auto">
+      <.flash_group flash={@flash} /> {@inner_content}
+    </div>
+  </main>
+</div>
