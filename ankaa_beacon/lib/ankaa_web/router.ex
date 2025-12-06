@@ -158,7 +158,7 @@ defmodule AnkaaWeb.Router do
     live_session :community,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_org_staff}
+        {AnkaaWeb.RoleAuth, :require_community_access}
         # {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live("/dashboard", Community.DashboardLive, :index)
