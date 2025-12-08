@@ -4,7 +4,6 @@ defmodule Ankaa.Monitoring.DeviceServer do
   It processes incoming readings, checks for threshold violations,
   triggers alerts, broadcasts updates, and persists data.
   """
-  alias ElixirSense.Log
   use GenServer, restart: :transient
   require Logger
 
@@ -60,7 +59,7 @@ defmodule Ankaa.Monitoring.DeviceServer do
           # Fallback
           Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
       end
-    Logger.info("Received new reading: #{inspect(reading)}")
+
     # 2. Analyze the reading for any threshold violations
     violations = Ankaa.Monitoring.ThresholdChecker.check(reading, custom_thresholds)
 
