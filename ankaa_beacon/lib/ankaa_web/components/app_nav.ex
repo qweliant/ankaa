@@ -1,4 +1,7 @@
 defmodule AnkaaWeb.AppNav do
+  @moduledoc """
+  Navigation component for the application based on user roles.
+  """
   use AnkaaWeb, :live_component
 
   def update(assigns, socket) do
@@ -11,7 +14,7 @@ defmodule AnkaaWeb.AppNav do
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 justify-between">
           <div class="flex">
-            <%= for {label, path, icon, module} <- menu_items(@current_user) do %>
+            <%= for {label, path, module} <- menu_items(@current_user) do %>
               <div class="flex space-x-8 mr-1.5">
                 <.link
                   navigate={path}
@@ -42,25 +45,25 @@ defmodule AnkaaWeb.AppNav do
     cond do
       role in ["clinic_technician", "doctor", "nurse"] ->
         [
-          {"Patients", ~p"/careprovider/patients", "hero-users", AnkaaWeb.CareProvider.PatientsLive.Index},
-          {"Community Hub", ~p"/community/dashboard", "hero-building-office-2", AnkaaWeb.Community.DashboardLive}
+          {"Patients", ~p"/careprovider/patients",  AnkaaWeb.CareProvider.PatientsLive.Index},
+          {"Community Hub", ~p"/community/dashboard", AnkaaWeb.Community.DashboardLive}
         ]
 
       role == "social_worker" ->
         [
-          {"Caseload", ~p"/case/dashboard", "hero-clipboard-document-list", AnkaaWeb.SocialWorker.Index},
-          {"Community Hub", ~p"/community/dashboard", "hero-building-office-2", AnkaaWeb.Community.DashboardLive}
+          {"Caseload", ~p"/case/dashboard", AnkaaWeb.SocialWorker.Index},
+          {"Community Hub", ~p"/community/dashboard", AnkaaWeb.Community.DashboardLive}
         ]
 
       role == "community_coordinator" ->
         [
-          {"Dashboard", ~p"/community/dashboard", "hero-chart-bar", AnkaaWeb.Community.DashboardLive},
-          {"Members", ~p"/community/members", "hero-user-group", AnkaaWeb.Community.MembersLive}
+          {"Dashboard", ~p"/community/dashboard", AnkaaWeb.Community.DashboardLive},
+          {"Members", ~p"/community/members", AnkaaWeb.Community.MembersLive}
         ]
 
       role in ["caresupport", "care_support"] ->
         [
-          {"Caring For", ~p"/caresupport/caringfor", "hero-hand-holding-heart", AnkaaWeb.CaringForLive.Index}
+          {"Caring For", ~p"/caresupport/caringfor", AnkaaWeb.CaringForLive.Index}
         ]
 
       true ->

@@ -20,6 +20,7 @@ defmodule AnkaaWeb.AlertBanner do
   @impl true
   def handle_event("dismiss_alert", %{"alert_id" => alert_id}, socket) do
     user = socket.assigns.current_user
+    Alerts.dismiss_alert(alert_id, user, "dismissed")
     Notifications.dismiss_notification(user.id, alert_id)
     send(self(), {:alert_dismissed, alert_id})
 

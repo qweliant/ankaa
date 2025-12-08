@@ -58,8 +58,6 @@ defmodule Ankaa.Alerts do
             "patient_alerts:#{patient_user_id}:alerts",
             {:new_alert, alert}
           )
-
-
         end
 
         broadcast_alert_created(alert)
@@ -101,7 +99,7 @@ defmodule Ankaa.Alerts do
   - For providers, it gets alerts for all their associated patients.
   - For patients, it gets alerts for themselves.
   """
-def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
+  def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
     cond do
       # --- PROVIDER LOGIC (Stays the same) ---
       user.role in ["doctor", "nurse", "caresupport", "clinic_technician", "social_worker"] ->
@@ -116,34 +114,26 @@ def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
             order_by: [desc: a.inserted_at],
             select: {n, a, p}
           )
+
         results = Repo.all(query)
+
         Enum.map(results, fn {notification, alert, patient} ->
           alert_with_patient = %{alert | patient: patient}
           %{alert: alert_with_patient, notification: notification}
         end)
 
-      # --- PATIENT LOGIC (FIXED) ---
       Accounts.User.patient?(user) ->
         query =
           from(a in Alert,
-            # 1. Start with ALERTS (The source of truth)
             join: p in assoc(a, :patient),
-
-            # 2. Optional Join: Look for a notification for this user
             left_join: n in Notification,
-            on: n.notifiable_id == a.id and n.notifiable_type == "Alert" and n.user_id == ^user.id,
-
-            # 3. Alert Filters
+            on:
+              n.notifiable_id == a.id and n.notifiable_type == "Alert" and n.user_id == ^user.id,
             where: a.patient_id == ^user.patient.id,
             where: a.status == "active",
             where: a.severity in ["high", "critical"],
-
-            # 4. Notification Filter:
-            # Show if (No Notification Exists) OR (Notification exists AND is not dismissed)
             where: is_nil(n.id) or n.status != "dismissed",
-
             order_by: [desc: a.inserted_at],
-            # Select all 3, even if 'n' is nil
             select: {n, a, p}
           )
 
@@ -169,7 +159,8 @@ def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
       iex> Ankaa.Alerts.dismiss_alert(alert, user, "No longer relevant")
       {:ok, %Alert{}}
   """
-  def dismiss_alert(%Alert{} = alert, %Ankaa.Accounts.User{} = user, dismissal_reason) do
+  def dismiss_alert(alert_id, %Ankaa.Accounts.User{} = user, dismissal_reason) do
+    alert = Repo.get!(Alert, alert_id)
     if can_dismiss_alert?(alert, user) do
       attrs = %{
         status: "dismissed",
