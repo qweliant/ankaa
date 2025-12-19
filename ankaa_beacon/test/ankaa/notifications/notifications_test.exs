@@ -84,7 +84,7 @@ defmodule Ankaa.NotificationsTest do
 
       # Pass the full `alert` and `nurse` structs, not their IDs
       assert {:ok, %Alert{} = dismissed_alert} =
-               Alerts.dismiss_alert(alert, nurse, "Test dismissal")
+               Alerts.dismiss_alert(alert.id, nurse, "Test dismissal")
 
       assert dismissed_alert.status == "dismissed"
       assert dismissed_alert.dismissed_by_user_id == nurse.id
