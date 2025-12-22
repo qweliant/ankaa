@@ -155,9 +155,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Arc::new(client);
 
     client
-        .subscribe("simulator/control", QoS::AtLeastOnce)
+        .subscribe("ankaa/simulator/control", QoS::AtLeastOnce)
         .await?;
-    info!("Subscribed to simulator/control topic.");
+    info!("Subscribed to ankaa/simulator/control topic.");
 
     let running_simulations: Arc<DashMap<String, task::JoinHandle<()>>> = Arc::new(DashMap::new());
 
@@ -165,7 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let notification = eventloop.poll().await?;
 
         if let rumqttc::Event::Incoming(rumqttc::Incoming::Publish(publish)) = notification {
-            if publish.topic == "simulator/control" {
+            if publish.topic == "ankaa/simulator/control" {
                 let command: SimulatorCommand = match serde_json::from_slice(&publish.payload) {
                     Ok(cmd) => cmd,
                     Err(e) => {

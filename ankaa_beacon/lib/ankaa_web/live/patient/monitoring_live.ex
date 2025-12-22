@@ -12,12 +12,13 @@ defmodule AnkaaWeb.MonitoringLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "bpdevicereading_readings")
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "dialysisdevicereading_readings")
-    end
+
 
     patient_id = socket.assigns.current_user.patient.id
+
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient:#{patient_id}:devicereading")
+    end
     devices = Devices.list_devices_for_patient(patient_id)
 
     active_session =
@@ -90,7 +91,7 @@ defmodule AnkaaWeb.MonitoringLive do
             }
           end)
 
-        MQTT.publish("simulator/control", Jason.encode!(%{start_simulations: command_payload}))
+        MQTT.publish("ankaa/simulator/control", Jason.encode!(%{start_simulations: command_payload}))
 
         alert_attrs = %{
           patient_id: patient.id,
@@ -123,7 +124,7 @@ defmodule AnkaaWeb.MonitoringLive do
     device_ids = Enum.map(devices, & &1.id)
 
     stop_payload = %{stop_simulations: device_ids}
-    MQTT.publish("simulator/control", Jason.encode!(stop_payload))
+    MQTT.publish("ankaa/simulator/control", Jason.encode!(stop_payload))
 
     case socket.assigns.active_session do
       nil ->
@@ -193,7 +194,7 @@ defmodule AnkaaWeb.MonitoringLive do
   end
 
   @impl true
-  def handle_info({:new_reading, reading, _opts}, socket) do
+  def handle_info({:new_reading, reading, violations}, socket) do
     reading_for_stream =
       reading
       |> Map.from_struct()
@@ -204,11 +205,13 @@ defmodule AnkaaWeb.MonitoringLive do
         %Ankaa.Monitoring.BPDeviceReading{} ->
           socket
           |> assign(:latest_bp, reading)
+          |> assign(:bp_violations, violations)
           |> stream_insert(:bp_readings, reading_for_stream, at: 0, limit: 4)
 
         %Ankaa.Monitoring.DialysisDeviceReading{} ->
           socket
           |> assign(:latest_dialysis, reading)
+          |> assign(:dialysis_violations, violations)
           |> stream_insert(:dialysis_readings, reading_for_stream, at: 0, limit: 4)
 
         _ ->
@@ -233,8 +236,7 @@ defmodule AnkaaWeb.MonitoringLive do
             <span>EMERGENCY HELP</span>
           </button>
         </div>
-        <h1 class=
-        "text-2xl font-bold text-slate-900">Patient Monitoring</h1>
+        <h1 class="text-2xl font-bold text-slate-900">Patient Monitoring</h1>
         <div class="flex items-center space-x-4">
           <div class="flex items-center">
             <div class="h-3 w-3 rounded-full bg-emerald-500 mr-2"></div>
@@ -337,6 +339,6 @@ defmodule AnkaaWeb.MonitoringLive do
 
   defp map_device_type("blood_pressure"), do: "bp"
   defp map_device_type("dialysis"), do: "dialysis"
-  # Default to BP if type is unknown or nil
+  # Default to BP if type is unknown or nil otherwise the break
   defp map_device_type(_), do: "bp"
 end

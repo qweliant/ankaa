@@ -40,79 +40,72 @@ defmodule Ankaa.Monitoring.DeviceServer do
       device: device,
       patient: patient,
       thresholds: custom_thresholds,
-      last_violation_key: last_violation_key
+      last_violation_key: last_violation_key,
+      violation_start_time: violation_start_time
     } = state
 
-    # 1. Parse & Structure the incoming data
+    # Parse & Structure the incoming data
     data = Jason.decode!(payload)
 
     reading =
       case device.type do
-        "blood_pressure" ->
-          Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
-
-        "dialysis" ->
-          Ankaa.Monitoring.DialysisDeviceReading.from_mqtt(data)
-
+        "blood_pressure" -> Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
+        "dialysis" -> Ankaa.Monitoring.DialysisDeviceReading.from_mqtt(data)
         _ ->
           Logger.warning("Unknown device type: #{device.type}")
-          # Fallback
           Ankaa.Monitoring.BPDeviceReading.from_mqtt(data)
       end
 
-    # 2. Analyze the reading for any threshold violations
+    # Analyze the reading for any threshold violations
     violations = Ankaa.Monitoring.ThresholdChecker.check(reading, custom_thresholds)
 
-    # 3. Create a unique "signature" for the current set of violations.
-    #    For example: `[:high_systolic, :high_heart_rate]` or `[]` if normal.
+    # Create a unique "signature" for the current set of violations.
+    #  For example: `[:high_systolic, :high_heart_rate]` or `[]` if normal.
     current_key = Enum.map(violations, & &1.parameter) |> Enum.sort()
 
-    # 4. Compare with the last known violation state
-    if current_key != last_violation_key do
-      # staete has changed
-      if Enum.any?(violations) do
-        # New Violation: Send Alert & Start Timer
-        Ankaa.Alerts.create_alerts_for_violations(patient, violations)
+    # Calculate New State & Determine Actions
+    # We return a tuple: {new_state, should_alert?}
+    {new_state, should_alert?} =
+      cond do
+        # CASE A: State Changed (New Violation or Back to Normal)
+        current_key != last_violation_key ->
+          if Enum.any?(violations) do
+            # New Violation Started -> Reset Timer, Set Key, Alert = YES
+            {%{state | last_violation_key: current_key, violation_start_time: DateTime.utc_now()},
+             true}
+          else
+            # Back to Normal -> Clear Timer, Set Key, Alert = NO
+            {%{state | last_violation_key: [], violation_start_time: nil}, false}
+          end
+        # CASE B: Same State (Persistent Violation) -> Check Nag Timer
+        Enum.any?(violations) and should_nudge?(violation_start_time) ->
+          # Nag Time Reached -> Reset Timer, Keep Key, Alert = YES
+          Logger.info("Re-sending alert for persistent violation")
+          {%{state | violation_start_time: DateTime.utc_now()}, true}
 
-        {:noreply,
-         %{state | last_violation_key: current_key, violation_start_time: DateTime.utc_now()}}
-      else
-        # Cleared: Reset Timer
-        {:noreply, %{state | last_violation_key: [], violation_start_time: nil}}
+        # CASE C: Same State (Normal OR Not yet time to nag)
+        true ->
+          # No changes needed
+          {state, false}
       end
-    else
-      # SAME STATE (High -> High)
-      # Check if we need to "Nag" (e.g., every 15 mins)
-      if state.violation_start_time && should_nudge?(state.violation_start_time) do
-        Logger.info("Re-sending alert for persistent violation")
-        Ankaa.Alerts.create_alerts_for_violations(patient, violations)
-        # Reset timer to nag again later
-        {:noreply, %{state | violation_start_time: DateTime.utc_now()}}
-      else
-        {:noreply, state}
-      end
+
+    if should_alert? do
+      Logger.info("DeviceServer: Triggering Alert for Patient #{patient.id}")
+      Ankaa.Alerts.create_alerts_for_violations(patient, violations)
     end
 
-    # 5. Broadcast the new reading to the patient's LiveView UI
     Phoenix.PubSub.broadcast(
       Ankaa.PubSub,
-      pubsub_topic_for(reading),
+      "patient:#{patient.id}:devicereading",
       {:new_reading, reading, violations}
     )
 
-    # 6. Persist the reading to the database asynchronously
     Task.start(fn -> Ankaa.Monitoring.save_reading(device, reading) end)
 
-    # 7. Update the state for the next check
-    new_state = %{state | last_violation_key: current_key}
     {:noreply, new_state}
   end
 
   defp via_tuple(device_id), do: {:via, Registry, {Ankaa.Monitoring.DeviceRegistry, device_id}}
-  defp pubsub_topic_for(%Ankaa.Monitoring.BPDeviceReading{}), do: "bpdevicereading_readings"
-
-  defp pubsub_topic_for(%Ankaa.Monitoring.DialysisDeviceReading{}),
-    do: "dialysisdevicereading_readings"
 
   defp should_nudge?(start_time) do
     DateTime.diff(DateTime.utc_now(), start_time, :minute) >= 7
