@@ -82,6 +82,7 @@ terraform.tfstate.d/
 .env
 .env.local
 .env.*.local
+.env.prod
 
 # Ignore terraform documentation
 terraform-docs.yml

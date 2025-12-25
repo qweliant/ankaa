@@ -1,0 +1,26 @@
+services:
+  backend:
+    image: 725149888536.dkr.ecr.us-east-1.amazonaws.com/ankaa-backend:latest
+    restart: always
+    ports:
+      - "4000:4000" # ALB sends traffic here
+    env_file:
+      - .env.prod # We will create this on the server
+    depends_on:
+      - db-init # Optional: wait for migrations (see below)
+
+  simulator:
+    image: 725149888536.dkr.ecr.us-east-1.amazonaws.com/ankaa-rust-simulator:latest
+    restart: always
+    # No ports needed! It only speaks OUT to AWS IoT.
+    env_file:
+      - .env.prod
+
+  # The Database Migrator:  This runs one command to migrate the DB, then dies.
+  db-init:
+    image: 725149888536.dkr.ecr.us-east-1.amazonaws.com/ankaa-backend:latest
+    # This tells the release to run the function 'migrate' inside the module 'Ankaa.Release'
+    command: "/app/bin/ankaa eval 'Ankaa.Release.migrate'"
+    env_file:
+      - .env.prod
+    restart: no

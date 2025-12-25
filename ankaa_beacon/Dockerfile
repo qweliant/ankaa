@@ -7,13 +7,13 @@
 # This file is based on these images:
 #
 #   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20250721-slim - for the release image
+#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20251208-slim - for the release image
 #   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.18.4-erlang-28.0.2-debian-bullseye-20250721-slim
+#   - Ex: hexpm/elixir:1.19.4-erlang-28.2-debian-bullseye-20251208-slim
 #
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=28.0.2
-ARG DEBIAN_VERSION=bullseye-20250721-slim
+ARG ELIXIR_VERSION=1.19.4
+ARG OTP_VERSION=28.2
+ARG DEBIAN_VERSION=bullseye-20251208-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -93,5 +93,4 @@ USER nobody
 # advised to add an init process such as tini via `apt-get install`
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
-
 CMD ["/app/bin/server"]
