@@ -96,8 +96,10 @@ defmodule Ankaa.Workers.MQTTConsumer do
     username = Keyword.get(mqtt_config, :username, "")
     password = Keyword.get(mqtt_config, :password, "")
     ssl_enabled = Keyword.get(mqtt_config, :enable_ssl, false)
-    certfile = "priv/cert/ca_store.pem"
-    keyfile = "priv/cert/ca_store_key.pem"
+    cert_dir = "/app/certs"
+    ca_path = Path.join(cert_dir, "root-ca.pem")
+    cert_path = Path.join(cert_dir, "certificate.pem.crt")
+    key_path = Path.join(cert_dir, "private.pem.key")
 
     [
       name: :emqtt_client,
@@ -108,11 +110,11 @@ defmodule Ankaa.Workers.MQTTConsumer do
       password: String.to_charlist(password),
       ssl: ssl_enabled,
       ssl_opts: [
-        verify: :verify_none,
+        verify: :verify_peer,
         server_name_indication: String.to_charlist(host),
-        cacertfile: CAStore.file_path(),
-        certfile: String.to_charlist(certfile),
-        keyfile: String.to_charlist(keyfile)
+        cacertfile: String.to_charlist(ca_path),
+        certfile: String.to_charlist(cert_path),
+        keyfile: String.to_charlist(key_path)
       ],
       reconnect: true,
       reconnect_interval: 10_000

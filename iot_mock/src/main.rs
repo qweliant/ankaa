@@ -4,9 +4,10 @@ use log::{error, info};
 use rand::SeedableRng;
 use rand::prelude::*;
 use rand::rngs::StdRng;
-use rumqttc::{AsyncClient, MqttOptions, QoS, Transport};
+use rumqttc::{AsyncClient, MqttOptions, QoS, Transport, TlsConfiguration};
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task;
@@ -126,7 +127,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = StdRng::seed_from_u64(42);
     let random_id: u16 = rng.random();
     let client_id = format!("iot_mock_server_{}", random_id);
-
+    
+    let ca_path = "/app/certs/root-ca.pem";
+    let client_cert_path = "/app/certs/certificate.pem.crt";
+    let client_key_path = "/app/certs/private.pem.key";
+    
     info!("🔌 Connecting to MQTT Broker: {}:{}", mqtt_host, mqtt_port);
     info!("🔑 Client ID: {}", client_id);
 
@@ -145,7 +150,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if use_tls {
         info!("Using TLS for MQTT connection.");
-        mqtt_options.set_transport(Transport::tls_with_default_config());
+        let ca = fs::read(ca_path).expect("Failed to read Root CA");
+        let client_cert = fs::read(client_cert_path).expect("Failed to read Client Cert");
+        let client_key = fs::read(client_key_path).expect("Failed to read Private Key");
+        let transport = Transport::Tls(TlsConfiguration::Simple {
+            ca: ca,
+            alpn: None,
+            client_auth: Some((client_cert, client_key)), // <--- This should load certs
+        });
+        mqtt_options.set_transport(transport);
     } else {
         info!("Using plain-text (TCP) for MQTT connection.");
     }
