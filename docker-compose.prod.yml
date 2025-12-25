@@ -6,6 +6,9 @@ services:
       - "4000:4000" # ALB sends traffic here
     env_file:
       - .env.prod # We will create this on the server
+    volumes:
+      - /home/ec2-user/certs/backend:/app/certs
+      - /home/ec2-user/certs/root-ca.pem:/app/certs/root-ca.pem
     depends_on:
       - db-init # Optional: wait for migrations (see below)
 
@@ -13,6 +16,10 @@ services:
     image: 725149888536.dkr.ecr.us-east-1.amazonaws.com/ankaa-rust-simulator:latest
     restart: always
     # No ports needed! It only speaks OUT to AWS IoT.
+    volumes:
+      # Map EC2 simulator folder -> Container folder
+      - /home/ec2-user/certs/simulator:/app/certs
+      - /home/ec2-user/certs/root-ca.pem:/app/certs/root-ca.pem
     env_file:
       - .env.prod
 
