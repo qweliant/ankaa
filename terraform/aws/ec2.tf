@@ -5,14 +5,14 @@ data "aws_ami" "amazon_linux_2023" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-2023.*-x86_64"]
+    values = ["al2023-ami-2023.*-arm64"]
   }
 }
 
 # Define the Server
 resource "aws_instance" "ankaa_app_server" {
   ami           = data.aws_ami.amazon_linux_2023.id
-  instance_type = "t3.small"
+  instance_type = "t4g.small"
 
   # Use the Output from the VPC Module
   # We are putting this in the PRIVATE subnet so it has a no path to the internet
@@ -29,6 +29,7 @@ resource "aws_instance" "ankaa_app_server" {
   tags = {
     Name        = "Ankaa-App-Server"
     Environment = "Production"
+    Arch        = "ARM64"
   }
 
   user_data = <<-EOF
@@ -38,5 +39,6 @@ resource "aws_instance" "ankaa_app_server" {
               dnf install -y docker
               systemctl start docker
               systemctl enable docker
+              usermod -aG docker ec2-user
               EOF
 }
