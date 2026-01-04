@@ -28,12 +28,14 @@ if config_env() == :prod do
       For example: ecto://USER:PASS@HOST/DATABASE
       """
 
-  maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
-
+  maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: [:inet]
+  IO.inspect(maybe_ipv6, label: "🚀 DEBUG: ECTO SOCKET OPTIONS")
+  IO.inspect(database_url, label: "🚀 DEBUG: DATABASE_URL")
   config :ankaa, Ankaa.Repo,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
+    socket_options: maybe_ipv6,
+    ssl_opts: [verify: :verify_none]
 
   host = System.get_env("MQTT_HOST") || raise("MQTT_HOST is not set")
 
@@ -61,7 +63,7 @@ if config_env() == :prod do
   config :ankaa, AnkaaWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     check_origin: [
-      "https://safehemo.com",
+      "//*.safehemo.com",
       "https://www.safehemo.com",
       "https://ankaa-beacon.fly.dev",
       "//*.fly.dev"
