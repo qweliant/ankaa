@@ -83,6 +83,7 @@ The system aims to:
 - [![Rust][Rust-badge]][Rust-url]
 - [![PostgreSQL][PostgreSQL-badge]][PostgreSQL-url]
 - [![Docker][Docker-badge]][Docker-url]
+- [![AWS][AWS-badge]][AWS-url]
 
 <!-- GETTING STARTED -->
 
@@ -90,80 +91,112 @@ The system aims to:
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Elixir 1.14+ (for local development)
-- Rust (for IoT mock development)
+- Docker (Engine) and Docker Compose v2+
+- Elixir 1.14+ (and a compatible Erlang/OTP)
+- Rust (stable toolchain) — for IoT mock
+- Node.js + npm or yarn (for Phoenix assets, only for local dev)
 
-### Installation
+Clone the repo
 
-1. Clone the repo
+```sh
+git clone https://github.com/qweliant/ankaa.git
+```
 
-   ````sh
-   git clone https://github.com/qweliant/ankaa.git
-   ```2. Start the services using Docker Compose
+### Docker setup
 
-   ```sh
-   docker-compose up -d
-   ````
+Start the db, rust, inbucket, and mosquitto service using Docker Compose
 
-2. Access the web interface at `http://localhost:4000`
+```sh
+docker-compose up -d --build
+```
 
-<!-- ARCHITECTURE -->
+### App development
 
-## Architecture
+For app development, switch to the backend app and follow its README:
 
-The system is built as a microservices architecture with the following components:
+```sh
+cd ankaa_beacon
+```
 
-1. **Ankaa Beacon** (Phoenix/Elixir Application):
-
-   - Main backend service
-   - Handles data processing and business logic
-   - Features real-time data processing and alert triggering
-
-2. **IoT Mock** (Rust Application):
-
-   - Simulates IoT devices
-   - Publishes mock data to MQTT broker
-   - Used for testing and development
-
-3. **MQTT Broker** (Mosquitto):
-
-   - Message broker for real-time communication
-   - Handles pub/sub messaging between components
-   - Exposed on ports 1883 (MQTT) and 9001 (WebSocket)
-
-4. **Data Storage**:
-   - PostgreSQL: General purpose database
-
+See ankaa_beacon/README.md for setup and run instructions.
+****
 <!-- ROADMAP -->
-
 ## Roadmap
 
-- [x] Monorepo structure
-- [x] Alert triggering system
-- [x] Notification service
-- [x] Care network user management
-- [x] Real-time monitoring dashboard
+### Phase 1: Prototype Validation & Emotional Utility (Now–3 months)
+
+- Goal: Establish that the product feels helpful, emotionally comforting, and technically credible for solo patients and caregivers.
+- Milestones
+  - [x] Deploy public read-only prototype (AWS)
+  - [x] Publish README + LICENSE (BUSL → MIT rollover)
+  - [x] Implement in-app alerts using mock thresholds
+  - [x] Build session-start / session-end flow (no live chat)
+  - [x] Add “sign up for updates” form on landing page
+  - [ ] Collect feedback from patients, caresupports, Reddit/forums, clinicians
+- Legal / Safety
+  - [x] Mark system experimental and non-medical (UI + README disclaimer)
+
+### Phase 2: Safety Layer MVP & Pre‑Revenue Clinical Demo (3–6 months)
+
+- Focus: Integrate real device signals, reliable alerting, escalation workflows, simple audit logs for clinicians.
+- Core tasks (examples)
+  - [ ] Device integration (mock → limited real BP/dialysis feeds)
+  - [ ] Robust alert routing (SMS, push, email)
+  - [ ] Care network UX: multi-caregiver roles & confirmations
+  - [ ] Data audit & export for clinicians
+  - [ ] Basic privacy & security hardening (HIPAA-influenced controls)
+
+### Phase 3: Monetization Pilot & Grant Funding (6–12 months)
+
+- Focus: Pilots with clinics, grant applications, soft monetization experiments.
+- Core tasks
+  - [ ] Freemium pilot: core safety features free, premium for clinics/analytics
+  - [ ] Apply for grants / research partnerships
+  - [ ] Small B2B pilots with 1–2 clinics
+
+### Sustainability (high level)
+
+- 🏗️ Foundation & Community Trust (Months 0–6)
+  - Goal: traction, validation, credibility
+  - MVP: mocked data or limited BP monitoring; care network; basic customizable alerts; accessible UI; HIPAA-aware architecture
+  - Design premium features early; communicate beta status
+
+****
+
+### Critical Factors
+
+- Success metrics by phase (examples)
+  - Phase 1 → 50+ active users, positive qualitative feedback
+  - Phase 2 → 15%+ conversion to paid trial, 1+ clinic interest
+  - Phase 3 → 2+ clinic partnerships, positive clinical outcome signals
+- Critical success factors
+  - Regulatory / HIPAA-informed compliance from day one
+  - Clear clinical evidence & auditability
+  - Care network feature as key differentiator
+  - Ethical pricing: no life-or-death paywalls; privacy prioritized
+  - Technology integration capability for enterprise value
 
 See the [open issues](https://github.com/qweliant/ankaa/issues) for a full list of proposed features.
 
 ### Impact & Implications
 
-This project addresses several critical barriers to home dialysis adoption:
+This section summarizes the intended benefits, measurable outcomes, and known limitations of the project.
 
-- **Safety Concerns**: By providing real-time monitoring and automated emergency detection, the system helps mitigate the primary fear of complications occurring during home treatment.
+- Patient safety: Real‑time detection and automated alerts aim to reduce missed critical events (hypotension, bleeding) and enable faster response.
+- Accessibility & adoption: Lowering perceived risk can increase willingness to choose home dialysis and expand patient options.
+- Care network enablement: Structured notifications and role-based escalation help families and caresupports coordinate responses.
+- Clinical integration & policy: Instrumented audit logs, exportable data, and demonstrable safety signals support clinical validation and potential reimbursement/policy adoption.
+- Economic impact: Safer home care can reduce facility visits and emergency transfers, lowering system costs while improving outcomes.
+- Autonomy & quality of life: Continuous monitoring provides a safety net that lets patients maintain routines with reduced anxiety.
+- Risks & limitations:
+  - Not a medical device: requires clear disclaimers, clinical validation, and regulatory review before clinical deployment.
+  - False positives/negatives: alert tuning and human-in-the-loop escalation are required to limit harm and alarm fatigue.
+  - Privacy/security: HIPAA‑aware design and strong access controls are essential prior to production use.
+- Success metrics / next steps:
+  - User confidence metrics, number of sessions monitored, time-to-alert, false alarm rate, and clinician auditability.
+  - Priorities: clinical pilot integrations, privacy/security hardening, and UX testing with patients and carers.
 
-- **Accessibility**: Making home dialysis feel safer could increase adoption rates, potentially allowing more patients to benefit from the flexibility and quality of life improvements that home treatment offers.
-
-- **Care Network Support**: The system empowers family members and caresupports to be more confident in supporting home dialysis patients, creating a stronger support network.
-
-- **Healthcare Evolution**: This technology could influence healthcare policies and insurance coverage for home dialysis by demonstrating that remote monitoring systems can effectively enhance patient safety.
-
-- **Patient Autonomy**: By providing a reliable safety net, patients gain more independence in managing their treatment while maintaining connection to their care network.
-
-- **Cost Implications**: By enabling more patients to safely perform dialysis at home, this system could help reduce the overall cost of care while improving patient outcomes.
-
-- **Quality of Life**: The combination of safety features and remote monitoring allows patients to maintain their normal routines and lifestyle while ensuring their wellbeing during treatment.
+This framing is aligned with the project landing and "Learn more" materials: emphasize measurable safety, clear limits, and a roadmap to clinical validation rather than clinical deployment.
 
 <!-- CONTRIBUTING -->
 
@@ -212,3 +245,5 @@ For full license terms, see the [LICENSE](LICENSE) file.
 [Docker-url]: https://www.docker.com/
 [PostgreSQL-badge]: https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white
 [PostgreSQL-url]: https://www.postgresql.org/
+[AWS-badge]: https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=**white**
+[AWS-url]: https://aws.com
