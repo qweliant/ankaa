@@ -45,7 +45,9 @@ resource "aws_iot_policy" "backend_policy" {
         Action = ["iot:Subscribe", "iot:Receive"],
         Resource = [
           "arn:aws:iot:*:*:topicfilter/ankaa/+/telemetry",
-          "arn:aws:iot:*:*:topic/ankaa/+/telemetry"
+          "arn:aws:iot:*:*:topicfilter/devices/+/telemetry",
+          "arn:aws:iot:*:*:topic/ankaa/+/telemetry",
+          "arn:aws:iot:*:*:topic/devices/+/telemetry",
         ]
       },
       # WRITE: Send signals/modes to the Rust app (Commands)
@@ -54,7 +56,7 @@ resource "aws_iot_policy" "backend_policy" {
         Action = ["iot:Publish"],
         Resource = [
           "arn:aws:iot:*:*:topic/ankaa/+/cmd",
-          "arn:aws:iot:*:*:topic/ankaa/simulator/control" 
+          "arn:aws:iot:*:*:topic/ankaa/simulator/control"
         ]
       }
     ]
@@ -75,7 +77,7 @@ resource "aws_iot_policy" "simulator_policy" {
       {
         Effect = "Allow",
         Action = ["iot:Publish"],
-        Resource = "arn:aws:iot:*:*:topic/ankaa/+/telemetry"
+        Resource = ["arn:aws:iot:*:*:topic/ankaa/+/telemetry", "arn:aws:iot:*:*:topic/devices/+/telemetry"]
       },
       # READ: Listen for start/stop signals (Commands)
       {
@@ -84,7 +86,8 @@ resource "aws_iot_policy" "simulator_policy" {
         Resource = [
           # Matches Rust: client.subscribe("ankaa/simulator/control")
           "arn:aws:iot:*:*:topicfilter/ankaa/simulator/control",
-          "arn:aws:iot:*:*:topic/ankaa/simulator/control"
+          "arn:aws:iot:*:*:topic/ankaa/simulator/control",
+          
         ]
       }
     ]

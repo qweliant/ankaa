@@ -8,45 +8,36 @@ on:
 permissions:
   contents: read
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
-    runs-on: ubuntu-latest
-    # Only run if the tests workflow was successful
+  deploy:
+    name: Deploy to EC2
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     concurrency: deploy-group
-    env:
-      MIX_ENV: prod
+    runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Elixir
-        uses: erlef/setup-beam@v1
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          elixir-version: "1.18.3"
-          otp-version: "27.3.3"
-      - name: Cache deps
-        id: cache-deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-elixir-deps
-        with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-${{ env.cache-name }}-
-      - name: Install dependencies
-        run: |
-          mix local.rebar --force
-          mix local.hex --force
-          mix deps.get
-          mix deps.compile
-        working-directory: ankaa_beacon
-      - name: Compile for production
-        run: mix compile
-        working-directory: ankaa_beacon
-      - name: Deploy to Fly.io
-        uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only --depot=false --config fly.toml
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        working-directory: ankaa_beacon
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "🚀 Starting Deployment on EC2..."
+            
+            # Switch to root user to ensure we have permissions to manage Docker
+            sudo su -
+
+            # Navigate to project folder
+            cd /home
+            
+            # Pull latest changes
+            docker compose pull 
+            
+            # Rebuild and restart containers
+            # We use --build to ensure code changes are picked up
+            docker compose up -d --build
+            
+            # Optional: Clean up old, unused images to save disk space
+            docker image prune -f
+            
+            echo "✅ Deployment Complete!"

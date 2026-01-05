@@ -129,8 +129,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_id = format!("iot_mock_server_{}", random_id);
     
     let ca_path = "/app/certs/root-ca.pem";
-    let client_cert_path = "/app/certs/certificate.pem.crt";
-    let client_key_path = "/app/certs/private.pem.key";
+    let client_cert_path = "/app/certs/simulator/certificate.pem.crt";
+    let client_key_path = "/app/certs/simulator/private.pem.key";
     
     info!("🔌 Connecting to MQTT Broker: {}:{}", mqtt_host, mqtt_port);
     info!("🔑 Client ID: {}", client_id);

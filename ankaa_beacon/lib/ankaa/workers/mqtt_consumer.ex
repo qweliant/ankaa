@@ -31,8 +31,13 @@ defmodule Ankaa.Workers.MQTTConsumer do
     case :emqtt.connect(state.client) do
       {:ok, _properties} ->
         Logger.info("MQTTConsumer: Successfully connected to broker!")
-        :emqtt.subscribe(state.client, [{"ankaa/+/telemetry", 0}])
 
+        topics = [
+          {"ankaa/+/telemetry", 0},
+          {"devices/+/telemetry", 0}
+        ]
+
+        :emqtt.subscribe(state.client, topics)
       {:error, reason} ->
         Logger.error("MQTTConsumer: Failed to connect on first attempt: #{inspect(reason)}")
     end
