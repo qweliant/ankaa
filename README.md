@@ -102,7 +102,10 @@ Clone the repo
 git clone https://github.com/qweliant/ankaa.git
 ```
 
-### Docker setup
+Grab your environment variables that can be seen in the .env.prod example
+Log into the aws cli. Set up the Session State Manager plugin as well.
+
+### Docker setup for development
 
 Start the db, rust, inbucket, and mosquitto service using Docker Compose
 
@@ -112,14 +115,58 @@ docker-compose up -d --build
 
 ### App development
 
-For app development, switch to the backend app and follow its README:
+For app development, switch to the main app dir and follow its README.
+
+I have been running the application locally and not in docker hence why you are starting there. The basic build run commands are
 
 ```sh
-cd ankaa_beacon
+cd ankaa_beacon/
+
+mix deps.get && mix ecto.migrate && mix phx.server 
 ```
 
-See ankaa_beacon/README.md for setup and run instructions.
+See ankaa_beacon/README.md for more instructions.
 ****
+
+### App deployment
+
+Provision infrastructure (Terraform)
+  notes after running
+    - setup the iot thing to connect to the right topics in your thing policy.
+    - setup the ec2 AMI to the correct image. elixir doesnt seem to cross compile well. build an image based on the machine you are building in.
+    - be sure the ec2 and the rds instances are connected in the console or in terraform.
+    - install docker compose on your ec2 instance
+
+```sh
+cd infra
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+Build and push container images to aws
+
+```sh
+./build_images.sh
+```
+
+Connect to the EC2 instance, add the certs for your things, create and deploy. You may need to sudo into the machine for the right user privaleges. 
+
+```sh
+aws ssm start-session --target <instance-id>
+cd /path/to/deployed/compose   
+docker compose pull
+docker compose up -d
+```
+
+Verify and inspect logs
+
+```sh
+docker compose ps
+docker compose logs -f            # follow all services
+docker compose logs -f <service>  # follow a single service
+```
+
 <!-- ROADMAP -->
 ## Roadmap
 
@@ -136,45 +183,41 @@ See ankaa_beacon/README.md for setup and run instructions.
 - Legal / Safety
   - [x] Mark system experimental and non-medical (UI + README disclaimer)
 
-### Phase 2: Safety Layer MVP & Pre‑Revenue Clinical Demo (3–6 months)
+<!-- ### Phase 2: Safety Layer MVP & Clinical Demo (3–6 months)
 
 - Focus: Integrate real device signals, reliable alerting, escalation workflows, simple audit logs for clinicians.
-- Core tasks (examples)
+- Core tasks
   - [ ] Device integration (mock → limited real BP/dialysis feeds)
   - [ ] Robust alert routing (SMS, push, email)
   - [ ] Care network UX: multi-caregiver roles & confirmations
   - [ ] Data audit & export for clinicians
   - [ ] Basic privacy & security hardening (HIPAA-influenced controls)
 
-### Phase 3: Monetization Pilot & Grant Funding (6–12 months)
+### Phase 3: Pilot & Grant Funding (6–12 months)
 
 - Focus: Pilots with clinics, grant applications, soft monetization experiments.
 - Core tasks
-  - [ ] Freemium pilot: core safety features free, premium for clinics/analytics
-  - [ ] Apply for grants / research partnerships
-  - [ ] Small B2B pilots with 1–2 clinics
-
-### Sustainability (high level)
-
-- 🏗️ Foundation & Community Trust (Months 0–6)
-  - Goal: traction, validation, credibility
-  - MVP: mocked data or limited BP monitoring; care network; basic customizable alerts; accessible UI; HIPAA-aware architecture
-  - Design premium features early; communicate beta status
+  - [ ] Pilot premium features for clinics
+  - [ ] Apply for grants & research partnerships
+  - [ ] Small B2B pilots with 1–2 clinics -->
 
 ****
 
-### Critical Factors
+<!-- ### Sustainability Factors
 
-- Success metrics by phase (examples)
-  - Phase 1 → 50+ active users, positive qualitative feedback
-  - Phase 2 → 15%+ conversion to paid trial, 1+ clinic interest
+- Success metrics by phase
+  - Phase 1 → 50+ active users, qualitative feedback
+  - Phase 2 → 15%+ donors, 1+ clinic interest
   - Phase 3 → 2+ clinic partnerships, positive clinical outcome signals
-- Critical success factors
-  - Regulatory / HIPAA-informed compliance from day one
+- Some success factors that dertermine this existing past the first ohase
+  - Regulatory / HIPAA-informed compliance
   - Clear clinical evidence & auditability
   - Care network feature as key differentiator
-  - Ethical pricing: no life-or-death paywalls; privacy prioritized
-  - Technology integration capability for enterprise value
+  - Ethical pricing
+    - no life-or-death paywalls
+    - non profit, donor driven
+  - Prioritized privacy
+  - Technology integration capability for enterprise value -->
 
 See the [open issues](https://github.com/qweliant/ankaa/issues) for a full list of proposed features.
 
