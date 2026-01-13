@@ -1,11 +1,84 @@
-defmodule Ankaa.Community do
+defmodule Ankaa.Communities do
   @moduledoc """
   The Community context.
   """
   import Ecto.Query, warn: false
   alias Ankaa.Repo
-  alias Ankaa.Community.{Post, Resource, BoardItem}
+  alias Ankaa.Community.{Post, Resource, BoardItem, Organization, OrganizationMembership}
+  alias Ankaa.Accounts.{User}
 
+  @doc """
+  Adds a user to an organization with a specific contextual role.
+  Replaces the old 'assign_organization'.
+  """
+  def add_member(%User{} = user, organization_id, role \\ "member") do
+    %OrganizationMembership{}
+    |> OrganizationMembership.changeset(%{
+      user_id: user.id,
+      organization_id: organization_id,
+      role: role,
+      status: "active" # Auto-activate if added by system/admin
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
+  Lists all users in an organization.
+  Updated to join the new membership table.
+  Returns a list of Maps: [%{user: User, role: "admin"}, ...]
+  """
+  def list_members(organization_id) do
+    from(u in User,
+      join: m in OrganizationMembership, on: m.user_id == u.id,
+      where: m.organization_id == ^organization_id,
+      order_by: [asc: m.role, asc: u.last_name],
+      select: %{user: u, role: m.role, status: m.status, joined_at: m.inserted_at}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Removes a user from a specific organization.
+  Now requires organization_id because a user can belong to many.
+  """
+  def remove_member(%User{} = user, organization_id) do
+    from(m in OrganizationMembership,
+      where: m.user_id == ^user.id and m.organization_id == ^organization_id
+    )
+    |> Repo.delete_all()
+  end
+
+  @doc """
+  Checks if a user is a member of an org.
+  Useful for Authorization plugs.
+  """
+  def get_membership(user_id, organization_id) do
+    Repo.get_by(OrganizationMembership, user_id: user_id, organization_id: organization_id)
+  end
+
+  @doc """
+  Creates a new organization.
+  (Useful for the first Doctor registering a clinic)
+  """
+  def create_organization(attrs \\ %{}) do
+    %Organization{}
+    |> Organization.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_organization!(id), do: Repo.get!(Organization, id)
+
+  @doc """
+  Removes a user from the community (sets organization_id to nil).
+  Does NOT delete the user account.
+  """
+  def remove_member(%User{} = user) do
+    user
+    |> User.organization_changeset(%{organization_id: nil})
+    |> Repo.update()
+  end
+
+  def get_member!(id), do: Repo.get!(User, id)
 
   def list_posts(org_id) do
     from(p in Post,

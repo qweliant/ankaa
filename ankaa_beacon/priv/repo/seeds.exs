@@ -1,32 +1,41 @@
 alias Ankaa.Accounts
+alias Ankaa.Communities
 alias Ankaa.Patients
 
 IO.puts("🌱 Seeding database...")
 
 IO.puts("   -> Creating organizations...")
 
-{:ok, clinic_org} = Accounts.create_organization(%{
-  name: "Romdeau General Hospital",
-  type: "clinic",
-  npi_number: "1999999999" # Fake Org NPI (Type 2)
-})
+{:ok, clinic_org} =
+  Communities.create_organization(%{
+    name: "Romdeau General Hospital",
+    type: "clinic",
+    npi_number: "1999999999",
+    description:
+      "A major hospital in the city of Romdeau, providing comprehensive healthcare services to the community.",
+    is_public: false
+  })
 
-{:ok, commune_org} = Accounts.create_organization(%{
-  name: "The Commune Support Group",
-  type: "community_center",
-  npi_number: nil
-})
+{:ok, commune_org} =
+  Communities.create_organization(%{
+    name: "The Commune Support Group",
+    type: "community_center",
+    npi_number: nil,
+    description:
+      "A community organization focused on providing support and resources to patients and caregivers outside the Romdeau walls.",
+    is_public: true
+  })
 
 create_staff = fn attrs, role, org_id ->
   with {:ok, user} <- Accounts.register_user(attrs),
        {:ok, user_with_name} <- Accounts.update_user_profile(user, attrs),
        {:ok, user_with_role} <- Accounts.assign_role(user_with_name, role) do
+    {:ok, _membership} = Communities.add_member(user, clinic_org.id, "admin")
 
-    if org_id do
-      Accounts.assign_organization(user_with_role, org_id)
-    end
+    IO.puts(
+      "     - Created #{role}: #{user_with_role.email} (#{attrs[:first_name]}) who belongs to org ID #{inspect(org_id)}"
+    )
 
-    IO.puts("     - Created #{role}: #{user_with_role.email} (#{attrs[:first_name]}) who belongs to org ID #{inspect(org_id)}")
     {:ok, user_with_role}
   else
     {:error, reason} ->
@@ -46,7 +55,7 @@ IO.puts("   -> Creating care team...")
       password: "password1234",
       first_name: "Daedalus",
       last_name: "Yumeno",
-      npi_number: "1111111111", # Fake NPI
+      npi_number: "1111111111",
       practice_state: "Romdeau"
     },
     "doctor",
@@ -126,6 +135,7 @@ IO.puts("   -> Creating patients...")
 
 {:ok, user_rel} =
   Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234"})
+
 {:ok, _} = Accounts.update_user_name(user_rel, %{first_name: "Re-l", last_name: "Mayer"})
 
 patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezone: "Etc/UTC"}
@@ -133,11 +143,11 @@ patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezon
 
 {:ok, user_vincent} =
   Accounts.register_user(%{email: "vincent.law@example.com", password: "password1234"})
+
 {:ok, _} = Accounts.update_user_name(user_vincent, %{first_name: "Vincent", last_name: "Law"})
 
 patient_attrs_vincent = %{name: "Vincent Law", date_of_birth: ~D[1995-05-05], timezone: "Etc/UTC"}
 {:ok, patient_vincent} = Patients.create_patient(patient_attrs_vincent, user_vincent)
-
 
 IO.puts("   -> Building care networks...")
 

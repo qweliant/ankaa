@@ -487,48 +487,4 @@ defmodule Ankaa.Accounts do
     |> User.provider_profile_changeset(attrs)
     |> Repo.update()
   end
-
-  @doc """
-  Assigns an existing user to an organization.
-  """
-  def assign_organization(%User{} = user, organization_id) do
-    user
-    |> User.organization_changeset(%{organization_id: organization_id})
-    |> Repo.update()
-  end
-
-  @doc """
-  Creates a new organization.
-  (Useful for the first Doctor registering a clinic)
-  """
-  def create_organization(attrs \\ %{}) do
-    %Ankaa.Accounts.Organization{}
-    |> Ankaa.Accounts.Organization.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def get_organization!(id), do: Repo.get!(Ankaa.Accounts.Organization, id)
-
-  @doc """
-  Lists all users who belong to the given organization.
-  """
-  def list_members(organization_id) do
-    from(u in User,
-      where: u.organization_id == ^organization_id,
-      order_by: [asc: u.role, asc: u.last_name]
-    )
-    |> Repo.all()
-  end
-
-  @doc """
-  Removes a user from the community (sets organization_id to nil).
-  Does NOT delete the user account.
-  """
-  def remove_member(%User{} = user) do
-    user
-    |> User.organization_changeset(%{organization_id: nil})
-    |> Repo.update()
-  end
-
-  def get_member!(id), do: Repo.get!(User, id)
 end

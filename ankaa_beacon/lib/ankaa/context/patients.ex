@@ -12,6 +12,7 @@ defmodule Ankaa.Patients do
   alias Ankaa.Accounts.User
   alias Ankaa.Notifications.Invite
   alias Ankaa.Sessions
+  alias Ankaa.Community.OrganizationMembership
 
   @doc """
   Returns the list of patients.
@@ -257,7 +258,13 @@ defmodule Ankaa.Patients do
   # Patient Association functions
 
   @doc """
-  Creates a patient association for healthcare providers.
+  Creates a patient association for care network.
+
+  ## Arguments
+  - user: The provider/caregiver
+  - patient: The patient hub
+  - relationship: Display label ("Doctor", "Mom")
+  - access_role: The permission level (:admin, :contributor, :viewer). Defaults to :viewer.
 
   ## Examples
 
@@ -267,11 +274,15 @@ defmodule Ankaa.Patients do
       iex> create_patient_association(patient_user, other_patient, "peer")
       {:error, :unauthorized_role}
   """
-  def create_patient_association(%User{} = user_struct, %Patient{} = patient, relationship) do
+  def create_patient_association(
+        %User{} = user_struct,
+        %Patient{} = patient,
+        relationship,
+        access_role \\ :viewer
+      ) do
     user = Ankaa.Accounts.get_user!(user_struct.id)
-    default_permissions = ["receive_alerts"]
 
-    is_authorized_provider =
+    is_authorized =
       User.doctor?(user) ||
         User.nurse?(user) ||
         User.clinic_technician?(user) ||
@@ -280,33 +291,15 @@ defmodule Ankaa.Patients do
         User.caresupport?(user) ||
         User.admin?(user)
 
-    if is_authorized_provider do
-      result =
-        Ecto.Multi.new()
-        |> Ecto.Multi.insert(
-          :association,
-          CareNetwork.changeset(%CareNetwork{}, %{
+    if is_authorized do
+        %CareNetwork{}
+        |> CareNetwork.changeset(%{
             user_id: user.id,
             patient_id: patient.id,
             relationship: relationship,
-            permissions: default_permissions
+            role: access_role,
           })
-        )
-        |> Ecto.Multi.run(:add_to_community, fn _repo, _changes ->
-          patient_user = Ankaa.Accounts.get_user!(patient.user_id)
-
-          if user.organization_id && is_nil(patient_user.organization_id) do
-            Ankaa.Accounts.assign_organization(patient_user, user.organization_id)
-          else
-            {:ok, patient_user}
-          end
-        end)
-        |> Repo.transaction()
-
-      case result do
-        {:ok, %{association: assoc}} -> {:ok, assoc}
-        error -> error
-      end
+        |> Repo.insert()
     else
       {:error, :unauthorized_role}
     end
@@ -336,7 +329,8 @@ defmodule Ankaa.Patients do
         user_id: user2.id,
         patient_id: patient_user.patient.id,
         relationship: "peer_support",
-        permissions: default_permissions
+        permissions: default_permissions,
+        role: :viewer
       })
       |> Repo.insert!()
 
@@ -346,7 +340,8 @@ defmodule Ankaa.Patients do
         user_id: patient_user.id,
         patient_id: peer_patient.id,
         relationship: "peer_support",
-        permissions: default_permissions
+        permissions: default_permissions,
+        role: :viewer
       })
       |> Repo.insert!()
     end)
@@ -477,10 +472,6 @@ defmodule Ankaa.Patients do
         nil ->
           # Not a member of the network.
           false
-
-        %CareNetwork{permissions: permissions} ->
-          # is a member; check if they have the "manage_network" permission.
-          "manage_network" in permissions
       end
     end
   end
@@ -533,26 +524,28 @@ defmodule Ankaa.Patients do
 
   """
   def list_available_colleagues(%User{} = doctor, patient_id) do
-    # If doctor has no org, they have no colleagues to pick from
-    if is_nil(doctor.organization_id) do
-      []
-    else
-      # Get all users in the same org
-      # Filter out those who are already in the care_network for this patient
-      # Filter out the doctor themselves
-
-      assigned_user_ids =
-        from(c in CareNetwork, where: c.patient_id == ^patient_id, select: c.user_id)
-
-      from(u in User,
-        where: u.organization_id == ^doctor.organization_id,
-        where: u.id != ^doctor.id,
-        where: u.id not in subquery(assigned_user_ids),
-        where: u.role in ["doctor", "nurse", "clinic_technician", "social_worker"],
-        order_by: [asc: u.last_name]
+    doctor_org_ids_query =
+      from(m in OrganizationMembership,
+        where: m.user_id == ^doctor.id,
+        select: m.organization_id
       )
-      |> Repo.all()
-    end
+
+    assigned_user_ids_query =
+      from(c in CareNetwork,
+        where: c.patient_id == ^patient_id,
+        select: c.user_id
+      )
+
+    from(u in User,
+      join: m in OrganizationMembership, on: m.user_id == u.id,
+      where: m.organization_id in subquery(doctor_org_ids_query),
+      where: u.id != ^doctor.id,
+      where: u.id not in subquery(assigned_user_ids_query),
+      where: u.role in ["doctor", "nurse", "clinic_technician", "social_worker"],
+      distinct: u.id,
+      order_by: [asc: u.last_name]
+    )
+    |> Repo.all()
   end
 
   @doc """

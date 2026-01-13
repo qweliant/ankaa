@@ -8,11 +8,12 @@ defmodule Ankaa.Patients.CareNetwork do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
+  @roles [:owner, :admin, :contributor, :viewer]
   schema "care_network" do
     field(:relationship, :string)
-    field(:permissions, {:array, :string}, default: [])
     field(:fridge_card_notes, :string)
+    field(:role, Ecto.Enum, values: @roles, default: :viewer)
+
     belongs_to(:user, User, foreign_key: :user_id)
     belongs_to(:patient, Patient, foreign_key: :patient_id)
 
@@ -21,7 +22,7 @@ defmodule Ankaa.Patients.CareNetwork do
 
   def changeset(patient_association, attrs) do
     patient_association
-    |> cast(attrs, [:relationship, :patient_id, :user_id, :permissions, :fridge_card_notes])
+    |> cast(attrs, [:relationship, :patient_id, :user_id, :fridge_card_notes, :role])
     |> validate_required([:relationship, :patient_id, :user_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:patient_id)

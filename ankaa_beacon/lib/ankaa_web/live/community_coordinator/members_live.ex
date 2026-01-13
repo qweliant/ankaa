@@ -1,15 +1,15 @@
 defmodule AnkaaWeb.Community.MembersLive do
   use AnkaaWeb, :live_view
 
-  alias Ankaa.Accounts
+  alias Ankaa.Communities
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
     if user.organization_id do
-      org = Accounts.get_organization!(user.organization_id)
-      members = Accounts.list_members(org.id)
+      org = Communities.get_organization!(user.organization_id)
+      members = Communities.list_members(org.id)
 
       {:ok,
        assign(socket,
@@ -24,19 +24,19 @@ defmodule AnkaaWeb.Community.MembersLive do
 
   @impl true
   def handle_event("remove_member", %{"id" => user_id}, socket) do
-    member_to_remove = Accounts.get_member!(user_id)
+    member_to_remove = Communities.get_member!(user_id)
 
     # Prevent removing self!
     if member_to_remove.id == socket.assigns.current_user.id do
       {:noreply, put_flash(socket, :error, "You cannot remove yourself from the community.")}
     else
-      case Accounts.remove_member(member_to_remove) do
+      case Communities.remove_member(member_to_remove) do
         {:ok, _} ->
           # Refresh list
           {:noreply,
            socket
            |> put_flash(:info, "Member removed from community.")
-           |> assign(members: Accounts.list_members(socket.assigns.org.id))}
+           |> assign(members: Communities.list_members(socket.assigns.org.id))}
 
         {:error, _} ->
           {:noreply, put_flash(socket, :error, "Failed to remove member.")}

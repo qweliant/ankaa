@@ -1,25 +1,22 @@
 defmodule AnkaaWeb.Community.DashboardLive do
   use AnkaaWeb, :live_view
 
-  alias Ankaa.Community
+  alias Ankaa.Communities
   alias Ankaa.Community.{Post, Resource}
-  alias Ankaa.Accounts
-    alias Phoenix.HTML.Form
-
+  alias Phoenix.HTML.Form
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
     if user.organization_id do
-      org = Accounts.get_organization!(user.organization_id)
+      org = Communities.get_organization!(user.organization_id)
 
-      posts = Community.list_posts(org.id)
-      resources = Community.list_resources(org.id)
-      board_items = Community.list_all_board_items(org.id)
-
-      post_changeset = Community.change_post(%Post{type: "announcement"})
-      resource_changeset = Community.change_resource(%Resource{})
+      posts = Communities.list_posts(org.id)
+      resources = Communities.list_resources(org.id)
+      board_items = Communities.list_all_board_items(org.id)
+      post_changeset = Communities.change_post(%Post{type: "announcement"})
+      resource_changeset = Communities.change_resource(%Resource{})
 
       {:ok,
        assign(socket,
@@ -52,7 +49,7 @@ defmodule AnkaaWeb.Community.DashboardLive do
   def handle_event("validate_post", %{"post" => params}, socket) do
     changeset =
       %Post{}
-      |> Community.change_post(params)
+      |> Communities.change_post(params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, post_form: to_form(changeset))}
@@ -60,19 +57,20 @@ defmodule AnkaaWeb.Community.DashboardLive do
 
   @impl true
   def handle_event("save_post", %{"post" => params}, socket) do
-    params = params
+    params =
+      params
       |> Map.put("organization_id", socket.assigns.org.id)
       |> Map.put("author_id", socket.assigns.current_user.id)
       |> Map.put_new("type", "announcement")
 
-    case Community.create_post(params) do
+    case Communities.create_post(params) do
       {:ok, _post} ->
         {:noreply,
          socket
          |> put_flash(:info, "Post published successfully.")
          |> assign(show_post_form: false)
-         |> assign(posts: Community.list_posts(socket.assigns.org.id))
-         |> assign(post_form: to_form(Community.change_post(%Post{type: "announcement"})))}
+         |> assign(posts: Communities.list_posts(socket.assigns.org.id))
+         |> assign(post_form: to_form(Communities.change_post(%Post{type: "announcement"})))}
 
       {:error, changeset} ->
         {:noreply, assign(socket, post_form: to_form(changeset))}
@@ -83,14 +81,14 @@ defmodule AnkaaWeb.Community.DashboardLive do
   def handle_event("save_resource", %{"resource" => params}, socket) do
     params = Map.put(params, "organization_id", socket.assigns.org.id)
 
-    case Community.create_resource(params) do
+    case Communities.create_resource(params) do
       {:ok, _resource} ->
         {:noreply,
          socket
          |> put_flash(:info, "Resource added to library.")
          |> assign(show_resource_form: false)
-         |> assign(resources: Community.list_resources(socket.assigns.org.id))
-         |> assign(resource_form: to_form(Community.change_resource(%Resource{})))}
+         |> assign(resources: Communities.list_resources(socket.assigns.org.id))
+         |> assign(resource_form: to_form(Communities.change_resource(%Resource{})))}
 
       {:error, changeset} ->
         {:noreply, assign(socket, resource_form: to_form(changeset))}
@@ -102,12 +100,12 @@ defmodule AnkaaWeb.Community.DashboardLive do
     item = Enum.find(socket.assigns.board_items, &(&1.id == id))
 
     if item do
-      {:ok, _updated} = Community.update_board_item_status(item, status)
+      {:ok, _updated} = Communities.update_board_item_status(item, status)
 
       {:noreply,
        socket
        |> put_flash(:info, "Item marked as #{status}.")
-       |> assign(board_items: Community.list_all_board_items(socket.assigns.org.id))}
+       |> assign(board_items: Communities.list_all_board_items(socket.assigns.org.id))}
     else
       {:noreply, socket}
     end
@@ -117,8 +115,10 @@ defmodule AnkaaWeb.Community.DashboardLive do
   def handle_event("invite_member", %{"email" => email}, socket) do
     attrs = %{
       "invitee_email" => email,
-      "invitee_role" => "patient", # Default role for community invites
-      "organization_id" => socket.assigns.org.id, # Forces them into THIS community
+      # Default role for community invites
+      "invitee_role" => "patient",
+      # Forces them into THIS community
+      "organization_id" => socket.assigns.org.id,
       "inviter_id" => socket.assigns.current_user.id
     }
 
@@ -135,7 +135,6 @@ defmodule AnkaaWeb.Community.DashboardLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-
       <div class="bg-white shadow rounded-lg p-6 mb-8">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Grow the Community</h3>
         <form phx-submit="invite_member" class="flex gap-2">
@@ -164,7 +163,6 @@ defmodule AnkaaWeb.Community.DashboardLive do
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
         <div class="space-y-6">
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900 flex items-center">
@@ -181,24 +179,43 @@ defmodule AnkaaWeb.Community.DashboardLive do
           <%= if @show_post_form do %>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <.simple_form for={@post_form} phx-change="validate_post" phx-submit="save_post">
-
-                <.input field={@post_form[:type]} type="select" label="Post Type" options={[
-                  "General Announcement": "announcement",
-                  "Action Item (Advocacy)": "action_item",
-                  "Event": "event"
-                ]} />
+                <.input
+                  field={@post_form[:type]}
+                  type="select"
+                  label="Post Type"
+                  options={[
+                    "General Announcement": "announcement",
+                    "Action Item (Advocacy)": "action_item",
+                    Event: "event"
+                  ]}
+                />
 
                 <.input field={@post_form[:title]} label="Headline" placeholder="Title..." required />
 
                 <%= if Form.input_value(@post_form, :type) == "action_item" do %>
                   <div class="p-3 bg-amber-50 border border-amber-100 rounded-md space-y-3 animate-in fade-in slide-in-from-top-2">
-                    <h4 class="text-xs font-bold text-amber-700 uppercase tracking-wide">Advocacy Settings</h4>
+                    <h4 class="text-xs font-bold text-amber-700 uppercase tracking-wide">
+                      Advocacy Settings
+                    </h4>
                     <div class="grid grid-cols-2 gap-3">
-                       <.input field={@post_form[:action_label]} label="Button Label" placeholder="e.g. Email Landlord" />
-                       <.input field={@post_form[:action_target]} label="Target Email" placeholder="manager@apts.com" />
+                      <.input
+                        field={@post_form[:action_label]}
+                        label="Button Label"
+                        placeholder="e.g. Email Landlord"
+                      />
+                      <.input
+                        field={@post_form[:action_target]}
+                        label="Target Email"
+                        placeholder="manager@apts.com"
+                      />
                     </div>
                     <.input field={@post_form[:action_subject]} label="Subject Line" />
-                    <.input field={@post_form[:action_script]} type="textarea" label="Email Body" rows="3" />
+                    <.input
+                      field={@post_form[:action_script]}
+                      type="textarea"
+                      label="Email Body"
+                      rows="3"
+                    />
                   </div>
                 <% end %>
 
@@ -230,14 +247,18 @@ defmodule AnkaaWeb.Community.DashboardLive do
                   <% end %>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">
-                  {Calendar.strftime(post.published_at || post.inserted_at, "%b %d")} • {String.capitalize(post.type)}
+                  {Calendar.strftime(post.published_at || post.inserted_at, "%b %d")} • {String.capitalize(
+                    post.type
+                  )}
                 </p>
                 <p class="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{post.body}</p>
 
                 <%= if post.type == "action_item" do %>
                   <div class="mt-4 pt-3 border-t border-gray-100">
-                    <a href={"mailto:#{post.action_target}?subject=#{URI.encode(post.action_subject || "")}&body=#{URI.encode(post.action_script || "")}"}
-                       class="flex items-center justify-center w-full rounded-md bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800 shadow-sm hover:bg-amber-200">
+                    <a
+                      href={"mailto:#{post.action_target}?subject=#{URI.encode(post.action_subject || "")}&body=#{URI.encode(post.action_script || "")}"}
+                      class="flex items-center justify-center w-full rounded-md bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800 shadow-sm hover:bg-amber-200"
+                    >
                       <.icon name="hero-envelope" class="w-4 h-4 mr-2" />
                       {post.action_label || "Take Action"}
                     </a>

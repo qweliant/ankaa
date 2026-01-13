@@ -10,14 +10,13 @@ defmodule Ankaa.InvitesTest do
   alias Ankaa.AccountsFixtures
 
   setup do
-    # The central patient for whom care is being coordinated.
     patient_user = AccountsFixtures.patient_fixture()
+    patient_hub = AccountsFixtures.organization_fixture()
 
-    # Care providers who can send and receive invites.
+    {:ok, _assoc} = Ankaa.Communities.add_member(patient_user, patient_hub.id, "admin")
     doctor_user = AccountsFixtures.doctor_fixture()
     nurse_user = AccountsFixtures.nurse_fixture()
 
-    # A brand new user who will be invited to become a patient.
     new_user_to_be_patient = AccountsFixtures.user_fixture(%{email: "new.patient@example.com"})
 
     %{
@@ -25,37 +24,68 @@ defmodule Ankaa.InvitesTest do
       patient_record: patient_user.patient,
       doctor_user: doctor_user,
       nurse_user: nurse_user,
-      new_user_to_be_patient: new_user_to_be_patient
+      new_user_to_be_patient: new_user_to_be_patient,
+      patient_hub: patient_hub
     }
   end
 
   describe "create_invite/2" do
-    test "a doctor can create an invite for a patient", %{
+    test "a doctor can create an invite for a NEW patient", %{
       doctor_user: doctor_user,
       new_user_to_be_patient: new_user_to_be_patient
     } do
       attrs = %{
         "invitee_email" => new_user_to_be_patient.email,
-        "invitee_role" => "patient"
-        # patient_id is nil because the invite is not for an existing patient
+        "invitee_role" => "patient",
+        "invitee_permission" => "owner",
+        "patient_id" => nil
       }
 
-      assert {:ok, %Invite{invitee_role: "patient"}} =
-               Invites.create_invite(doctor_user, attrs)
+      {:ok, invite} = Invites.create_invite(doctor_user, attrs)
+
+      assert invite.invitee_email == new_user_to_be_patient.email
+      assert invite.invitee_role == "patient"
+      assert invite.invitee_permission == "owner"
+      assert invite.status == "pending"
     end
 
     test "a patient can create an invite for a nurse", %{
       patient_user: patient_user,
-      nurse_user: nurse_user
+      nurse_user: nurse
     } do
       attrs = %{
-        "invitee_email" => nurse_user.email,
+        "invitee_email" => nurse.email,
         "invitee_role" => "nurse",
-        "patient_id" => patient_user.patient.id
+        "patient_id" => patient_user.patient.id,
+        "invitee_permission" => "contributor",
+
       }
 
       assert {:ok, %Invite{invitee_role: "nurse"}} =
                Invites.create_invite(patient_user, attrs)
+    end
+
+    test "a doctor can create an invite for a nurse to join a patient's care network and inviters org", %{
+      doctor_user: doctor_user,
+      nurse_user: nurse,
+      patient_user: patient_user,
+      patient_hub: patient_hub
+    } do
+      # add the doctor to the org, then invite the nurse to the org with a specific role
+      {:ok, _membership} = Ankaa.Communities.add_member(doctor_user, patient_hub.id, "admin")
+      attrs = %{
+        "invitee_email" => nurse.email,
+        "invitee_role" => "nurse",
+        "invitee_permission" => "contributor",
+        "patient_id" => patient_user.patient.id,
+        "organization_id" => patient_hub.id
+      }
+
+      {:ok, invite} = Invites.create_invite(doctor_user, attrs)
+
+      assert invite.invitee_role == "nurse"
+      assert invite.organization_id == patient_hub.id
+      assert invite.patient_id == patient_user.patient.id
     end
   end
 

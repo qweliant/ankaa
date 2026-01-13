@@ -75,6 +75,7 @@ defmodule Ankaa.AccountsFixtures do
 
     # Reload user to include patient association
     Ankaa.Repo.preload(user, :patient)
+
   end
 
   def device_fixture(%Ankaa.Patients.Patient{} = patient, attrs \\ %{}) do
@@ -101,11 +102,17 @@ defmodule Ankaa.AccountsFixtures do
     {:ok, org} =
       attrs
       |> Enum.into(%{
-        name: "Test Clinic",
+        name: "Test Clinic #{System.unique_integer()}",
         type: "clinic"
       })
-      |> Ankaa.Accounts.create_organization()
+      |> Ankaa.Communities.create_organization()
 
     org
+  end
+
+  def membership_fixture(user, org, role \\ "member") do
+    {:ok, membership} =
+      Ankaa.Communities.add_member(user, org.id, role)
+    membership
   end
 end

@@ -1,10 +1,9 @@
-defmodule Ankaa.Accounts.Organization do
+defmodule Ankaa.Community.Organization do
   @moduledoc """
   Represents a healthcare organization.
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ankaa.Accounts.User
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -12,9 +11,11 @@ defmodule Ankaa.Accounts.Organization do
     field(:name, :string)
     field(:npi_number, :string)
     field(:type, :string)
+    field(:description, :string)
+    field(:is_public, :boolean, default: true)
 
-    has_many(:users, User)
-
+    has_many(:memberships, Ankaa.Community.OrganizationMembership)
+    has_many(:members, through: [:memberships, :user])
     timestamps()
   end
 

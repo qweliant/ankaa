@@ -4,6 +4,7 @@ defmodule Ankaa.Invites do
   """
   import Ecto.{Query}, warn: false
 
+  alias Ankaa.Communities
   alias Ankaa.Repo
 
   alias Ankaa.Mailer
@@ -11,6 +12,8 @@ defmodule Ankaa.Invites do
   alias Ankaa.Notifications.Invite
   alias Ankaa.Patients
   alias Ankaa.Accounts
+
+  require Logger
 
   @rand_size 32
 
@@ -47,23 +50,21 @@ defmodule Ankaa.Invites do
     final_attrs =
       invite_attrs
       |> Map.put("inviter_id", inviter_user.id)
-      |> Map.put("organization_id", inviter_user.organization_id)
       |> Map.put("token", token)
       |> Map.put("expires_at", expires_at)
       |> Map.put("status", "pending")
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
+    # We use Ecto.Multi to ensure that if the email fails to send, the invite creation is rolled back.
     multi =
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:invite, Invite.changeset(%Invite{}, final_attrs))
       |> Ecto.Multi.run(:email, fn _repo, %{invite: invite} ->
         case Mailer.deliver_invite_email(invite, token) do
           {:ok, _delivery_details} ->
-            # Report success
             {:ok, :email_sent}
 
           {:error, reason} ->
-            # Report failure, this will roll back the transaction
             {:error, reason}
         end
       end)
@@ -113,22 +114,14 @@ defmodule Ankaa.Invites do
   invite status within a single transaction.
   """
   def accept_invite(user, %Invite{} = invite) do
-    cond do
-      invite.invitee_role == "patient" ->
-        accept_as_patient(user, invite)
-
-      invite.invitee_role == "caresupport" ->
-        accept_as_care_support(user, invite)
-
-      invite.invitee_role in ["doctor", "nurse"] ->
-        accept_as_care_provider(user, invite)
-
-      invite.invitee_role in ["doctor", "nurse", "clinic_technician"] ->
-        accept_as_colleague(user, invite)
-
-      true ->
-        {:error, "Invalid or unhandled invite role: #{invite.invitee_role}"}
-    end
+    Repo.transaction(fn ->
+      with {:ok, _result} <- process_target(user, invite),
+           {:ok, updated_invite} <- update_status(invite, "accepted") do
+        updated_invite
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
   end
 
   @doc false
@@ -140,10 +133,17 @@ defmodule Ankaa.Invites do
   end
 
   defp accept_as_patient(user, invite) do
+    access_role = String.to_existing_atom(invite.invitee_permission || "owner")
     Repo.transaction(fn ->
       with {:ok, patient_record} <- find_or_create_patient_for_user(user),
            inviter <- Accounts.get_user!(invite.inviter_id),
-           {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role),
+           {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role, access_role),
+           {:ok, _} <-
+             (if invite.organization_id do
+                Communities.add_member(user, invite.organization_id, "admin")
+              else
+                {:ok, nil}
+              end),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
@@ -156,8 +156,20 @@ defmodule Ankaa.Invites do
     Repo.transaction(fn ->
       with {:ok, user_with_role} <- Accounts.assign_role(user, invite.invitee_role),
            patient <- Patients.get_patient!(invite.patient_id),
+           hub_access_role = String.to_existing_atom(invite.invitee_permission || "contributor"),
            {:ok, _relationship} <-
-             Patients.create_patient_association(user_with_role, patient, invite.invitee_role),
+             Patients.create_patient_association(
+               user_with_role,
+               patient,
+               invite.invitee_role,
+               hub_access_role
+             ),
+           {:ok, _} <-
+             (if invite.organization_id do
+                Communities.add_member(user, invite.organization_id, "member")
+              else
+                {:ok, nil}
+              end),
            {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
         updated_invite
       else
@@ -181,9 +193,10 @@ defmodule Ankaa.Invites do
   end
 
   defp accept_as_colleague(user, invite) do
+    hub_access_role = String.to_existing_atom(invite.invitee_permission || "member")
     Ecto.Multi.new()
     |> Ecto.Multi.update(
-      :invite,
+      :invite_status,
       Invite.changeset(invite, %{status: "accepted", accepted_at: DateTime.utc_now()})
     )
     |> Ecto.Multi.run(:assign_role, fn _repo, _changes ->
@@ -191,7 +204,7 @@ defmodule Ankaa.Invites do
     end)
     |> Ecto.Multi.run(:join_organization, fn _repo, _changes ->
       if invite.organization_id do
-        Accounts.assign_organization(user, invite.organization_id)
+        Communities.add_member(user, invite.organization_id, "member")
       else
         # Inviter has no org, do nothing
         {:ok, user}
@@ -203,13 +216,18 @@ defmodule Ankaa.Invites do
       if invite.patient_id do
         patient = Patients.get_patient!(invite.patient_id)
         relationship = invite.invitee_role
-        Patients.create_patient_association(user, patient, relationship)
+        Patients.create_patient_association(user, patient, relationship, hub_access_role)
       else
         # No patient attached? It's a pure colleague invite. Do nothing.
         {:ok, nil}
       end
     end)
     |> Repo.transaction()
+    |> case do
+      {:ok, %{invite: updated_invite}} -> updated_invite
+      {:error, _step, reason, _changes} -> {:error, reason}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp find_or_create_patient_for_user(user) do
@@ -231,6 +249,33 @@ defmodule Ankaa.Invites do
       existing_patient ->
         # A patient record already exists, so we just return it.
         {:ok, existing_patient}
+    end
+  end
+
+  defp process_target(user, invite) do
+    cond do
+      invite.invitee_role == "patient" ->
+        accept_as_patient(user, invite)
+
+      invite.invitee_role == "caresupport" ->
+        accept_as_care_support(user, invite)
+
+      # Care provider Flow (Doctor, Nurse, Tech, Social Worker)
+      invite.invitee_role in ["doctor", "nurse", "clinic_technician", "social_worker"] ->
+        # Check the Invite Target to decide the strategy
+        if invite.patient_id do
+          # If there is a patient attached, they are a Care Provider
+          accept_as_care_provider(user, invite)
+        else
+          # If no patient, they are just joining the Organization as a Colleague
+          accept_as_colleague(user, invite)
+        end
+
+      invite.organization_id ->
+        Communities.add_member(user, invite.organization_id, invite.invitee_role)
+
+      true ->
+        {:error, "Invite is missing a target (patient_id or organization_id)"}
     end
   end
 
@@ -277,5 +322,11 @@ defmodule Ankaa.Invites do
     else
       :ok
     end
+  end
+
+  defp update_status(invite, status) do
+    invite
+    |> Invite.changeset(%{status: status})
+    |> Repo.update()
   end
 end

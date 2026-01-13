@@ -3,26 +3,25 @@ defmodule AnkaaWeb.Community.Feed do
   LiveView for the Community Coordinator Feed page.
   """
   use AnkaaWeb, :live_view
-  alias Ankaa.Community
 
-  alias Ankaa.Accounts
+  alias Ankaa.Communities
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
     if user.organization_id do
-      org = Accounts.get_organization!(user.organization_id)
+      org = Communities.get_organization!(user.organization_id)
 
       {:ok,
        assign(socket,
          org: org,
          # Fetch Data
-         posts: Community.list_posts(org.id),
-         resources: Community.list_resources(org.id),
-         board_items: Community.list_approved_board_items(org.id),
+         posts: Communities.list_posts(org.id),
+         resources: Communities.list_resources(org.id),
+         board_items: Communities.list_approved_board_items(org.id),
          # Initialize Item Form
-         item_form: to_form(Community.change_board_item(%Ankaa.Community.BoardItem{})),
+         item_form: to_form(Communities.change_board_item(%Ankaa.Community.BoardItem{})),
          show_item_form: false
        )}
     else
@@ -38,7 +37,7 @@ defmodule AnkaaWeb.Community.Feed do
       |> Map.put("user_id", socket.assigns.current_user.id)
       |> Map.put("status", "pending") # Always pending until Coordinator approves
 
-    case Community.create_board_item(params) do
+    case Communities.create_board_item(params) do
       {:ok, _} ->
         {:noreply,
          socket

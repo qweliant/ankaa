@@ -12,8 +12,6 @@ defmodule Ankaa.Alerts do
   alias Ankaa.Patients
   alias Ankaa.Accounts
 
-  require Logger
-
   def create_alert(attrs) do
     patient_id = attrs["patient_id"] || attrs[:patient_id]
     care_network_user_ids = get_care_network_for_alerts(patient_id)
@@ -64,7 +62,6 @@ defmodule Ankaa.Alerts do
         {:ok, alert}
 
       {:error, _failed_operation, failed_value, _changes_so_far} ->
-        Logger.error("Failed to create alert: #{inspect(failed_value)}")
         {:error, failed_value}
     end
   end
@@ -232,10 +229,8 @@ defmodule Ankaa.Alerts do
 
   defp get_care_network_for_alerts(patient_id) do
     from(cn in CareNetwork,
-      # This checks if the `permissions` array contains the "receive_alerts" string
-      where:
-        cn.patient_id == ^patient_id and
-          fragment("? @> ARRAY[?]::varchar[]", cn.permissions, "receive_alerts"),
+      where: cn.patient_id == ^patient_id,
+      where: cn.role in [:owner, :admin, :contributor],
       select: cn.user_id
     )
     |> Repo.all()

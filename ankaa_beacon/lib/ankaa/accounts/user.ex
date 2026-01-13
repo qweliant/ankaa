@@ -4,7 +4,6 @@ defmodule Ankaa.Accounts.User do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ankaa.Accounts.Organization
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -37,7 +36,6 @@ defmodule Ankaa.Accounts.User do
     has_many(:alerts_dismissed, Ankaa.Notifications.Alert, foreign_key: :dismissed_by_user_id)
 
     has_many(:notifications, Ankaa.Notifications.Notification)
-    belongs_to(:organization, Organization)
     timestamps(type: :utc_datetime)
   end
 
