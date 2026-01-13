@@ -58,6 +58,6 @@ defmodule Ankaa.Emergency do
       dispatch_id: dispatch_id,
       status: "dispatched"
     })
-    |> Repo.insert()
+    |> Repo.insert!()
   end
 end

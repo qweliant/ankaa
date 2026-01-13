@@ -6,6 +6,7 @@ defmodule Ankaa.Emergency.Incident do
   import Ecto.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "incidents" do
     field(:trigger_time, :utc_datetime)
     field(:trigger_reason, :string)

@@ -11,7 +11,7 @@ defmodule Ankaa.Emergency.MockDispatcher do
     if payload.address == "error" do
       {:error, "Simulated Dispatch Failure"}
     else
-      Process.sleep(500)
+      Process.sleep(500) # Simulate network delay
       dispatch_id = "mock_dispatch_#{System.unique_integer([:positive])}"
 
       Logger.critical("""

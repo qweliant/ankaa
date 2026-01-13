@@ -188,7 +188,7 @@ defmodule Ankaa.Messages do
           unread_count: unread_count
         }
       end)
-      |> Enum.sort_by(& &1.latest_message.inserted_at, {:desc, DateTime})
+      |> Enum.sort_by(& &1.latest_message.inserted_at, {:desc, NaiveDateTime})
 
     conversations
   end
