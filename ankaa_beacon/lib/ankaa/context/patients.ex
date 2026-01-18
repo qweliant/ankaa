@@ -44,19 +44,23 @@ defmodule Ankaa.Patients do
   def list_patients_for_user(%User{} = user) do
     cond do
       User.admin?(user) ->
-        {:ok, list_patients()}
+        list_patients()
 
-      User.doctor?(user) or User.nurse?(user) ->
-        {:ok, list_care_provider_patients(user)}
+      User.doctor?(user) or
+        User.nurse?(user) or
+        User.clinic_technician?(user) or
+        User.social_worker?(user) or
+          User.caresupport?(user) ->
+        list_care_provider_patients(user)
 
       User.patient?(user) ->
         case get_patient_by_user_id(user.id) do
-          %Patient{} = patient -> {:ok, list_peer_patients(patient)}
-          nil -> {:error, :patient_not_found}
+          %Patient{} = patient -> list_peer_patients(patient)
+          nil -> []
         end
 
       true ->
-        {:error, :unauthorized}
+        []
     end
   end
 
@@ -292,14 +296,14 @@ defmodule Ankaa.Patients do
         User.admin?(user)
 
     if is_authorized do
-        %CareNetwork{}
-        |> CareNetwork.changeset(%{
-            user_id: user.id,
-            patient_id: patient.id,
-            relationship: relationship,
-            role: access_role,
-          })
-        |> Repo.insert()
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: user.id,
+        patient_id: patient.id,
+        relationship: relationship,
+        role: access_role
+      })
+      |> Repo.insert()
     else
       {:error, :unauthorized_role}
     end
@@ -537,7 +541,8 @@ defmodule Ankaa.Patients do
       )
 
     from(u in User,
-      join: m in OrganizationMembership, on: m.user_id == u.id,
+      join: m in OrganizationMembership,
+      on: m.user_id == u.id,
       where: m.organization_id in subquery(doctor_org_ids_query),
       where: u.id != ^doctor.id,
       where: u.id not in subquery(assigned_user_ids_query),

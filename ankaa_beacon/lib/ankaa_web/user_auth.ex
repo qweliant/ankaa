@@ -233,22 +233,11 @@ defmodule AnkaaWeb.UserAuth do
       !user ->
         ~p"/"
 
-      Ankaa.Accounts.User.patient?(user) ->
-        ~p"/patient/monitoring"
-
-      user.role ->
-        case user.role do
-          "doctor" -> ~p"/careprovider/patients"
-          "nurse" -> ~p"/careprovider/patients"
-          "clinic_technician" -> ~p"/careprovider/patients"
-          "caresupport" -> ~p"/caresupport/caringfor"
-          "community_coordinator" -> ~p"/community/dashboard"
-          "social_worker" -> ~p"/case/dashboard"
-          _ -> ~p"/register"
-        end
+      is_nil(user.role) and is_nil(user.patient) ->
+         ~p"/register"
 
       true ->
-        ~p"/register"
+        ~p"/portal"
     end
   end
 end

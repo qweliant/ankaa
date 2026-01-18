@@ -27,19 +27,8 @@
                   <.link href={~p"/"} class="text-xl font-bold text-gray-900">Safehemo</.link>
                 <% !@current_user.role && !@current_user.patient -> %>
                   <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Safehemo</.link>
-                <% @current_user.role && !@current_user.patient -> %>
-                  <%= case @current_user.role do %>
-                    <% "doctor" -> %>
-                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Safehemo</.link>
-                    <% "nurse" -> %>
-                      <.link href={~p"/careprovider/patients"} class="text-xl font-bold text-gray-900">Safehemo</.link>
-                    <% "caresupport" -> %>
-                      <.link href={~p"/caresupport/caringfor"} class="text-xl font-bold text-gray-900">Safehemo</.link>
-                    <% _ -> %>
-                      <.link href={~p"/register"} class="text-xl font-bold text-gray-900">Safehemo</.link>
-                  <% end %>
-                <% @current_user.patient -> %>
-                  <.link href={~p"/patient/health"} class="text-xl font-bold text-gray-900">Safehemo</.link>
+                <% @current_user.role || @current_user.patient -> %>
+                  <.link href={~p"/portal"} class="text-xl font-bold text-gray-900">Safehemo</.link>
               <% end %>
             </div>
           </div>

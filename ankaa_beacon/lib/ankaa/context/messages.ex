@@ -14,6 +14,32 @@ defmodule Ankaa.Messages do
 
   require Logger
 
+  @doc """
+  Returns a changeset for the message form.
+  """
+  def change_message(%Message{} = message, attrs \\ %{}) do
+    Message.changeset(message, attrs)
+  end
+
+  @doc """
+  Creates a generic message between two users and broadcasts it.
+  """
+  def create_message(attrs) do
+    %Message{}
+    |> Message.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, message} ->
+        # Preload sender/recipient for the UI
+        message = Repo.preload(message, [:sender, :recipient])
+        broadcast_message(message)
+        {:ok, message}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
   @doc "Lists all messages for a given patient."
   def list_messages_for_patient(patient_id) do
     from(m in Message,
@@ -39,6 +65,7 @@ defmodule Ankaa.Messages do
     attrs = %{
       content: content,
       sender_id: care_network_member.id,
+      recipient_id: patient.user_id,
       patient_id: patient.id
     }
 
@@ -63,11 +90,7 @@ defmodule Ankaa.Messages do
         sms_body = "Ankaa Alert: #{provider_name} is checking on #{patient.name}."
         SMS.send(to_number, sms_body)
 
-        Phoenix.PubSub.broadcast(
-          Ankaa.PubSub,
-          "patient:#{patient.id}:messages",
-          {:new_message, message}
-        )
+        broadcast_message(message)
 
         {:ok, message}
 
@@ -194,6 +217,37 @@ defmodule Ankaa.Messages do
   end
 
   @doc """
+  Finds all conversations for a specific User (not just patient).
+  It finds anyone this user has sent messages to OR received messages from.
+  """
+  def list_conversations_for_user(user_id) do
+    query = from m in Message,
+      where: m.sender_id == ^user_id or m.recipient_id == ^user_id,
+      preload: [:sender, :recipient],
+      order_by: [desc: m.inserted_at]
+
+    Repo.all(query)
+    |> Enum.group_by(fn message ->
+      if message.sender_id == user_id, do: message.recipient_id, else: message.sender_id
+    end)
+    |> Enum.map(fn {_partner_id, messages} ->
+      latest = hd(messages)
+      partner = if latest.sender_id == user_id, do: latest.recipient, else: latest.sender
+
+      unread_count = Enum.count(messages, fn m ->
+        m.recipient_id == user_id and m.read == false
+      end)
+
+      %{
+        partner: partner,
+        latest_message: latest,
+        unread_count: unread_count
+      }
+    end)
+    |> Enum.sort_by(& &1.latest_message.inserted_at, {:desc, NaiveDateTime})
+  end
+
+  @doc """
   Gets the total unread message count for a patient.
   """
   def get_unread_message_count(patient_id) do
@@ -218,6 +272,19 @@ defmodule Ankaa.Messages do
   end
 
   @doc """
+  Gets the chat history between two specific users.
+  """
+  def get_messages_between(user_a_id, user_b_id) do
+    from(m in Message,
+      where: (m.sender_id == ^user_a_id and m.recipient_id == ^user_b_id) or
+             (m.sender_id == ^user_b_id and m.recipient_id == ^user_a_id),
+      order_by: [desc: m.inserted_at],
+      preload: [:sender, :recipient]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Marks all unread messages from a sender as read.
   """
   def mark_messages_as_read(patient_id, sender_id) do
@@ -231,5 +298,31 @@ defmodule Ankaa.Messages do
       update: [set: [read: true, updated_at: ^now]]
     )
     |> Repo.update_all([])
+  end
+
+  defp broadcast_message(message) do
+    if message.recipient_id do
+      Phoenix.PubSub.broadcast(
+        Ankaa.PubSub,
+        "user:#{message.recipient_id}:messages",
+        {:new_message, message}
+      )
+    end
+
+    if message.sender_id do
+       Phoenix.PubSub.broadcast(
+        Ankaa.PubSub,
+        "user:#{message.sender_id}:messages",
+        {:new_message, message}
+      )
+    end
+
+    if message.patient_id do
+      Phoenix.PubSub.broadcast(
+        Ankaa.PubSub,
+        "patient:#{message.patient_id}:messages",
+        {:new_message, message}
+      )
+    end
   end
 end

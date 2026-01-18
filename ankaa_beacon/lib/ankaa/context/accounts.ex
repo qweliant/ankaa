@@ -429,6 +429,13 @@ defmodule Ankaa.Accounts do
   def nurse?(user), do: has_role?(user, "nurse")
 
   @doc """
+  Returns `true` if the given user has the "clinic technician" role.
+
+  This check delegates to `has_role?(user, "clinic_technician")` and expects a user struct or map that `has_role?/2` can inspect.
+  """
+  def clinic_technician?(user), do: has_role?(user, "clinic_technician")
+
+  @doc """
   Returns `true` if the given user has the "admin" role.
 
   This check delegates to `has_role?(user, "admin")` and expects a user struct or map that `has_role?/2` can inspect.
@@ -441,13 +448,6 @@ defmodule Ankaa.Accounts do
   This check delegates to `has_role?(user, "caresupport")` and expects a user struct or map that `has_role?/2` can inspect.
   """
   def caresupport?(user), do: has_role?(user, "caresupport")
-
-  @doc """
-  Returns `true` if the given user has the "technical_support" role.
-
-  This check delegates to `has_role?(user, "technical_support")` and expects a user struct or map that `has_role?/2` can inspect.
-  """
-  def technical_support?(user), do: has_role?(user, "technical_support")
 
   @doc """
   Returns `true` if the given user is considered a patient.
@@ -486,5 +486,16 @@ defmodule Ankaa.Accounts do
     user
     |> User.provider_profile_changeset(attrs)
     |> Repo.update()
+  end
+
+  def list_available_contacts(%User{} = user) do
+    # This logic depends on your business rules.
+    # For now, let's just return everyone EXCEPT the current user
+    # so you can test easily
+    from(u in User,
+      where: u.id != ^user.id,
+      order_by: u.first_name
+    )
+    |> Repo.all()
   end
 end

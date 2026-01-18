@@ -69,6 +69,19 @@ defmodule Ankaa.Communities do
   def get_organization!(id), do: Repo.get!(Organization, id)
 
   @doc """
+  Returns a list of organizations the user belongs to.
+  """
+  def list_organizations_for_user(%User{} = user) do
+    from(o in Organization,
+      join: m in assoc(o, :memberships),
+      where: m.user_id == ^user.id,
+      order_by: [asc: o.name],
+      select: o
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Removes a user from the community (sets organization_id to nil).
   Does NOT delete the user account.
   """

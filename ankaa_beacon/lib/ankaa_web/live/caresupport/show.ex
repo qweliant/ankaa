@@ -26,13 +26,7 @@ defmodule AnkaaWeb.CaringForLive.Show do
     care_network_entry = Patients.get_care_network_entry(current_user.id, patient.id)
     devices = Devices.list_devices_for_patient(patient.id)
 
-    has_vitals_permission =
-      if care_network_entry do
-        "share_vitals" in care_network_entry.permissions
-      else
-        false
-      end
-
+    has_vitals_permission = false
     Logger.debug("Has vitals permission: #{inspect(has_vitals_permission)}")
 
     if connected?(socket) && has_vitals_permission do
