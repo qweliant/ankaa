@@ -128,6 +128,7 @@ defmodule AnkaaWeb.Router do
     end
   end
 
+
   # Doctor + Nurse routes
   scope "/careprovider", AnkaaWeb do
     pipe_through([:browser, :require_authenticated_user])
@@ -161,31 +162,15 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  scope "/community", AnkaaWeb do
+  scope "/c/:community_id", AnkaaWeb do
     pipe_through([:browser, :require_authenticated_user])
 
-    live_session :community,
+    live_session :community_db,
       on_mount: [
         {AnkaaWeb.UserAuth, :ensure_authenticated},
         {AnkaaWeb.RoleAuth, :require_community_access}
-        # {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
-      live("/dashboard", Community.DashboardLive, :index)
-      live("/members", Community.MembersLive, :index)
-    end
-  end
-
-  scope "/case", AnkaaWeb do
-    pipe_through([:browser, :require_authenticated_user])
-
-    live_session :social,
-      on_mount: [
-        {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_social_worker},
-        {AnkaaWeb.AlertHook, :subscribe_alerts}
-      ] do
-      live("/dashboard", SocialWorker.Index, :index)
-      live("/patient/:id", SocialWorker.Show, :show)
+      live("/dashboard", CommunityDashboardLive, :index)
     end
   end
 end

@@ -1,6 +1,5 @@
 defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
   use AnkaaWeb, :live_component
-  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
   alias Ankaa.Sessions

@@ -17,7 +17,8 @@ defmodule Ankaa.Communities do
       user_id: user.id,
       organization_id: organization_id,
       role: role,
-      status: "active" # Auto-activate if added by system/admin
+      # Auto-activate if added by system/admin
+      status: "active"
     })
     |> Repo.insert()
   end
@@ -29,7 +30,8 @@ defmodule Ankaa.Communities do
   """
   def list_members(organization_id) do
     from(u in User,
-      join: m in OrganizationMembership, on: m.user_id == u.id,
+      join: m in OrganizationMembership,
+      on: m.user_id == u.id,
       where: m.organization_id == ^organization_id,
       order_by: [asc: m.role, asc: u.last_name],
       select: %{user: u, role: m.role, status: m.status, joined_at: m.inserted_at}
@@ -67,6 +69,36 @@ defmodule Ankaa.Communities do
   end
 
   def get_organization!(id), do: Repo.get!(Organization, id)
+
+  @doc """
+  Returns the role string ("coordinator", "patient", etc) for a user in a specific org.
+  Returns nil if not a member.
+  """
+  def get_user_role_in_org(%User{} = user, %Organization{} = org) do
+    case Repo.get_by(OrganizationMembership, user_id: user.id, organization_id: org.id) do
+      %OrganizationMembership{role: role, status: "active"} -> role
+      _ -> nil
+    end
+  end
+
+  def moderator?(role) do
+    role in ["admin", "moderator"]
+  end
+
+  @doc """
+  Returns a list of organizations the user belongs to.
+  Queries the OrganizationMembership join table.
+  """
+  def list_communities_for_user(%User{} = user) do
+    from(o in Organization,
+      join: m in assoc(o, :memberships),
+      where: m.user_id == ^user.id,
+      where: m.status == "active",
+      order_by: [asc: o.name],
+      select: o
+    )
+    |> Repo.all()
+  end
 
   @doc """
   Returns a list of organizations the user belongs to.

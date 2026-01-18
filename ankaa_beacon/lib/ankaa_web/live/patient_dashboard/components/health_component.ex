@@ -1,4 +1,8 @@
 defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
+  @moduledoc """
+  A component that provides a "Health & Wellness" view for patients, showing key treatment information
+  and a daily mood tracker.
+  """
   use AnkaaWeb, :live_component
   alias Ankaa.Patients
 
@@ -60,7 +64,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
         </div>
       </div>
 
-      <div class="bg-white shadow rounded-[2rem] overflow-hidden border border-slate-100">
+      <div class="bg-white shadow rounded-4xl overflow-hidden border border-slate-100">
         <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
           <h3 class="text-lg leading-6 font-medium text-gray-900">My Session Information</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">Prescribed treatment targets</p>
@@ -114,7 +118,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
         </div>
       </div>
 
-      <div class="bg-white rounded-[2rem] p-1 border border-slate-100 shadow-sm">
+      <div class="bg-white rounded-4xl p-1 border border-slate-100 shadow-sm">
         <.live_component
           module={AnkaaWeb.DailyTrackerComponent}
           id="health-mood-tracker"
@@ -124,7 +128,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
         />
       </div>
 
-      <div class="bg-white shadow rounded-[2rem] overflow-hidden border border-slate-100">
+      <div class="bg-white shadow rounded-4xl overflow-hidden border border-slate-100">
         <div class="px-6 py-5 border-b border-slate-100">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Monthly Statistics</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">Treatment performance overview</p>
@@ -153,7 +157,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
         </div>
       </div>
 
-      <div class="bg-white shadow overflow-hidden sm:rounded-[2rem] border border-slate-100">
+      <div class="bg-white shadow overflow-hidden sm:rounded-4xl border border-slate-100">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Treatment History</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">Recent dialysis sessions</p>

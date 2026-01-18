@@ -106,7 +106,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.CareNetworkComponent do
 
       <div class="grid gap-4">
         <%= for member <- @network do %>
-          <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-100 transition-colors">
+          <div class="bg-white p-6 rounded-4xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-100 transition-colors">
 
             <div class="flex items-center gap-4">
               <div class={"h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold

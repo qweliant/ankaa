@@ -4,7 +4,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.FamilyPeaceComponent do
   of the patient's well-being, recent session history, and quick access to communication tools.
   """
   use AnkaaWeb, :live_component
-  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
   alias Ankaa.Sessions

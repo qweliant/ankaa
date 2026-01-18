@@ -1,4 +1,8 @@
 defmodule AnkaaWeb.PatientDashboard.Components.CaseworkerNotebookComponent do
+  @moduledoc """
+  A component that serves as a digital notebook for caseworkers, allowing them to log notes,
+  track social determinants of health, and maintain a history of interactions and interventions.
+  """
   use AnkaaWeb, :live_component
   alias Ankaa.Patients
 

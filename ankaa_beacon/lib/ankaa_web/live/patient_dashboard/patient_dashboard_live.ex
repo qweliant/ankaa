@@ -1,8 +1,8 @@
 defmodule AnkaaWeb.PatientDashboardLive do
   use AnkaaWeb, :live_view
+  use AnkaaWeb, :alert_handling
 
   alias Ankaa.Patients
-  alias Ankaa.Accounts.User
   alias Ankaa.Devices
   alias Ankaa.Accounts
 
@@ -10,7 +10,6 @@ defmodule AnkaaWeb.PatientDashboardLive do
   alias AnkaaWeb.PatientDashboard.Components.FamilyPeaceComponent
   alias AnkaaWeb.PatientDashboard.Components.CaseworkerNotebookComponent
   alias AnkaaWeb.PatientDashboard.Components.PatientSelfComponent
-  alias AnkaaWeb.PatientDashboard.Components.CareNetworkComponent
 
   require Logger
 
