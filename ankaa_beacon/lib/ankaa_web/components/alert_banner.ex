@@ -35,8 +35,7 @@ defmodule AnkaaWeb.AlertBanner do
       ) do
     user = socket.assigns.current_user
 
-    if user.role in ["doctor", "nurse"] do
-      # Clinical users can acknowledge the alert
+    if user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
       patient = Ankaa.Patients.get_patient!(patient_id)
       alert = Enum.find(socket.assigns.active_alerts, &(&1.alert.id == alert_id))
 

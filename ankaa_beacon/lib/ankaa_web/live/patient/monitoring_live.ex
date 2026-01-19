@@ -12,13 +12,12 @@ defmodule AnkaaWeb.MonitoringLive do
 
   @impl true
   def mount(_params, _session, socket) do
-
-
     patient_id = socket.assigns.current_user.patient.id
 
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient:#{patient_id}:devicereading")
-    end
+    # if connected?(socket) do
+    #   Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient:#{patient_id}:devicereading")
+    # end
+
     devices = Devices.list_devices_for_patient(patient_id)
 
     active_session =
@@ -91,7 +90,10 @@ defmodule AnkaaWeb.MonitoringLive do
             }
           end)
 
-        MQTT.publish("ankaa/simulator/control", Jason.encode!(%{start_simulations: command_payload}))
+        MQTT.publish(
+          "ankaa/simulator/control",
+          Jason.encode!(%{start_simulations: command_payload})
+        )
 
         alert_attrs = %{
           patient_id: patient.id,

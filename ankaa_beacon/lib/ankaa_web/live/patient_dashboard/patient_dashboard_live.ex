@@ -23,39 +23,45 @@ defmodule AnkaaWeb.PatientDashboardLive do
     # TODO: Add security check here later (Patients.can_access?)
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:messages")
-      Phoenix.PubSub.subscribe(Ankaa.PubSub, "ankaa/patient:#{patient.id}:devicereading")
+      Phoenix.PubSub.subscribe(Ankaa.PubSub, "patient:#{patient.id}:devicereading")
     end
 
     view_type =
       cond do
         Accounts.patient?(user) and user.patient.id == patient.id ->
           :patient_self
+
         Accounts.doctor?(user) or Accounts.nurse?(user) or Accounts.clinic_technician?(user) ->
           :clinical
+
         Accounts.has_role?(user, "social_worker") ->
           :social
+
         Accounts.caresupport?(user) ->
           :family
+
         true ->
           :unknown
       end
 
-    {:ok,
-     assign(socket,
-       patient: patient,
-       current_user: user,
-       user_role: user.role,
-       page_title: "#{patient.name} - Dashboard",
-       view_type: view_type,
-       has_vitals_permission: true,
-       devices: devices,
-       bp_readings: [],
-       dialysis_readings: [],
-       bp_violations: [],
-       dialysis_violations: [],
-       contacts: contacts,
-       show_chat: false
-     )}
+    {
+      :ok,
+      assign(socket,
+        patient: patient,
+        current_user: user,
+        user_role: user.role,
+        page_title: "#{patient.name} - Dashboard",
+        view_type: view_type,
+        has_vitals_permission: true,
+        devices: devices,
+        bp_readings: [],
+        dialysis_readings: [],
+        bp_violations: [],
+        dialysis_violations: [],
+        contacts: contacts,
+        show_chat: false
+      )
+    }
   end
 
   @impl true
@@ -64,28 +70,45 @@ defmodule AnkaaWeb.PatientDashboardLive do
   end
 
   @impl true
-  def handle_info({:new_reading, reading, violations}, socket)
-      when is_map_key(reading, :systolic) do
-    if Enum.any?(socket.assigns.devices, &(&1.id == reading.device_id)) do
-      {:noreply,
-       socket
-       |> update(:bp_readings, fn readings -> [reading | Enum.take(readings, 2)] end)
-       |> update(:bp_violations, fn _ -> violations end)}
-    else
-      {:noreply, socket}
+  def handle_event("dismiss_alert", %{"id" => alert_id}, socket) do
+    # Call context to dismiss
+    case Ankaa.Alerts.dismiss_alert(alert_id, socket.assigns.current_user, "Dismissed by patient") do
+      {:ok, _} ->
+        # The list updates automatically via PubSub broadcast {:alert_dismissed, id}
+        # which is handled by `use AnkaaWeb, :alert_handling`
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not dismiss alert.")}
     end
   end
 
   @impl true
-  def handle_info({:new_reading, reading, violations}, socket) when is_map_key(reading, :bfr) do
-    if Enum.any?(socket.assigns.devices, &(&1.device_id == reading.device_id)) do
-      {:noreply,
-       socket
-       |> update(:dialysis_readings, fn readings -> [reading | Enum.take(readings, 2)] end)
-       |> update(:dialysis_violations, fn _ -> violations end)}
-    else
-      {:noreply, socket}
-    end
+  def handle_info({:new_reading, reading, violations}, socket) do
+    reading_for_stream =
+      reading
+      |> Map.from_struct()
+      |> Map.put(:id, Ecto.UUID.generate())
+
+    socket =
+      case reading do
+        %Ankaa.Monitoring.BPDeviceReading{} ->
+          socket
+          |> assign(:latest_bp, reading)
+          |> assign(:bp_violations, violations)
+          |> update(:bp_readings, fn list -> [reading | Enum.take(list, 4)] end)
+
+        %Ankaa.Monitoring.DialysisDeviceReading{} ->
+          socket
+          |> assign(:latest_dialysis, reading)
+          |> assign(:dialysis_violations, violations)
+          |> update(:dialysis_readings, fn list -> [reading | Enum.take(list, 4)] end)
+
+        _ ->
+          socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -177,6 +200,10 @@ defmodule AnkaaWeb.PatientDashboardLive do
               id="clinical"
               patient={@patient}
               current_user={@current_user}
+              active_alerts={@active_alerts}
+              bp_readings={@bp_readings}
+              dialysis_readings={@dialysis_readings}
+              devices={@devices}
             />
           <% :family -> %>
             <.live_component

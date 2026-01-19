@@ -1,4 +1,120 @@
-<header class="px-4 sm:px-6 lg:px-8"></header>
+<header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm/50 backdrop-blur-md bg-white/90">
+  <div class="mx-auto max-w-[98%] px-4 sm:px-6 lg:px-8">
+    <div class="flex h-16 justify-between items-center">
+
+      <div class="flex items-center gap-6">
+
+        <%= if assigns[:patient] && @current_user.role !="patient" do %>
+          <.link navigate={~p"/portal"}
+            class="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-purple-600 transition-colors">
+            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-purple-100 transition-colors">
+              <.icon name="hero-arrow-left" class="w-4 h-4" />
+            </div>
+            <span>Back to Portal</span>
+          </.link>
+
+          <div class="h-8 w-px bg-slate-200"></div>
+
+          <div class="flex items-center gap-3 animate-fade-in">
+            <div
+              class="h-9 w-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shadow-inner">
+              {String.slice(@patient.name, 0, 1)}
+            </div>
+            <div>
+              <h1 class="text-sm font-bold text-slate-900 leading-tight">{@patient.name}</h1>
+              <div class="flex items-center gap-1.5">
+                <span class="relative flex h-2 w-2">
+                  <%= if assigns[:session_started] do %>
+                    <span
+                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <% else %>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-slate-300"></span>
+                      <% end %>
+                </span>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+                  {if assigns[:session_started], do: "Live Session", else: "Offline"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <% else %>
+            <div class="flex shrink-0 items-center gap-3">
+              <img src={~p"/images/favicon.svg"} alt="Ankaa" class="h-9 w-9" />
+
+              <% target_link=cond do !@current_user -> ~p"/"
+                !@current_user.role && !@current_user.patient -> ~p"/register"
+                true -> ~p"/portal"
+                end
+                %>
+
+                <.link href={target_link}
+                  class="text-xl font-black tracking-tight text-slate-900 hover:text-purple-700 transition-colors">
+                  Safehemo
+                </.link>
+            </div>
+            <% end %>
+      </div>
+
+      <div class="flex items-center gap-5">
+
+        <%= if @current_user do %>
+          <button class="relative text-slate-400 hover:text-purple-600 transition-colors p-1">
+            <.icon name="hero-bell" class="w-6 h-6" />
+            <%= if assigns[:active_alerts] && @active_alerts !=[] do %>
+              <span
+                class="absolute top-0.5 right-0.5 block h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-pulse"></span>
+              <% end %>
+          </button>
+
+          <div class="h-8 w-px bg-slate-100"></div>
+
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <p class="text-sm font-bold text-slate-700 leading-none mb-0.5">
+                {@current_user.email}
+              </p>
+              <p class="text-[10px] uppercase tracking-wider font-semibold text-purple-600">
+                {@current_user.role || "Member"}
+              </p>
+            </div>
+
+            <div class="relative group">
+              <button
+                class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:border-purple-300 hover:text-purple-600 transition-all overflow-hidden shadow-sm">
+                <.icon name="hero-user" class="w-5 h-5" />
+              </button>
+
+              <div
+                class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right z-50">
+                <.link href={~p"/users/settings"}
+                  class="block px-4 py-3 text-sm text-slate-600 hover:bg-purple-50 hover:text-purple-700 font-medium">
+                  <.icon name="hero-cog-6-tooth" class="w-4 h-4 inline mr-2" /> Settings
+                </.link>
+                <.link href={~p"/users/log_out"} method="delete"
+                  class="block px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 font-medium border-t border-slate-50">
+                  <.icon name="hero-arrow-right-start-on-rectangle" class="w-4 h-4 inline mr-2" /> Log out
+                </.link>
+              </div>
+            </div>
+          </div>
+          <% else %>
+            <div class="flex items-center gap-3">
+              <.link href={~p"/users/log_in"} class="text-sm font-bold text-slate-600 hover:text-purple-600 px-4 py-2">
+                Log in
+              </.link>
+              <.link href={~p"/users/register"}
+                class="text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 px-5 py-2.5 rounded-xl shadow-lg shadow-purple-200 transition-all hover:-translate-y-0.5">
+                Get Started
+              </.link>
+            </div>
+            <% end %>
+
+      </div>
+    </div>
+  </div>
+</header>
 <div id="alert-portal">
   <%= if assigns[:active_alerts] && not Enum.empty?(@active_alerts) do %>
     <.live_component module={AnkaaWeb.AlertBanner} id="alert-banner" active_alerts={@active_alerts}
@@ -9,11 +125,6 @@
   <%= if @current_user && Map.get(assigns, :toast_message)do %>
     <.live_component module={AnkaaWeb.ToastNotification} id="toast-notification-component"
       toast_message={@toast_message} current_user={@current_user} />
-  <% end %>
-</div>
-<div>
-  <%=if @current_user do %>
-    <.live_component module={AnkaaWeb.AppNav} id="main-nav" current_user={@current_user}  />
   <% end %>
 </div>
 <div class="py-10">

@@ -1,31 +1,51 @@
 defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
+  @moduledoc """
+  Clinical command center view for doctors, nurses, and clinic technicians.
+  Displays patient vitals, treatment plan, and allows for quick actions like
+  editing the treatment plan or contacting the care team.
+  """
   use AnkaaWeb, :live_component
 
   alias Ankaa.Patients
   alias Ankaa.Sessions
   alias Ankaa.Patients.TreatmentPlan
+  alias Ankaa.Alerts
+  alias Ankaa.Messages
 
   @impl true
   def update(%{patient: patient, current_user: current_user} = assigns, socket) do
+    socket =
+      if Map.has_key?(socket.assigns, :latest_session) do
+        socket
+      else
+        assign(socket,
+          latest_session: Sessions.get_latest_session_for_patient(patient),
+          recent_sessions: Sessions.list_sessions_for_patient(patient.id),
+          treatment_plan:
+            Patients.get_treatment_plan(patient.id) || %TreatmentPlan{patient_id: patient.id},
+          care_team: Patients.list_care_team(patient.id)
+        )
+      end
+
     latest_session = Sessions.get_latest_session_for_patient(patient)
-    recent_sessions = Sessions.list_sessions_for_patient(patient.id)
     available_colleagues = Patients.list_available_colleagues(current_user, patient.id)
-    care_team = Patients.list_care_team(patient.id)
     age = calculate_age(patient.date_of_birth)
+
+    prepare_readings = fn readings ->
+      Enum.map(readings || [], fn reading ->
+        id = "#{reading.device_id}-#{DateTime.to_unix(reading.timestamp, :millisecond)}"
+
+        reading
+        |> Map.from_struct()
+        |> Map.put(:id, id)
+      end)
+    end
 
     {status, last_session} =
       case latest_session do
         %Sessions.Session{status: s, start_time: st} -> {String.capitalize(s), st}
         nil -> {"No Sessions", nil}
       end
-
-    treatment_plan =
-      case Patients.get_treatment_plan(patient.id) do
-        nil -> %TreatmentPlan{patient_id: patient.id}
-        plan -> plan
-      end
-
-    plan_form = to_form(Patients.change_treatment_plan(treatment_plan))
 
     vitals = %{
       blood_pressure: "135/88 mmHg",
@@ -34,6 +54,28 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
       last_updated: DateTime.utc_now() |> DateTime.add(-15, :minute)
     }
 
+    patient_alerts =
+      if assigns[:active_alerts] do
+        Enum.filter(assigns.active_alerts, fn item ->
+          item.alert.patient_id == patient.id and
+            item.alert.status == "active" and
+            item.alert.severity in ["medium", "high", "critical"]
+        end)
+      else
+        []
+      end
+
+    socket =
+      if Map.has_key?(socket.assigns, :plan_form) do
+        socket
+      else
+        assign(socket,
+          plan_form: to_form(Patients.change_treatment_plan(socket.assigns.treatment_plan)),
+          team_form: to_form(%{"user_id" => ""}),
+          editing_plan: false
+        )
+      end
+
     {:ok,
      socket
      |> assign(assigns)
@@ -41,16 +83,13 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
        age: age,
        status: status,
        last_session: last_session,
-       recent_sessions: recent_sessions,
        vitals: vitals,
-       treatment_plan: treatment_plan,
-       plan_form: plan_form,
-       editing_plan: false,
        show_chat: false,
-       care_team: care_team,
        available_colleagues: available_colleagues,
-       team_form: to_form(%{"user_id" => ""})
-     )}
+       patient_alerts: patient_alerts
+     )
+     |> assign(:bp_readings, prepare_readings.(assigns[:bp_readings]))
+     |> assign(:dialysis_readings, prepare_readings.(assigns[:dialysis_readings]))}
   end
 
   @impl true
@@ -59,25 +98,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
     <div class="max-w-[98%] mx-auto px-2 sm:px-4 lg:px-6 py-8">
       <div class="sm:flex sm:items-center sm:justify-between">
         <div class="sm:flex-auto flex items-center gap-2">
-          <.link
-            navigate={~p"/careprovider/patients"}
-            class="inline-flex items-center justify-center rounded-full bg-white p-2 text-gray-400 shadow-sm ring-1 ring-gray-900/10 hover:bg-gray-50 hover:text-gray-600 -ml-2"
-          >
-            <span class="sr-only">Go back</span>
-            <svg
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-              />
-            </svg>
-          </.link>
           <div>
             <h1 class="text-xl font-semibold text-gray-900">Patient Details: {@patient.name}</h1>
             <p class="mt-2 text-sm text-gray-700">
@@ -86,7 +106,58 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
           </div>
         </div>
       </div>
+      <%= if @patient_alerts != [] do %>
+        <div class="mb-8 rounded-lg border-l-4 border-rose-500 bg-white shadow-md overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div class="px-6 py-4 border-b border-gray-100 bg-rose-50 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-rose-700 flex items-center gap-2">
+              <.icon name="hero-bell-alert" class="w-6 h-6" />
+              Active Risks ({length(@patient_alerts)})
+            </h3>
+          </div>
+          <div class="divide-y divide-gray-100">
+            <%= for item <- @patient_alerts do %>
+              <div class="px-6 py-4 flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-gray-900 uppercase">{item.alert.type}</span>
+                    <span class={[
+                      "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset",
+                      case item.alert.severity do
+                        "critical" -> "bg-red-50 text-red-700 ring-red-600/20"
+                        "high" -> "bg-orange-50 text-orange-700 ring-orange-600/20"
+                        _ -> "bg-yellow-50 text-yellow-800 ring-yellow-600/20"
+                      end
+                    ]}>
+                      {String.capitalize(item.alert.severity)}
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-1">{item.alert.message}</p>
+                  <p class="text-xs text-gray-400 mt-1">
+                    Detected: {Calendar.strftime(item.alert.inserted_at, "%b %d at %H:%M")}
+                  </p>
+                </div>
 
+                <div>
+                  <%= if item.alert.status != "acknowledged" do %>
+                    <button
+                      phx-click="acknowledge_alert"
+                      phx-value-id={item.alert.id}
+                      phx-target={@myself}
+                      class="bg-rose-100 text-rose-800 px-4 py-2 rounded-lg text-sm font-bold hover:bg-rose-200 border border-rose-200 shadow-sm transition-all"
+                    >
+                      Acknowledge & Notify
+                    </button>
+                  <% else %>
+                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full border border-gray-200">
+                      Acknowledged
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
       <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-medium text-gray-900">Overview</h2>
@@ -127,6 +198,42 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
               <dd class="mt-1 text-sm text-gray-900">{@vitals.oxygen_saturation}</dd>
             </div>
           </dl>
+        </div>
+
+        <div class="bg-white shadow rounded-lg p-6 lg:col-span-2">
+          <div class="overflow-hidden flex flex-col h-full">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-lg font-medium text-gray-900">Real-time Telemetry</h2>
+              <%= if @status == "Ongoing" do %>
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75">
+                  </span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+              <% else %>
+                <span class="text-xs text-gray-400">Offline</span>
+              <% end %>
+            </div>
+
+            <div class="space-y-8">
+              <% latest_map = List.first(@bp_readings) %>
+              <.live_component
+                module={AnkaaWeb.Monitoring.BPComponent}
+                id="bp-chart"
+                latest={latest_map}
+                readings={@bp_readings}
+                devices={@devices}
+              />
+              <% latest_map = List.first(@dialysis_readings) %>
+              <.live_component
+                module={AnkaaWeb.Monitoring.DialysisComponent}
+                id="dialysis-chart"
+                latest={latest_map}
+                readings={@dialysis_readings}
+                devices={@devices}
+              />
+            </div>
+          </div>
         </div>
 
         <div class="bg-white shadow rounded-lg p-6 lg:col-span-3 mt-8">
@@ -436,6 +543,35 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
 
     updated_team = Patients.list_care_team(socket.assigns.patient.id)
     {:noreply, assign(socket, care_team: updated_team)}
+  end
+
+  @impl true
+  def handle_event("acknowledge_alert", %{"id" => alert_id}, socket) do
+    user = socket.assigns.current_user
+    patient = socket.assigns.patient
+
+    if user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
+      alert_struct = Alerts.get_alert!(alert_id)
+
+      case Alerts.acknowledge_critical_alert(alert_struct, user.id) do
+        {:ok, _} ->
+          Messages.create_message(%{
+            sender_id: user.id,
+            recipient_id: patient.user_id,
+            content:
+              "I have reviewed your recent alert and checked your vitals. We will monitor this.",
+            read_at: nil
+          })
+
+          {:noreply, put_flash(socket, :info, "Alert acknowledged & patient notified.")}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to acknowledge alert.")}
+      end
+    else
+      Logger.warning("Non-clinical user #{user.id} attempted to acknowledge alert #{alert_id}")
+      {:noreply, put_flash(socket, :error, "Unauthorized.")}
+    end
   end
 
   defp calculate_age(nil), do: "N/A"

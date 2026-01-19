@@ -92,6 +92,11 @@ defmodule Ankaa.Alerts do
   end
 
   @doc """
+  Gets a single alert. Raises Ecto.NoResultsError if the Alert does not exist.
+  """
+  def get_alert!(id), do: Repo.get!(Alert, id)
+
+  @doc """
   Gets all active alerts for a provider, excluding any they have dismissed.
   - For providers, it gets alerts for all their associated patients.
   - For patients, it gets alerts for themselves.
@@ -230,7 +235,7 @@ defmodule Ankaa.Alerts do
   defp get_care_network_for_alerts(patient_id) do
     from(cn in CareNetwork,
       where: cn.patient_id == ^patient_id,
-      where: cn.role in [:owner, :admin, :contributor],
+      # where: cn.role in [:owner, :admin, :contributor],
       select: cn.user_id
     )
     |> Repo.all()

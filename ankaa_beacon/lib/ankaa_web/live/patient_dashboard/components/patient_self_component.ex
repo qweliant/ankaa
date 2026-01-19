@@ -15,7 +15,19 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
 
   @impl true
   def update(assigns, socket) do
-    # 1. Fetch data for the Home View
+    socket =
+      if Map.has_key?(socket.assigns, :latest_session) do
+        socket
+      else
+        patient_id = assigns.patient.id
+
+        assign(socket,
+          latest_session: Sessions.get_latest_session_for_patient(assigns.patient),
+          treatment_plan: Patients.get_treatment_plan(patient_id),
+          todays_mood_entry: Patients.get_mood_entry_for_today(patient_id)
+        )
+      end
+
     latest_session = Sessions.get_latest_session_for_patient(assigns.patient)
     treatment_plan = Patients.get_treatment_plan(assigns.patient.id)
     todays_mood_entry = Patients.get_mood_entry_for_today(assigns.patient.id)
@@ -26,7 +38,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
         _ -> "Idle"
       end
 
-    # (Mock stats - replace with real context calls later)
     stats = %{
       weekly_streak: 2,
       weekly_goal: 3,
@@ -34,6 +45,17 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
       fluid_limit: 1.5,
       dry_weight_diff: 1.2
     }
+
+    prepare_readings = fn readings ->
+      Enum.map(readings || [], fn reading ->
+        id = "#{reading.device_id}-#{DateTime.to_unix(reading.timestamp, :millisecond)}"
+
+        # Convert struct to map and add the ID key
+        reading
+        |> Map.from_struct()
+        |> Map.put(:id, id)
+      end)
+    end
 
     socket =
       socket
@@ -47,6 +69,8 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
         latest_session: latest_session,
         todays_mood_entry: todays_mood_entry
       )
+      |> assign(:bp_readings, prepare_readings.(assigns[:bp_readings]))
+      |> assign(:dialysis_readings, prepare_readings.(assigns[:dialysis_readings]))
 
     {:ok, socket}
   end
@@ -366,7 +390,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
   end
 
   defp refresh_home_data(socket) do
-    patient= socket.assigns.patient
+    patient = socket.assigns.patient
 
     latest_session = Sessions.get_latest_session_for_patient(patient)
     status = if latest_session && latest_session.status == "ongoing", do: "Ongoing", else: "Idle"

@@ -70,7 +70,10 @@ defmodule AnkaaWeb.Router do
     pipe_through([:browser, :require_authenticated_user])
 
     live_session :authenticated,
-      on_mount: [{AnkaaWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [
+        {AnkaaWeb.UserAuth, :ensure_authenticated},
+        {AnkaaWeb.AlertHook, :subscribe_alerts}
+      ] do
       live("/register", RoleRegistrationLive, :new)
       live("/portal", PortalLive.Index, :index)
       live("/users/settings", UserSettingsLive, :edit)
@@ -127,7 +130,6 @@ defmodule AnkaaWeb.Router do
       live "/dashboard", PatientDashboardLive, :index
     end
   end
-
 
   # Doctor + Nurse routes
   scope "/careprovider", AnkaaWeb do
