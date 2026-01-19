@@ -266,14 +266,18 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
                         {String.capitalize(member.relationship || member.user.role)} • {member.user.email}
                       </p>
                     </div>
-                    <div>
-                      <button
-                        phx-click="remove_team_member"
-                        phx-value-id={member.id}
-                        class="text-sm text-red-600 hover:text-red-900"
-                      >
-                        Remove
-                      </button>
+                    <div class="flex items-center justify-between p-3">
+                    <%!-- #TODO use member role to determine if they can remove --%>
+                      <%= if @current_user.role == "admin" or @patient.user_id == @current_user.id or member.id == @current_user.id do %>
+                        <button
+                          phx-click="remove_member"
+                          phx-value-id={member.id}
+                          phx-target={@myself}
+                          class="text-red-500 hover:text-red-700 text-xs font-bold"
+                        >
+                          Remove
+                        </button>
+                      <% end %>
                     </div>
                   </div>
                 </li>

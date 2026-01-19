@@ -24,7 +24,8 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
         assign(socket,
           latest_session: Sessions.get_latest_session_for_patient(assigns.patient),
           treatment_plan: Patients.get_treatment_plan(patient_id),
-          todays_mood_entry: Patients.get_mood_entry_for_today(patient_id)
+          todays_mood_entry: Patients.get_mood_entry_for_today(patient_id),
+          care_team: Patients.list_care_team(patient_id)
         )
       end
 
@@ -244,15 +245,21 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                     </div>
 
                     <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                      <button class="shrink-0 flex items-center gap-3 bg-white p-2 pr-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition">
-                        <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs">
-                          Dr
-                        </div>
-                        <div class="text-left">
-                          <p class="text-xs font-bold text-slate-800">Dr. Yumeno</p>
-                          <p class="text-[10px] text-slate-500">Nephro</p>
-                        </div>
-                      </button>
+                      <%= for member <- Enum.take(@care_team, 3) do %>
+                        <button class="shrink-0 flex items-center gap-3 bg-white p-2 pr-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                          <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs uppercase">
+                            {String.slice(to_string(member.role || "U"), 0, 2)}
+                          </div>
+                          <div class="text-left">
+                            <p class="text-xs font-bold text-slate-800">
+                              {member.user.first_name} {String.slice(to_string(member.user.last_name || ""), 0, 1)}.
+                            </p>
+                            <p class="text-[10px] text-slate-500 capitalize">
+                              {to_string(member.user.role || "Provider")}
+                            </p>
+                          </div>
+                        </button>
+                      <% end %>
 
                       <button
                         phx-click="switch_view"

@@ -320,7 +320,7 @@ defmodule Ankaa.Messages do
     if message.patient_id do
       Phoenix.PubSub.broadcast(
         Ankaa.PubSub,
-        "patient:#{message.patient_id}:messages",
+        "user:#{message.patient_id}:messages",
         {:new_message, message}
       )
     end

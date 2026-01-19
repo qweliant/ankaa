@@ -92,7 +92,7 @@
                   class="block px-4 py-3 text-sm text-slate-600 hover:bg-purple-50 hover:text-purple-700 font-medium">
                   <.icon name="hero-cog-6-tooth" class="w-4 h-4 inline mr-2" /> Settings
                 </.link>
-                <.link href={~p"/users/log_out"} method="delete"
+                <.link href={~p"/users/logout"} method="delete"
                   class="block px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 font-medium border-t border-slate-50">
                   <.icon name="hero-arrow-right-start-on-rectangle" class="w-4 h-4 inline mr-2" /> Log out
                 </.link>
@@ -101,7 +101,7 @@
           </div>
           <% else %>
             <div class="flex items-center gap-3">
-              <.link href={~p"/users/log_in"} class="text-sm font-bold text-slate-600 hover:text-purple-600 px-4 py-2">
+              <.link href={~p"/users/login"} class="text-sm font-bold text-slate-600 hover:text-purple-600 px-4 py-2">
                 Log in
               </.link>
               <.link href={~p"/users/register"}

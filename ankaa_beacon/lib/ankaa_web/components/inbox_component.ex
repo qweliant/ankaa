@@ -56,8 +56,8 @@ defmodule AnkaaWeb.Chat.InboxComponent do
     {:noreply,
      assign(socket,
        active_conversation: %{partner: partner, messages: messages},
-        conversations: updated_conversations,
-        is_composing: false
+       conversations: updated_conversations,
+       is_composing: false
      )}
   end
 
@@ -142,132 +142,120 @@ defmodule AnkaaWeb.Chat.InboxComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col h-full bg-white">
-      <%= if !@active_conversation and !@is_composing do %>
-        <div class="flex justify-between items-center mb-4 px-2">
-          <h3 class="text-lg font-bold text-gray-900">Inbox</h3>
-          <button
-            phx-click="show_compose"
-            phx-target={@myself}
-            class="text-purple-600 hover:text-purple-800 text-sm font-semibold flex items-center gap-1"
-          >
-            <.icon name="hero-pencil-square" class="w-5 h-5" /> New
-          </button>
-        </div>
-      <% end %>
-
-      <div class="flex-1 overflow-y-auto">
+    <div class="flex flex-col h-full bg-white relative">
+      <div class="flex-1 overflow-hidden flex flex-col">
         <%= if @is_composing do %>
-          <div class="p-2">
-            <div class="flex items-center mb-4">
-              <button phx-click="cancel_compose" phx-target={@myself} class="mr-2 text-gray-500">
-                <.icon name="hero-arrow-left" class="w-5 h-5" />
-              </button>
-              <h3 class="font-bold">New Message</h3>
-            </div>
-
-            <p class="text-sm text-gray-500 mb-2">Select a recipient:</p>
-            <ul class="divide-y divide-gray-100 border rounded-lg">
-              <%= for contact <- @contacts do %>
-                <li
-                  class="hover:bg-gray-50 p-3 cursor-pointer flex items-center gap-3"
-                  phx-click="start_new_chat"
-                  phx-value-recipient_id={contact.id}
-                  phx-target={@myself}
-                >
-                  <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-xs font-bold">
-                    {String.at(contact.first_name || "?", 0)}
-                  </div>
-                  <span>{contact.first_name} {contact.last_name}</span>
-                </li>
-              <% end %>
-            </ul>
-          </div>
         <% else %>
           <%= if @active_conversation do %>
             <div class="flex flex-col h-full">
-              <div class="border-b pb-2 mb-2 flex items-center">
+              <div class="border-b px-4 py-3 flex items-center bg-gray-50/50">
                 <button
                   phx-click="close_conversation"
                   phx-target={@myself}
-                  class="mr-2 text-gray-500 hover:text-gray-700"
+                  class="mr-3 text-slate-500 hover:text-purple-600 transition"
                 >
                   <.icon name="hero-arrow-left" class="w-5 h-5" />
                 </button>
-                <span class="font-bold">
-                  {@active_conversation.partner.first_name} {@active_conversation.partner.last_name}
-                </span>
+                <div>
+                  <h3 class="font-bold text-slate-800 text-sm">
+                    {@active_conversation.partner.first_name} {@active_conversation.partner.last_name}
+                  </h3>
+                  <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                    Online
+                  </p>
+                </div>
               </div>
 
-              <div class="flex-1 overflow-y-auto space-y-3 p-2 flex flex-col-reverse">
+              <div
+                id="chat-messages"
+                phx-hook="ScrollToBottom"
+                class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col-reverse scroll-smooth"
+              >
                 <%= for msg <- @active_conversation.messages do %>
-                  <div class={"flex #{if to_string(msg.sender_id) == to_string(@current_user.id), do: "justify-end", else: "justify-start"}"}>
-                    <div class={"max-w-[85%] px-3 py-2 rounded-lg text-sm #{
+                  <div class={"flex mb-2 #{if msg.sender_id == @current_user.id, do: "justify-end", else: "justify-start"}"}>
+                    <div class={"max-w-[80%] px-4 py-2 text-sm shadow-sm #{
                       if msg.sender_id == @current_user.id,
-                      do: "bg-purple-600 text-white rounded-br-none",
-                      else: "bg-gray-100 text-gray-800 rounded-bl-none"
+                      do: "bg-purple-600 text-white rounded-2xl rounded-tr-sm",
+                      else: "bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm"
                     }"}>
                       {msg.content}
                     </div>
                   </div>
                 <% end %>
+
                 <%= if Enum.empty?(@active_conversation.messages) do %>
-                  <p class="text-center text-gray-400 text-sm mt-10">Start the conversation...</p>
+                  <div class="flex-1 flex items-center justify-center">
+                    <p class="text-slate-300 text-sm italic">No messages yet. Say hello!</p>
+                  </div>
                 <% end %>
               </div>
 
-              <div class="mt-2 pt-2 border-t">
+              <div class="p-3 border-t bg-white">
                 <.simple_form
                   for={@message_form}
                   phx-submit="send_message"
                   phx-target={@myself}
-                  class="flex gap-2"
+                  class="relative"
                 >
-                  <div class="flex-1">
-                    <.input
-                      field={@message_form[:content]}
-                      type="text"
-                      placeholder="Message..."
-                      class="mt-0!"
-                    />
+                  <div class="flex gap-2 items-center">
+                    <div class="flex-1 relative">
+                      <.input
+                        field={@message_form[:content]}
+                        type="text"
+                        placeholder="Type a message..."
+                        class="w-full pr-10 rounded-full border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      class="bg-purple-600 hover:bg-purple-700 text-white p-2.5 rounded-full shadow-md shadow-purple-200 transition-transform hover:scale-105 active:scale-95"
+                    >
+                      <.icon name="hero-paper-airplane" class="w-5 h-5 -ml-0.5" />
+                    </button>
                   </div>
-                  <button type="submit" class="bg-purple-600 text-white p-2 rounded-lg">
-                    <.icon name="hero-paper-airplane" class="w-5 h-5" />
-                  </button>
                 </.simple_form>
               </div>
             </div>
           <% else %>
-            <ul class="divide-y divide-gray-100">
+            <ul class="divide-y divide-gray-50 overflow-y-auto">
               <%= for convo <- @conversations do %>
                 <li
                   phx-click="select_conversation"
                   phx-value-partner-id={convo.partner.id}
                   phx-target={@myself}
-                  class="p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition"
+                  class="p-4 hover:bg-purple-50 cursor-pointer transition-colors group"
                 >
                   <div class="flex justify-between items-start">
                     <div class="flex items-center gap-3">
-                      <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
-                        {String.at(convo.partner.first_name, 0)}
+                      <div class="relative">
+                        <div class="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 group-hover:border-purple-200 group-hover:bg-white group-hover:text-purple-600 transition-colors">
+                          {String.at(convo.partner.first_name, 0)}
+                        </div>
+                        <div class="absolute bottom-0 right-0 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white">
+                        </div>
                       </div>
                       <div>
-                        <p class="font-medium text-gray-900">{convo.partner.first_name}</p>
-                        <p class="text-xs text-gray-500 truncate w-32">
+                        <p class="font-bold text-slate-800 text-sm">
+                          {convo.partner.first_name} {convo.partner.last_name}
+                        </p>
+                        <p class={"text-xs truncate w-40 #{if convo.unread_count > 0, do: "font-bold text-slate-900", else: "text-slate-500"}"}>
                           {convo.latest_message.content}
                         </p>
                       </div>
                     </div>
                     <%= if convo.unread_count > 0 do %>
-                      <span class="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full">
-                        {convo.unread_count}
-                      </span>
+                      <div class="flex flex-col items-end gap-1">
+                        <span class="text-[10px] text-slate-400">
+                          {Calendar.strftime(convo.latest_message.inserted_at, "%H:%M")}
+                        </span>
+                        <span class="bg-purple-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center shadow-sm shadow-purple-200">
+                          {convo.unread_count}
+                        </span>
+                      </div>
                     <% end %>
                   </div>
                 </li>
-              <% end %>
-              <%= if Enum.empty?(@conversations) do %>
-                <li class="text-center text-gray-500 py-8">No messages yet.</li>
               <% end %>
             </ul>
           <% end %>
@@ -277,28 +265,31 @@ defmodule AnkaaWeb.Chat.InboxComponent do
     """
   end
 
-  defp load_conversations(user) do
-    # Assuming you have a generic context function.
-    # If not, you might need to check user role and call specific context.
-    Messages.list_conversations_for_user(user.id)
-  end
-
   # Handles real-time updates passed from Parent LiveView
   defp handle_incoming_message(socket, message) do
     current_active = socket.assigns.active_conversation
+    current_user_id = socket.assigns.current_user.id
 
-    # 1. If we are currently chatting with the sender, append the message
+    # Scenario A: We are currently looking at the chat with the sender
     if current_active && current_active.partner.id == message.sender_id do
-      # Mark read since we are looking at it
-      Messages.mark_messages_as_read(socket.assigns.current_user.id, message.sender_id)
+      # 1. Mark read instantly
+      Messages.mark_messages_as_read(current_user_id, message.sender_id)
 
+      # 2. Add to list (PREPENDING because we use flex-col-reverse)
       updated_active = Map.update!(current_active, :messages, &[message | &1])
+
+      # 3. Play a tiny sound effect? (Optional via JS hook later)
       assign(socket, active_conversation: updated_active)
 
-      # 2. If we are not chatting with them, just refresh the conversation list to show badges/latest text
+      # Scenario B: We are looking at a different chat or the list
     else
-      conversations = load_conversations(socket.assigns.current_user)
-      assign(socket, conversations: conversations)
+      # 1. Refresh the conversation list to update the "Unread" badge and "Last Message" snippet
+      new_conversations = Messages.list_conversations_for_user(current_user_id)
+
+      socket
+      |> assign(conversations: new_conversations)
+      # Optional Toast
+      |> put_flash(:info, "New message from #{message.sender_id}!")
     end
   end
 end

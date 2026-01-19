@@ -113,7 +113,22 @@ defmodule AnkaaWeb.PatientDashboardLive do
 
   @impl true
   def handle_info({:new_message, message}, socket) do
+    # 1. (Optional) Log it so you can see it working in the terminal
+    require Logger
+    Logger.info("📨 Real-time message received: #{message.content}")
+
+    # 2. Pass the message to the Inbox Component
+    # CRITICAL: The `id` here ("main-inbox") MUST match the ID in your HTML render
     send_update(AnkaaWeb.Chat.InboxComponent, id: "main-inbox", new_message_event: message)
+
+    # 3. (Optional) Play a sound or show a generic toast if chat is closed
+    socket =
+      if !socket.assigns.show_chat do
+        put_flash(socket, :info, "New message from #{message.sender.first_name}")
+      else
+        socket
+      end
+
     {:noreply, socket}
   end
 
