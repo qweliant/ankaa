@@ -9,7 +9,12 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
   @impl true
   def update(assigns, socket) do
     todays_mood_entry = Patients.get_mood_entry_for_today(assigns.patient.id)
-    mood_form = if todays_mood_entry, do: Patients.get_mood_tracker_changeset(todays_mood_entry), else: Patients.create_mood_tracker_changeset(assigns.patient)
+
+    mood_form =
+      if todays_mood_entry,
+        do: Patients.get_mood_tracker_changeset(todays_mood_entry),
+        else: Patients.create_mood_tracker_changeset(assigns.patient)
+
     treatment_plan = Patients.get_treatment_plan(assigns.patient.id)
 
     # UPDATED: Dummy data structure to match your specific layout requirements
@@ -49,14 +54,23 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
       ]
     }
 
-    {:ok, assign(socket, assigns |> Map.merge(%{todays_mood_entry: todays_mood_entry, mood_form: mood_form, treatment_plan: treatment_plan, data: dummy_data}))}
+    {:ok,
+     assign(
+       socket,
+       assigns
+       |> Map.merge(%{
+         todays_mood_entry: todays_mood_entry,
+         mood_form: mood_form,
+         treatment_plan: treatment_plan,
+         data: dummy_data
+       })
+     )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
-
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-2xl font-bold text-slate-800">Health & Wellness</h2>
@@ -75,7 +89,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Dialysis Schedule</dt>
               <dd class="mt-1 text-lg font-semibold text-purple-700">
-                <%= if @treatment_plan, do: @treatment_plan.frequency, else: "--" %>
+                {if @treatment_plan, do: @treatment_plan.frequency, else: "--"}
               </dd>
             </div>
             <div class="sm:col-span-1">
@@ -91,7 +105,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Access Type</dt>
               <dd class="mt-1 text-lg font-semibold text-gray-900">
-                <%= if @treatment_plan, do: @treatment_plan.access_type, else: "--" %>
+                {if @treatment_plan, do: @treatment_plan.access_type, else: "--"}
               </dd>
             </div>
             <div class="sm:col-span-1">
@@ -137,11 +151,15 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
           <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Treatments Completed</dt>
-              <dd class="mt-1 text-2xl font-semibold text-gray-900">{@data.monthly_stats.treatments_completed}</dd>
+              <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                {@data.monthly_stats.treatments_completed}
+              </dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Average UF Removed</dt>
-              <dd class="mt-1 text-2xl font-semibold text-gray-900">{@data.monthly_stats.average_uf_removed}</dd>
+              <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                {@data.monthly_stats.average_uf_removed}
+              </dd>
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Avg Session Duration</dt>
@@ -151,7 +169,9 @@ defmodule AnkaaWeb.PatientDashboard.Components.HealthComponent do
             </div>
             <div class="sm:col-span-1">
               <dt class="text-sm font-medium text-gray-500">Kt/V Ratio</dt>
-              <dd class="mt-1 text-2xl font-semibold text-gray-900">{@data.monthly_stats.kt_v_ratio}</dd>
+              <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                {@data.monthly_stats.kt_v_ratio}
+              </dd>
             </div>
           </dl>
         </div>

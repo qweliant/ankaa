@@ -18,6 +18,30 @@ defmodule AnkaaWeb.PatientDashboard.Components.MonitoringComponent do
       else
         active_session = Sessions.get_active_session_for_patient(assigns.patient.id)
 
+        # === FIX: WAKE UP SIMULATORS ===
+        # If we found an ongoing session, ensure simulators are running.
+        if active_session && active_session.status == "ongoing" do
+          Task.start(fn ->
+            # Re-construct the start payload (borrowed from handle_event "start_session")
+            devices = assigns.devices
+
+            command_payload =
+              Enum.map(devices, fn device ->
+                %{
+                  device_id: device.id,
+                  scenario: Macro.underscore(device.simulation_scenario || "Normal"),
+                  device_type: map_device_type(device.type)
+                }
+              end)
+
+            # Send the command to the Rust/Python Simulator
+            Ankaa.MQTT.publish(
+              "ankaa/simulator/control",
+              Jason.encode!(%{start_simulations: command_payload})
+            )
+          end)
+        end
+
         assign(socket,
           active_session: active_session,
           session_started: active_session != nil,

@@ -49,6 +49,14 @@ defmodule AnkaaWeb.PatientDashboard.Components.FamilyPeaceComponent do
           <p class="text-stone-500 mt-1">
             Here is the latest update for <strong>{@patient.name}</strong>.
           </p>
+          <div class="mt-6">
+            <.live_component
+              module={AnkaaWeb.CheckInButton}
+              id={"check-in-btn-for-#{@patient.id}"}
+              patient={@patient}
+              current_user={@current_user}
+            />
+          </div>
         </div>
         <button class="p-3 bg-white rounded-2xl shadow-sm text-stone-400 hover:text-stone-600 transition">
           <.icon name="hero-bell" class="w-6 h-6" />
@@ -89,7 +97,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.FamilyPeaceComponent do
           </div>
         </div>
       </div>
-
       <%!-- <%= if @has_vitals_permission and @status == "Ongoing" do %>
         <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-stone-100 shadow-sm">
           <div class="flex items-center gap-3 mb-6">

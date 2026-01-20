@@ -599,12 +599,8 @@ defmodule Ankaa.Patients do
   @doc """
   Removes a member from the care network by the association ID.
   """
-  def delete_care_network_member(association_id) do
-    # We use get here to avoid crashing if the user double-clicks delete
-    case Repo.get(CareNetwork, association_id) do
-      nil -> {:error, :not_found}
-      association -> Repo.delete(association)
-    end
+  def delete_care_network_member(%CareNetwork{} = member) do
+    Repo.delete(member)
   end
 
   @doc """

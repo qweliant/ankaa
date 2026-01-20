@@ -12,6 +12,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
   alias Ankaa.Alerts
   alias Ankaa.Messages
 
+  require Logger
   @impl true
   def update(%{patient: patient, current_user: current_user} = assigns, socket) do
     socket =
@@ -96,6 +97,14 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
   def render(assigns) do
     ~H"""
     <div class="max-w-[98%] mx-auto px-2 sm:px-4 lg:px-6 py-8">
+      <% my_membership = Enum.find(@care_team, fn m -> m.user_id == @current_user.id end)
+
+      my_role = if my_membership, do: my_membership.role, else: @current_user.role
+
+      can_manage_team? =
+        @current_user.role in ["admin", "contributor", "owner"] or
+          @patient.user_id == @current_user.id or
+          @current_user.role in ["doctor", "nurse", "clinic_technician"] %>
       <div class="sm:flex sm:items-center sm:justify-between">
         <div class="sm:flex-auto flex items-center gap-2">
           <div>
@@ -267,15 +276,24 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
                       </p>
                     </div>
                     <div class="flex items-center justify-between p-3">
-                    <%!-- #TODO use member role to determine if they can remove --%>
-                      <%= if @current_user.role == "admin" or @patient.user_id == @current_user.id or member.id == @current_user.id do %>
+                      <% is_me = member.user_id == @current_user.id
+                      is_patient = member.user_id == @patient.user_id
+
+                      can_remove_this_person? = (can_manage_team? and not is_patient) or is_me %>
+
+                      <%= if can_remove_this_person? do %>
                         <button
-                          phx-click="remove_member"
+                          phx-click="remove_team_member"
                           phx-value-id={member.id}
                           phx-target={@myself}
-                          class="text-red-500 hover:text-red-700 text-xs font-bold"
+                          data-confirm={
+                            if is_me,
+                              do: "Are you sure you want to leave the care team?",
+                              else: "Remove this member?"
+                          }
+                          class="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
                         >
-                          Remove
+                          {if is_me, do: "Leave", else: "Remove"}
                         </button>
                       <% end %>
                     </div>
@@ -541,12 +559,44 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
   end
 
   @impl true
-  def handle_event("remove_team_member", %{"id" => association_id}, socket) do
-    # You'll need to implement delete_care_network_member in Context if not exists
-    Patients.delete_care_network_member(association_id)
+  def handle_event("remove_team_member", %{"id" => id}, socket) do
+    membership_to_remove = Patients.get_care_network_member!(id)
 
-    updated_team = Patients.list_care_team(socket.assigns.patient.id)
-    {:noreply, assign(socket, care_team: updated_team)}
+    current_user = socket.assigns.current_user
+    patient = socket.assigns.patient
+
+    is_admin = current_user.role == "admin"
+    is_patient_owner = patient.user_id == current_user.id
+    is_self_removal = membership_to_remove.user_id == current_user.id
+    is_clinician = current_user.role in ["doctor", "nurse", "clinic_technician"]
+
+    target_is_owner = membership_to_remove.user_id == patient.user_id
+
+    authorized? =
+      is_admin or
+        is_patient_owner or
+        is_self_removal or
+        (is_clinician and not target_is_owner)
+
+    if authorized? do
+      case Patients.remove_care_network_member(membership_to_remove) do
+        {:ok, _deleted_struct} ->
+          updated_team = Patients.list_care_team(patient.id)
+
+          msg =
+            if is_self_removal, do: "You have left the care team.", else: "Team member removed."
+
+          {:noreply,
+           socket
+           |> assign(care_team: updated_team)
+           |> put_flash(:info, msg)}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Database error: Could not remove member.")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "Unauthorized: You cannot remove this member.")}
+    end
   end
 
   @impl true

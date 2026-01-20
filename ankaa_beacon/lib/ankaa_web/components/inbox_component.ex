@@ -240,7 +240,11 @@ defmodule AnkaaWeb.Chat.InboxComponent do
                           {convo.partner.first_name} {convo.partner.last_name}
                         </p>
                         <p class={"text-xs truncate w-40 #{if convo.unread_count > 0, do: "font-bold text-slate-900", else: "text-slate-500"}"}>
-                          {convo.latest_message.content}
+                          <%= if convo.latest_message do %>
+                            {convo.latest_message.content}
+                          <% else %>
+                            <span class="italic text-slate-400">Start a conversation</span>
+                          <% end %>
                         </p>
                       </div>
                     </div>

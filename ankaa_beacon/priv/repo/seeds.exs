@@ -169,15 +169,15 @@ Communities.add_member(user_rel, commune_org.id, "member")
 IO.puts("   -> Building care networks...")
 
 # Re-l's Network
-Patients.create_patient_association(dr_daedalus, patient_rel, "doctor")
+Patients.create_patient_association(dr_daedalus, patient_rel, "doctor", "admin")
 Patients.create_patient_association(support_iggy, patient_rel, "caresupport")
-Patients.create_patient_association(tech_raul, patient_rel, "clinic_technician")
+Patients.create_patient_association(tech_raul, patient_rel, "clinic_technician", "contributor")
 
 # Vincent's Network
-Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor")
-Patients.create_patient_association(nurse_kristeva, patient_vincent, "nurse")
+Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor", "admin")
+Patients.create_patient_association(nurse_kristeva, patient_vincent, "nurse", "moderator")
 Patients.create_patient_association(coord_hoody, patient_vincent, "community_coordinator")
-Patients.create_patient_association(worker_pino, patient_vincent, "social_worker")
+Patients.create_patient_association(worker_pino, patient_vincent, "social_worker", "contributor")
 Patients.create_patient_association(support_iggy, patient_vincent, "caresupport")
 
 IO.puts("   -> Seeding Community Content (Feature Parity Check)...")
