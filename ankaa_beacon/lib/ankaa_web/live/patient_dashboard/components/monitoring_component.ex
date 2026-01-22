@@ -18,7 +18,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.MonitoringComponent do
       else
         active_session = Sessions.get_active_session_for_patient(assigns.patient.id)
 
-        # === FIX: WAKE UP SIMULATORS ===
         # If we found an ongoing session, ensure simulators are running.
         if active_session && active_session.status == "ongoing" do
           Task.start(fn ->

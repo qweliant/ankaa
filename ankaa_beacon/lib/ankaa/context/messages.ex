@@ -72,8 +72,6 @@ defmodule Ankaa.Messages do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:message, Message.changeset(%Message{}, attrs))
     |> Ecto.Multi.run(:notification, fn _repo, %{message: message} ->
-      # Create a notification for the *patient* that points
-      # to the new message.
       notification_attrs = %{
         user_id: patient.user_id,
         notifiable_id: message.id,
@@ -113,7 +111,8 @@ defmodule Ankaa.Messages do
     attrs = %{
       content: content,
       sender_id: caregiver.id,
-      patient_id: patient.id
+      patient_id: patient.id,
+      recipient_id: patient.user_id
     }
 
     Ecto.Multi.new()
@@ -131,11 +130,8 @@ defmodule Ankaa.Messages do
     |> Repo.transaction()
     |> case do
       {:ok, %{message: message, notification: _notification}} ->
-        Phoenix.PubSub.broadcast(
-          Ankaa.PubSub,
-          "patient:#{patient.id}:messages",
-          {:new_message, message}
-        )
+        message = Repo.preload(message, [:sender, :recipient])
+        broadcast_message(message)
 
         {:ok, message}
 
@@ -151,29 +147,29 @@ defmodule Ankaa.Messages do
   def send_check_in_reply(%Patient{} = patient, %Message{} = original_message, content) do
     attrs = %{
       content: content,
-      sender_id: patient.user_id, # The *patient* is the sender now
-      patient_id: patient.id # It's still "about" the patient
+      sender_id: patient.user_id,
+      patient_id: patient.id,
+      recipient_id: original_message.sender_id
     }
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:message, Message.changeset(%Message{}, attrs))
     |> Ecto.Multi.run(:notification, fn _repo, %{message: message} ->
-        notification_attrs = %{
-          user_id: original_message.sender_id,
-          notifiable_id: message.id,
-          notifiable_type: "Message",
-          status: "unread"
-        }
-        Notifications.create_notification(notification_attrs)
+      notification_attrs = %{
+        user_id: original_message.sender_id,
+        notifiable_id: message.id,
+        notifiable_type: "Message",
+        status: "unread"
+      }
+
+      Notifications.create_notification(notification_attrs)
     end)
     |> Repo.transaction()
     |> case do
       {:ok, %{message: message, notification: _notification}} ->
-        Phoenix.PubSub.broadcast(
-          Ankaa.PubSub,
-          "user:#{original_message.sender_id}:messages",
-          {:new_message, message}
-        )
+        message = Repo.preload(message, [:sender, :recipient])
+        broadcast_message(message)
+
         {:ok, message}
 
       {:error, _failed_op, failed_value, _changes} ->
@@ -221,10 +217,11 @@ defmodule Ankaa.Messages do
   It finds anyone this user has sent messages to OR received messages from.
   """
   def list_conversations_for_user(user_id) do
-    query = from m in Message,
-      where: m.sender_id == ^user_id or m.recipient_id == ^user_id,
-      preload: [:sender, :recipient],
-      order_by: [desc: m.inserted_at]
+    query =
+      from m in Message,
+        where: m.sender_id == ^user_id or m.recipient_id == ^user_id,
+        preload: [:sender, :recipient],
+        order_by: [desc: m.inserted_at]
 
     Repo.all(query)
     |> Enum.group_by(fn message ->
@@ -234,9 +231,10 @@ defmodule Ankaa.Messages do
       latest = hd(messages)
       partner = if latest.sender_id == user_id, do: latest.recipient, else: latest.sender
 
-      unread_count = Enum.count(messages, fn m ->
-        m.recipient_id == user_id and m.read == false
-      end)
+      unread_count =
+        Enum.count(messages, fn m ->
+          m.recipient_id == user_id and m.read == false
+        end)
 
       %{
         partner: partner,
@@ -276,8 +274,9 @@ defmodule Ankaa.Messages do
   """
   def get_messages_between(user_a_id, user_b_id) do
     from(m in Message,
-      where: (m.sender_id == ^user_a_id and m.recipient_id == ^user_b_id) or
-             (m.sender_id == ^user_b_id and m.recipient_id == ^user_a_id),
+      where:
+        (m.sender_id == ^user_a_id and m.recipient_id == ^user_b_id) or
+          (m.sender_id == ^user_b_id and m.recipient_id == ^user_a_id),
       order_by: [desc: m.inserted_at],
       preload: [:sender, :recipient]
     )
@@ -310,7 +309,7 @@ defmodule Ankaa.Messages do
     end
 
     if message.sender_id do
-       Phoenix.PubSub.broadcast(
+      Phoenix.PubSub.broadcast(
         Ankaa.PubSub,
         "user:#{message.sender_id}:messages",
         {:new_message, message}

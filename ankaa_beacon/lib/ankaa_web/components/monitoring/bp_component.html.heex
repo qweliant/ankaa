@@ -9,9 +9,6 @@
   <%= if Enum.empty?(@devices |> Enum.filter(&(&1.type == "blood_pressure"))) do %>
     <div class="text-center py-12">
       <p class="text-slate-500">No blood pressure device registered.</p>
-      <.link navigate={~p"/patient/devices/new"} class="text-sm font-semibold text-indigo-600 mt-2 inline-block">
-        Register a device &rarr;
-      </.link>
     </div>
     <% else %>
       <%= if @latest==nil do %>

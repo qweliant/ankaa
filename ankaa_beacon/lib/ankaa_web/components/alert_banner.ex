@@ -43,7 +43,6 @@ defmodule AnkaaWeb.AlertBanner do
       Messages.send_checked_on_message(patient, user)
       {:noreply, socket}
     else
-      # Non-clinical users cannot
       Logger.warning("Non-clinical user #{user.id} attempted to acknowledge alert #{alert_id}")
       {:noreply, put_flash(socket, :error, "You are not authorized to perform this action.")}
     end
