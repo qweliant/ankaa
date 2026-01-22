@@ -68,3 +68,10 @@ import_config "#{config_env()}.exs"
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :ankaa, :emergency_adapter, Ankaa.Emergency.MockDispatcher
+
+
+config :sentry,
+  dsn: "https://12efe07eede719ed50cf8109cd716af4@o4510755305029632.ingest.de.sentry.io/4510755308765264",
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()]

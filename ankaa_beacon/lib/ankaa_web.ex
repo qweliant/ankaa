@@ -55,6 +55,7 @@ defmodule AnkaaWeb do
       use Phoenix.LiveView,
         layout: {AnkaaWeb.Layouts, :app}
 
+      on_mount Sentry.LiveViewHook
       unquote(html_helpers())
     end
   end

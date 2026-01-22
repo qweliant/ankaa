@@ -1,4 +1,5 @@
 defmodule AnkaaWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :ankaa
 
   # The session will be stored in the cookie and signed,
@@ -50,4 +51,6 @@ defmodule AnkaaWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug AnkaaWeb.Router
+  plug Sentry.PlugContext
+  plug Sentry.PlugCapture
 end

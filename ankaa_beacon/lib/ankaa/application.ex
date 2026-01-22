@@ -7,6 +7,14 @@ defmodule Ankaa.Application do
 
   @impl true
   def start(_type, _args) do
+    :logger.add_handler(:my_sentry_handler, Sentry.LoggerHandler, %{
+      config: %{metadata: [:file, :line]}
+    })
+
+    Logger.add_backend(Sentry.LoggerBackend)
+    # LoggerBackends.add(Sentry.LoggerBackend)
+    Logger.add_handlers(:ankaa)
+
     children = [
       # Start the Telemetry supervisor
       AnkaaWeb.Telemetry,
@@ -22,19 +30,27 @@ defmodule Ankaa.Application do
       {Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry},
       # Start the Registry for
       {Registry, keys: :unique, name: Ankaa.Monitoring.DeviceRegistry},
-      {DynamicSupervisor, name: Ankaa.Monitoring.DeviceSupervisor, strategy: :one_for_one},
+      {DynamicSupervisor, name: Ankaa.Monitoring.DeviceSupervisor, strategy: :one_for_one}
     ]
 
-  children =
-    if Application.get_env(:ankaa, :start_mqtt_consumer, true) do
-      children ++ [Ankaa.Workers.MQTTConsumer]
-    else
-      children
-    end
+    children =
+      if Application.get_env(:ankaa, :start_mqtt_consumer, true) do
+        children ++ [Ankaa.Workers.MQTTConsumer]
+      else
+        children
+      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Ankaa.Supervisor]
+
+    try do
+      raise "This is a test!"
+    rescue
+      exception ->
+        Sentry.capture_exception(exception, stacktrace: __STACKTRACE__)
+    end
+
     Supervisor.start_link(children, opts)
   end
 
