@@ -23,7 +23,7 @@ defmodule Ankaa.Patients.CareNetwork do
   def changeset(patient_association, attrs) do
     patient_association
     |> cast(attrs, [:relationship, :patient_id, :user_id, :fridge_card_notes, :role])
-    |> validate_required([:relationship, :patient_id, :user_id])
+    |> validate_required([:relationship, :patient_id, :user_id, :role])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:patient_id)
     |> unique_constraint([:user_id, :patient_id],

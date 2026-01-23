@@ -8,8 +8,8 @@ defmodule AnkaaWeb.PatientDashboard.Components.FamilyPeaceComponent do
   alias Ankaa.Patients
   alias Ankaa.Sessions
   alias AnkaaWeb.FridgeCardComponent
-  alias AnkaaWeb.Monitoring.BPComponent
-  alias AnkaaWeb.Monitoring.DialysisComponent
+  # alias AnkaaWeb.Monitoring.BPComponent
+  # alias AnkaaWeb.Monitoring.DialysisComponent
 
   @impl true
   def update(%{patient: patient, current_user: current_user} = assigns, socket) do

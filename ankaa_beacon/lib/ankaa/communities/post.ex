@@ -20,7 +20,7 @@ defmodule Ankaa.Community.Post do
     field(:action_link, :string)
     field(:action_count, :integer, default: 0)
 
-    belongs_to :organization, Ankaa.Accounts.Organization
+    belongs_to :organization, Ankaa.Community.Organization
     belongs_to :author, Ankaa.Accounts.User
 
     timestamps()

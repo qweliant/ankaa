@@ -95,30 +95,6 @@ defmodule AnkaaWeb.Router do
     end
   end
 
-  # Patient routes
-  scope "/patient", AnkaaWeb do
-    pipe_through([:browser, :require_authenticated_user])
-
-    live_session :patient,
-      on_mount: [
-        {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_patient},
-        {AnkaaWeb.AlertHook, :subscribe_alerts}
-      ] do
-      live("/health", HealthLive, :index)
-      live("/monitoring", MonitoringLive, :index)
-      live("/devices/new", DeviceEntryLive, :new)
-      live("/devices", DeviceLive, :index)
-      live("/devices/:id/edit", DeviceEditLive, :edit)
-      live("/carenetwork/invite", CareNetworkInviteLive, :new)
-      live("/carenetwork/", CareNetworkMemberLive.Index, :index)
-      live("/carenetwork/:id/edit", CareNetworkMemberLive.Edit, :edit)
-      live("/inbox", PatientInboxListLive.Index, :index)
-      live("/inbox/:id", PatientInboxListLive.Show, :show)
-      live("/feed", Community.Feed, :index)
-    end
-  end
-
   scope "/p/:patient_id", AnkaaWeb do
     pipe_through [:browser, :require_authenticated_user]
 
@@ -128,39 +104,6 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
       live "/dashboard", PatientDashboardLive, :index
-    end
-  end
-
-  # Doctor + Nurse routes
-  scope "/careprovider", AnkaaWeb do
-    pipe_through([:browser, :require_authenticated_user])
-
-    live_session :care_provider,
-      on_mount: [
-        {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_doctor_or_nurse},
-        {AnkaaWeb.RoleAuth, :require_clinical_staff},
-        {AnkaaWeb.AlertHook, :subscribe_alerts}
-      ] do
-      live("/patients", CareProvider.PatientsLive.Index, :index)
-      live("/patient/new", CareProvider.PatientLive.New, :new)
-      live("/patient/:id", CareProvider.PatientDetailsLive.Index, :index)
-      live("/patient/:id/edit", CareProvider.PatientLive.Edit, :edit)
-    end
-  end
-
-  # Care support routes
-  scope "/caresupport", AnkaaWeb do
-    pipe_through([:browser, :require_authenticated_user])
-
-    live_session :caresupport,
-      on_mount: [
-        {AnkaaWeb.UserAuth, :ensure_authenticated},
-        {AnkaaWeb.RoleAuth, :require_caresupport},
-        {AnkaaWeb.AlertHook, :subscribe_alerts}
-      ] do
-      live("/caringfor", CaringForLive.Index, :index)
-      live("/caringfor/:id", CaringForLive.Show, :show)
     end
   end
 

@@ -11,8 +11,10 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
   alias Ankaa.Patients.TreatmentPlan
   alias Ankaa.Alerts
   alias Ankaa.Messages
+  alias Ankaa.Invites
 
   require Logger
+
   @impl true
   def update(%{patient: patient, current_user: current_user} = assigns, socket) do
     socket =
@@ -99,7 +101,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
     <div class="max-w-[98%] mx-auto px-2 sm:px-4 lg:px-6 py-8">
       <% my_membership = Enum.find(@care_team, fn m -> m.user_id == @current_user.id end)
 
-      my_role = if my_membership, do: my_membership.role, else: @current_user.role
+      _my_role = if my_membership, do: my_membership.role, else: @current_user.role
 
       can_manage_team? =
         @current_user.role in ["admin", "contributor", "owner"] or
@@ -304,27 +306,29 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
           </div>
 
           <div class="bg-gray-50 p-4 rounded-md">
-            <h3 class="text-sm font-medium text-gray-900 mb-2">Add Colleague to Patient</h3>
+            <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <.icon name="hero-user-plus" class="w-4 h-4 text-purple-600" />
+              Add Colleague to Care Team
+            </h3>
             <form phx-submit="add_team_member" class="flex gap-3">
-              <input
-                type="email"
-                name="email"
-                placeholder="Enter colleague's email..."
-                required
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6"
-              />
+              <div class="grow">
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="colleague@hospital.org"
+                  required
+                  class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6"
+                />
+              </div>
               <button
                 type="submit"
-                class="rounded-md bg-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500"
+                class="rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-purple-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-purple-600"
               >
-                Add
+                Send Invite
               </button>
             </form>
-            <p class="text-xs text-gray-500 mt-2">
-              User must already have an account. If not, <.link
-                navigate={~p"/careprovider/patient/new"}
-                class="text-purple-600 underline"
-              >invite them first</.link>.
+            <p class="text-xs text-slate-500 mt-2">
+              This will send an email invite. Once they accept, they will have access to <strong>{ @patient.name }</strong>'s data.
             </p>
           </div>
         </div>
@@ -537,24 +541,52 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
 
   @impl true
   def handle_event("add_team_member", %{"email" => email}, socket) do
+    email = String.trim(email)
     patient = socket.assigns.patient
+    current_user = socket.assigns.current_user
 
     case Patients.add_care_team_member_by_email(patient.id, email) do
-      {:ok, _association} ->
-        # Refresh list
+      {:ok, _new_member} ->
+        # CASE A: Success! They existed and were added.
+
+        # Refresh the list if your UI depends on @care_team
+
         updated_team = Patients.list_care_team(patient.id)
 
         {:noreply,
          socket
+         # Update the list in UI
          |> assign(care_team: updated_team)
-         |> put_flash(:info, "Team member added successfully.")
-         |> assign(team_form: to_form(%{"email" => ""}))}
+         |> assign(team_form: to_form(%{"email" => ""}))
+         |> put_flash(:info, "#{email} added to the team.")}
+
+      # CASE B: User doesn't exist -> Trigger Invite
+
+      # We catch the specific error that says "User not found"
+
+      {:error, reason} when reason in [:not_found, "User not found"] ->
+        # Fallback to Invite Logic
+
+        invite_params = %{"invitee_email" => email, "invitee_role" => "doctor"}
+
+        case Invites.send_invitation(current_user, patient, invite_params) do
+          {:ok, _invite} ->
+            {:noreply,
+             put_flash(socket, :info, "User not found, so we sent an invite to #{email} instead.")}
+
+          {:error, msg} ->
+            {:noreply, put_flash(socket, :error, "Could not invite user: #{inspect(msg)}")}
+        end
+
+      # CASE C: Validation Error (e.g., Already on team)
 
       {:error, %Ecto.Changeset{}} ->
-        {:noreply, put_flash(socket, :error, "This user is already on the team.")}
+        {:noreply, put_flash(socket, :error, "User is already on the team.")}
+
+      # CASE D: Any other error
 
       {:error, msg} ->
-        {:noreply, put_flash(socket, :error, msg)}
+        {:noreply, put_flash(socket, :error, "Error: #{inspect(msg)}")}
     end
   end
 

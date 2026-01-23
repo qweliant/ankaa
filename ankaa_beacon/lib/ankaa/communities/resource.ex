@@ -13,7 +13,7 @@ defmodule Ankaa.Community.Resource do
     field(:url, :string)
     field(:category, :string)
 
-    belongs_to :organization, Ankaa.Accounts.Organization
+    belongs_to :organization, Ankaa.Community.Organization
 
     timestamps()
   end

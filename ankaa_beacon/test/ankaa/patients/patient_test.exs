@@ -77,7 +77,8 @@ defmodule Ankaa.PatientsTest do
       |> CareNetwork.changeset(%{
         user_id: doctor.id,
         patient_id: patient1.patient.id,
-        relationship: "doctor"
+        relationship: "doctor",
+        role: :admin
       })
       |> Repo.insert!()
 

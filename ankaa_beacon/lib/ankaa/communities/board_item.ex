@@ -13,7 +13,7 @@ defmodule Ankaa.Community.BoardItem do
     field(:description, :string)
     field(:status, :string, default: "pending")
 
-    belongs_to(:organization, Ankaa.Accounts.Organization)
+    belongs_to(:organization, Ankaa.Community.Organization)
     belongs_to(:user, Ankaa.Accounts.User)
 
     timestamps()

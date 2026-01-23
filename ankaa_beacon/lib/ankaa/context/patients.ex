@@ -321,7 +321,6 @@ defmodule Ankaa.Patients do
       {:error, :not_a_patient}
   """
   def create_peer_association(%User{} = patient_user, %Patient{} = peer_patient) do
-    default_permissions = ["receive_alerts"]
     # Get the User struct for the second patient
     user2 = Repo.get!(User, peer_patient.user_id)
 
@@ -333,7 +332,6 @@ defmodule Ankaa.Patients do
         user_id: user2.id,
         patient_id: patient_user.patient.id,
         relationship: "peer_support",
-        permissions: default_permissions,
         role: :viewer
       })
       |> Repo.insert!()
@@ -344,7 +342,6 @@ defmodule Ankaa.Patients do
         user_id: patient_user.id,
         patient_id: peer_patient.id,
         relationship: "peer_support",
-        permissions: default_permissions,
         role: :viewer
       })
       |> Repo.insert!()
@@ -557,28 +554,9 @@ defmodule Ankaa.Patients do
   Adds an existing medical professional to a patient's care network by email.
   """
   def add_care_team_member_by_email(patient_id, email) do
-    with %User{} = user <- Ankaa.Accounts.get_user_by_email(email),
-         true <- user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
-      # Define permissions based on role
-      permissions =
-        case user.role do
-          "clinic_technician" -> ["read_vitals", "receive_alerts"]
-          _ -> ["read_vitals", "edit_plan", "receive_alerts"]
-        end
-
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: user.id,
-        patient_id: patient_id,
-        # Use their role as the relationship label
-        relationship: user.role,
-        permissions: permissions
-      })
-      |> Repo.insert()
-    else
-      nil -> {:error, "User not found with that email."}
-      false -> {:error, "User is not a medical professional."}
-      {:error, changeset} -> {:error, changeset}
+    case Ankaa.Accounts.get_user_by_email(email) do
+      %User{} = user -> add_care_team_member(patient_id, user)
+      nil -> {:error, :not_found}
     end
   end
 
@@ -608,30 +586,9 @@ defmodule Ankaa.Patients do
   (Used by the 'Add Colleague' dropdown)
   """
   def add_care_team_member_by_id(patient_id, user_id) do
-    user = Repo.get(User, user_id)
-
-    with %User{} <- user,
-         true <- user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
-      # Define permissions based on role
-      permissions =
-        case user.role do
-          "clinic_technician" -> ["read_vitals", "receive_alerts"]
-          # Doctors, Nurses, Social Workers get edit access
-          _ -> ["read_vitals", "edit_plan", "receive_alerts"]
-        end
-
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: user.id,
-        patient_id: patient_id,
-        relationship: user.role,
-        permissions: permissions
-      })
-      |> Repo.insert()
-    else
-      nil -> {:error, "User not found."}
-      false -> {:error, "User is not a medical professional."}
-      {:error, changeset} -> {:error, changeset}
+    case Repo.get(User, user_id) do
+      %User{} = user -> add_care_team_member(patient_id, user)
+      nil -> {:error, :not_found}
     end
   end
 
@@ -736,5 +693,27 @@ defmodule Ankaa.Patients do
         status: "pending"
       }
     end)
+  end
+
+  defp add_care_team_member(patient_id, user) do
+    if user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
+      role =
+        case user.role do
+          "clinic_technician" -> :viewer
+          "social_worker" -> :viewer
+          _ -> :contributor
+        end
+
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: user.id,
+        patient_id: patient_id,
+        relationship: String.capitalize(user.role),
+        role: role
+      })
+      |> Repo.insert()
+    else
+      {:error, "User exists but is not a medical professional."}
+    end
   end
 end
