@@ -7,6 +7,8 @@ defmodule Ankaa.Sessions.Session do
 
   @statuses ["ongoing", "completed", "aborted"]
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "sessions" do
     field(:start_time, :utc_datetime)
     field(:end_time, :utc_datetime)

@@ -7,21 +7,21 @@ defmodule AnkaaWeb.PortalLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-
-    # 1. "Who am I caring for?" (Provider View)
-    care_networks = Patients.list_patients_for_user(user)
-
-    # 2. "Where do I belong?" (Community View)
     communities = Communities.list_organizations_for_user(user)
-
-    # 3. "Am I a patient?" (Self View)
-    # If the user is a patient, they need a card to enter their OWN dashboard.
     my_patient_profile = Patients.get_patient_by_user_id(user.id)
+
+    socket =
+      case Patients.list_patients_for_user(user) do
+        {:ok, patients} ->
+          assign(socket, care_networks: patients)
+
+        {:error, _reason} ->
+          assign(socket, care_networks: [])
+      end
 
     {:ok,
      assign(socket,
        page_title: "My Portal",
-       care_networks: care_networks,
        communities: communities,
        my_patient_profile: my_patient_profile
      )}

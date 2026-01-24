@@ -9,11 +9,11 @@ defmodule AnkaaWeb.UserLoginLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/users/login")
 
       assert html =~ "Log in"
-      assert html =~ "Register"
+      assert html =~ "Sign up"
       assert html =~ "Forgot your password?"
     end
 
-    test "redirects if already logged in", %{conn: conn} do
+    test "redirects if already logged in but is not regitered with a role", %{conn: conn} do
       result =
         conn
         |> log_in_user(user_fixture())

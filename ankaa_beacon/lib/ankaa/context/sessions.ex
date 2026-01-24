@@ -4,13 +4,16 @@ defmodule Ankaa.Sessions do
   alias Ankaa.Sessions.Session
 
   @doc """
-  Returns a list of all sessions for a patient, newest first.
+  Returns a list of sessions for a patient, newest first, with an optional limit.
   """
-  def list_sessions_for_patient(patient_id) do
+  def list_sessions_for_patient(patient_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+
     Repo.all(
       from(s in Session,
         where: s.patient_id == ^patient_id,
-        order_by: [desc: s.start_time]
+        order_by: [desc: s.start_time],
+        limit: ^limit
       )
     )
   end

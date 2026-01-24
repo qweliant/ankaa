@@ -43,24 +43,29 @@ defmodule Ankaa.Patients do
   """
   def list_patients_for_user(%User{} = user) do
     cond do
-      User.admin?(user) ->
-        list_patients()
+      user.role == "admin" ->
+        {:ok, list_patients()}
 
-      User.doctor?(user) or
-        User.nurse?(user) or
-        User.clinic_technician?(user) or
-        User.social_worker?(user) or
-          User.caresupport?(user) ->
-        list_care_provider_patients(user)
+      user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] ->
+        patients =
+          list_care_provider_patients(user)
+          |> Repo.preload([:user, :devices])
 
-      User.patient?(user) ->
-        case get_patient_by_user_id(user.id) do
-          %Patient{} = patient -> list_peer_patients(patient)
-          nil -> []
+        {:ok, patients}
+
+      patient_rec = get_patient_by_user_id(user.id) ->
+        if patient_rec do
+          patients =
+            list_peer_patients(patient_rec)
+            |> Repo.preload([:user, :devices])
+
+          {:ok, patients}
+        else
+          {:error, :unauthorized}
         end
 
       true ->
-        []
+        {:error, :unauthorized}
     end
   end
 
@@ -174,24 +179,28 @@ defmodule Ankaa.Patients do
       {:ok, [%Patient{name: "John Doe"}, ...]}
 
   """
-  def search_patients(%User{} = user, search_terms) do
-    base_query = from(p in Patient)
+  def search_patients(%User{} = user, params) do
+    case list_patients_for_user(user) do
+      {:ok, allowed_patients} ->
+        # Filter the allowed list in memory or compose a new query
+        # Since we already fetched them, let's filter in memory for simplicity
+        # (or better: refactor to use composable Ecto queries)
 
-    query =
-      case search_terms do
-        %{name: name} when is_binary(name) and name != "" ->
-          from(p in base_query, where: ilike(p.name, ^"%#{name}%"))
+        search_term = Map.get(params, :name)
 
-        %{external_id: id} when is_binary(id) or is_integer(id) ->
-          from(p in base_query, where: p.external_id == ^id)
+        results =
+          if is_nil(search_term) or search_term == "" do
+            allowed_patients
+          else
+            Enum.filter(allowed_patients, fn p ->
+              String.contains?(String.downcase(p.name), String.downcase(search_term))
+            end)
+          end
 
-        _ ->
-          base_query
-      end
+        {:ok, results}
 
-    with {:ok, patients} <- list_patients_for_user(user) do
-      patient_ids = Enum.map(patients, & &1.id)
-      {:ok, Repo.all(from(p in query, where: p.id in ^patient_ids))}
+      error ->
+        error
     end
   end
 
@@ -627,11 +636,10 @@ defmodule Ankaa.Patients do
     |> Repo.all()
   end
 
-  # Private helpers
   defp list_care_provider_patients(user) do
     CareNetwork
-    |> join(:inner, [pa], p in Patient, on: pa.patient_id == p.id)
-    |> where([pa, _], pa.user_id == ^user.id)
+    |> join(:inner, [cn], p in Patient, on: cn.patient_id == p.id)
+    |> where([cn, _], cn.user_id == ^user.id)
     |> select([_, p], p)
     |> Repo.all()
   end
@@ -642,7 +650,6 @@ defmodule Ankaa.Patients do
         where: cn.patient_id == ^patient.id and cn.relationship == "peer_support",
         select: cn.user_id
       )
-
     from(p in Patient,
       where: p.user_id in subquery(peer_user_ids_query)
     )

@@ -174,8 +174,16 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                 <div class="space-y-6">
                   <div class="bg-white p-6 rounded-4xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-purple-200 transition-colors">
                     <div class="flex justify-between items-start mb-4">
-                      <div class="bg-purple-50 p-3 rounded-2xl text-purple-600">
-                        <.icon name="hero-face-smile" class="w-8 h-8" />
+                      <div class={
+                        if @todays_mood_entry && @todays_mood_entry.mood in ["Dizzy", "Cramping"],
+                          do: "bg-rose-50 p-3 rounded-2xl text-rose-600",
+                          else: "bg-purple-50 p-3 rounded-2xl text-purple-600"
+                      }>
+                        <%= if @todays_mood_entry && @todays_mood_entry.mood in ["Dizzy", "Cramping"] do %>
+                          <.icon name="hero-exclamation-triangle" class="w-8 h-8" />
+                        <% else %>
+                          <.icon name="hero-heart" class="w-8 h-8" />
+                        <% end %>
                       </div>
                       <button
                         phx-click="switch_view"
@@ -191,28 +199,44 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                       <h3 class="text-3xl font-black text-slate-800 mb-1">
                         {@todays_mood_entry.mood}
                       </h3>
-                      <p class="text-sm font-medium text-slate-500 mb-4">Daily Check-in Complete</p>
+                      <p class="text-sm font-medium text-slate-500 mb-4">Safety Check Complete</p>
 
                       <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                        <div class="bg-green-500 h-3 rounded-full w-full"></div>
+                        <div class={
+                          if @todays_mood_entry.mood in ["Dizzy", "Cramping"],
+                            do: "bg-rose-500 h-3 rounded-full w-full",
+                            else: "bg-emerald-500 h-3 rounded-full w-full"
+                        }>
+                        </div>
                       </div>
 
-                      <button
-                        phx-click="switch_view"
-                        phx-value-view="health"
-                        phx-target={@myself}
-                        class="mt-6 w-full py-2 rounded-xl border-2 border-dashed border-green-200 text-green-600 font-bold text-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <.icon name="hero-check" class="w-4 h-4" /> Entry Saved
-                      </button>
+                      <%= if @todays_mood_entry.mood in ["Dizzy", "Cramping"] do %>
+                        <button
+                          phx-click="switch_view"
+                          phx-value-view="health"
+                          phx-target={@myself}
+                          class="mt-6 w-full py-2 rounded-xl bg-rose-50 text-rose-700 font-bold text-sm hover:bg-rose-100 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <.icon name="hero-eye" class="w-4 h-4" /> Review Safety Alert
+                        </button>
+                      <% else %>
+                        <button
+                          phx-click="switch_view"
+                          phx-value-view="health"
+                          phx-target={@myself}
+                          class="mt-6 w-full py-2 rounded-xl border-2 border-dashed border-emerald-200 text-emerald-600 font-bold text-sm hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <.icon name="hero-check" class="w-4 h-4" /> Status Normal
+                        </button>
+                      <% end %>
                     <% else %>
                       <h3 class="text-3xl font-black text-slate-800 mb-1">
                         Hello!
                         <span class="text-lg font-medium text-slate-400 block">
-                          How are you feeling?
+                          How does your body feel?
                         </span>
                       </h3>
-                      <p class="text-sm font-medium text-slate-500 mb-4">Daily Check-in Pending</p>
+                      <p class="text-sm font-medium text-slate-500 mb-4">Pre-Session Check Pending</p>
 
                       <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
                         <div class="bg-purple-500 h-3 rounded-full w-[5%]"></div>
@@ -222,9 +246,9 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                         phx-click="switch_view"
                         phx-value-view="health"
                         phx-target={@myself}
-                        class="mt-6 w-full py-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-500 font-bold text-sm hover:border-purple-400 hover:text-purple-600 transition-colors"
+                        class="mt-6 w-full py-2 rounded-xl bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 shadow-md shadow-purple-200 transition-all"
                       >
-                        + Log Mood
+                        Start Safety Check
                       </button>
                     <% end %>
                   </div>
@@ -252,7 +276,11 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                           </div>
                           <div class="text-left">
                             <p class="text-xs font-bold text-slate-800">
-                              {member.user.first_name} {String.slice(to_string(member.user.last_name || ""), 0, 1)}.
+                              {member.user.first_name} {String.slice(
+                                to_string(member.user.last_name || ""),
+                                0,
+                                1
+                              )}.
                             </p>
                             <p class="text-[10px] text-slate-500 capitalize">
                               {to_string(member.user.role || "Provider")}
@@ -274,29 +302,52 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                 </div>
 
                 <div class="space-y-6">
-                  <div class="bg-white p-6 rounded-4xl border border-slate-100 shadow-sm flex items-center justify-between">
+                  <%!-- <div class="bg-white p-6 rounded-4xl border border-slate-100 shadow-sm flex items-center justify-between">
                     <div>
                       <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                        Weight Status
+                        Fluid Status (Weight)
                       </p>
                       <h3 class="text-2xl font-black text-slate-800">
-                        +{@stats.dry_weight_diff}
+                        <%= if @stats.dry_weight_diff > 0 do %>
+                          +{@stats.dry_weight_diff}
+                        <% else %>
+                          {@stats.dry_weight_diff}
+                        <% end %>
                         <span class="text-sm font-medium text-slate-400">kg</span>
                       </h3>
-                      <p class="text-xs text-orange-500 font-bold bg-orange-50 px-2 py-0.5 rounded-md inline-block mt-1">
-                        Over Dry Weight
-                      </p>
+
+                      <%= cond do %>
+                        <% @stats.dry_weight_diff > 2.0 -> %>
+                          <p class="text-xs text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                            ⚠️ High Fluid Risk
+                          </p>
+                        <% @stats.dry_weight_diff > 1.0 -> %>
+                          <p class="text-xs text-orange-500 font-bold bg-orange-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                            Over Dry Weight
+                          </p>
+                        <% true -> %>
+                          <p class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                            Safe Range
+                          </p>
+                      <% end %>
                     </div>
-                    <div class="h-14 w-14 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+
+                    <div class={
+                      if @stats.dry_weight_diff > 2.0,
+                        do:
+                          "h-14 w-14 bg-rose-50 text-rose-400 rounded-full flex items-center justify-center",
+                        else:
+                          "h-14 w-14 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center"
+                    }>
                       <.icon name="hero-scale" class="w-7 h-7" />
                     </div>
-                  </div>
+                  </div> --%>
 
-                  <div class="bg-linear-to-br from-purple-600 to-indigo-600 p-6 rounded-4xl shadow-lg text-white relative overflow-hidden flex flex-col justify-between h-48">
+                  <%!-- <div class="bg-linear-to-br from-purple-600 to-indigo-600 p-6 rounded-4xl shadow-lg text-white relative overflow-hidden flex flex-col justify-between h-48">
                     <div class="relative z-10 flex justify-between items-start">
                       <div>
                         <p class="text-purple-200 text-xs font-bold uppercase tracking-wider mb-1">
-                          Weekly Goal
+                          Weekly Adherence
                         </p>
                         <h3 class="text-3xl font-black">
                           {@stats.weekly_streak}
@@ -306,23 +357,23 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
                         </h3>
                       </div>
                       <div class="text-center bg-white/20 p-2 rounded-2xl backdrop-blur-sm">
-                        <div class="text-2xl">🔥</div>
+                        <div class="text-2xl">🛡️</div>
                       </div>
                     </div>
                     <div class="relative z-10">
-                      <p class="text-sm font-medium text-white/90 mb-3">Treatments Completed</p>
+                      <p class="text-sm font-medium text-white/90 mb-3">Sessions Completed</p>
                       <button
                         phx-click="switch_view"
                         phx-value-view="health"
                         phx-target={@myself}
                         class="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl text-xs font-bold transition border border-white/10"
                       >
-                        View Trends
+                        View Safety History
                       </button>
                     </div>
                     <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl">
                     </div>
-                  </div>
+                  </div> --%>
 
                   <button
                     phx-click="switch_view"

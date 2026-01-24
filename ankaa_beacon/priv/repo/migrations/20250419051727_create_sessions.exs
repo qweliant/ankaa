@@ -2,7 +2,8 @@ defmodule Ankaa.Repo.Migrations.CreateSessions do
   use Ecto.Migration
 
   def change do
-    create table(:sessions) do
+    create table(:sessions, primary_key: false) do
+      add(:id, :binary_id, primary_key: true)
       add(:start_time, :utc_datetime, null: false)
       add(:end_time, :utc_datetime)
       add(:status, :string, null: false, default: "ongoing")

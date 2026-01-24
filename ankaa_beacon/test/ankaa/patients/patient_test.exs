@@ -47,15 +47,19 @@ defmodule Ankaa.PatientsTest do
     test "doctor sees only their patients", %{doctor: doctor, patient1: p1, patient2: p2} do
       assert {:ok, patients} = Patients.list_patients_for_user(doctor)
       assert length(patients) == 1
-      assert p1.patient in patients
-      refute p2.patient in patients, "Doctor should only see their assigned patients"
+      patient_ids = Enum.map(patients, & &1.id)
+
+      assert p1.patient.id in patient_ids
+      refute p2.patient.id in patient_ids, "Doctor should only see their assigned patients"
     end
 
     test "patient sees peer patients", %{patient1: p1, patient2: p2} do
       assert {:ok, patients} = Patients.list_patients_for_user(p1)
       assert length(patients) == 1
-      refute p1.patient in patients, "Patient shouldn't see themselves"
-      assert p2.patient in patients, "Patient should see their peers"
+      patient_ids = Enum.map(patients, & &1.id)
+
+      refute p1.patient.id in patient_ids, "Patient shouldn't see themselves"
+      assert p2.patient.id in patient_ids, "Patient should see their peers"
     end
 
     test "unauthorized user gets error" do
@@ -93,13 +97,15 @@ defmodule Ankaa.PatientsTest do
 
     test "doctor can search their patients by name", %{doctor: doctor, patient1: p1} do
       assert {:ok, results} = Patients.search_patients(doctor, %{name: "Test Patient"})
-      assert p1.patient in results
+      result_ids = Enum.map(results, & &1.id)
+      assert p1.patient.id in result_ids
     end
 
     test "patient can't see unauthorized patients in search", %{patient1: p1} do
       # Assuming patient1 shouldn't see patient2 based on your rules
       assert {:ok, results} = Patients.search_patients(p1, %{name: "Peer Patient"})
-      refute p1.patient in results
+      result_ids = Enum.map(results, & &1.id)
+      refute p1.patient.id in result_ids
     end
 
     test "handles empty search terms", %{admin: admin} do
