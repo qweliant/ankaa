@@ -92,5 +92,27 @@ defmodule Ankaa.OrganizationTest do
       patient_user = Ankaa.Repo.get(Ankaa.Accounts.User, patient.id)
       assert Ankaa.Communities.get_membership(patient_user.id, org.id) == nil
     end
+
+    test "create_organization_with_defaults/2 creates org, membership, post, and resource" do
+      user = AccountsFixtures.user_fixture()
+      attrs = %{name: "Seeded Community", description: "Testing seeds"}
+
+      assert {:ok, result} = Ankaa.Communities.create_organization_with_defaults(user, attrs)
+
+      assert result.org.name == "Seeded Community"
+
+      assert result.membership.user_id == user.id
+      assert result.membership.role == "admin"
+      assert result.membership.organization_id == result.org.id
+
+      assert result.welcome_post.title == "Welcome to Seeded Community"
+      assert result.welcome_post.organization_id == result.org.id
+
+      assert result.welcome_post.author_id == user.id
+
+      assert result.resource.title == "Getting Started with SafeHemo"
+      assert result.resource.organization_id == result.org.id
+      assert result.resource.user_id == user.id
+    end
   end
 end

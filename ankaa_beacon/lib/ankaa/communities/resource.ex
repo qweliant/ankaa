@@ -14,13 +14,14 @@ defmodule Ankaa.Community.Resource do
     field(:category, :string)
 
     belongs_to :organization, Ankaa.Community.Organization
+    belongs_to :user, Ankaa.Accounts.User
 
     timestamps()
   end
 
   def changeset(resource, attrs) do
     resource
-    |> cast(attrs, [:title, :description, :url, :category, :organization_id])
-    |> validate_required([:title, :url, :category, :organization_id])
+    |> cast(attrs, [:title, :description, :url, :category, :organization_id, :user_id])
+    |> validate_required([:title, :url, :category, :organization_id, :user_id])
   end
 end

@@ -68,6 +68,50 @@ defmodule Ankaa.Communities do
     |> Repo.insert()
   end
 
+  @doc """
+  Creates an organization, adds the creator as admin, and seeds default content.
+  """
+  def create_organization_with_defaults(%User{} = creator, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:org, Organization.changeset(%Organization{}, attrs))
+    |> Ecto.Multi.run(:membership, fn repo, %{org: org} ->
+      %OrganizationMembership{}
+      |> OrganizationMembership.changeset(%{
+        user_id: creator.id,
+        organization_id: org.id,
+        role: "admin",
+        status: "active"
+      })
+      |> repo.insert()
+    end)
+    |> Ecto.Multi.run(:welcome_post, fn repo, %{org: org} ->
+      %Post{}
+      |> Post.changeset(%{
+        organization_id: org.id,
+        author_id: creator.id,
+        title: "Welcome to #{org.name}",
+        body: "This is your Community News feed. As a coordinator, you can pin important announcements here.",
+        is_pinned: true,
+        published_at: DateTime.utc_now(),
+        type: "announcement"
+      })
+      |> repo.insert()
+    end)
+    |> Ecto.Multi.run(:resource, fn repo, %{org: org} ->
+      %Resource{}
+      |> Resource.changeset(%{
+        organization_id: org.id,
+        user_id: creator.id,
+        title: "Getting Started with SafeHemo",
+        description: "A guide on how to use the Resource Library.",
+        url: "https://safehemo.com",
+        category: "guide"
+      })
+      |> repo.insert()
+    end)
+    |> Repo.transaction()
+  end
+
   def get_organization!(id), do: Repo.get!(Organization, id)
 
   @doc """
@@ -111,6 +155,13 @@ defmodule Ankaa.Communities do
       select: o
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking organization changes.
+  """
+  def change_organization(%Organization{} = organization, attrs \\ %{}) do
+    Organization.changeset(organization, attrs)
   end
 
   @doc """
@@ -222,4 +273,10 @@ defmodule Ankaa.Communities do
     |> BoardItem.moderation_changeset(%{status: status})
     |> Repo.update()
   end
+
+  def delete_board_item(%BoardItem{} = item) do
+    Repo.delete(item)
+  end
+
+  def get_board_item!(id), do: Repo.get!(BoardItem, id)
 end
