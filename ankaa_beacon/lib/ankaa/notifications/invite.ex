@@ -29,6 +29,7 @@ defmodule Ankaa.Notifications.Invite do
     field(:invitee_email, :string)
     field(:invitee_role, :string)
     field(:invitee_permission, :string)
+    field(:invitee_relationship, :string)
 
     field(:token, :string)
     field(:status, :string, default: "pending")
@@ -51,7 +52,8 @@ defmodule Ankaa.Notifications.Invite do
       :inviter_id,
       :patient_id,
       :invitee_permission,
-      :organization_id
+      :organization_id,
+      :invitee_relationship
     ])
     |> validate_required([
       :invitee_email,
@@ -59,7 +61,8 @@ defmodule Ankaa.Notifications.Invite do
       :token,
       :status,
       :expires_at,
-      :inviter_id
+      :inviter_id,
+      :invitee_permission
     ])
     |> validate_format(:invitee_email, ~r/^[^\s]+@[^\s]+$/)
     |> validate_inclusion(:status, @statuses)

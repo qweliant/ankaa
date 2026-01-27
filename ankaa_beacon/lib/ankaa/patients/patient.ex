@@ -14,9 +14,10 @@ defmodule Ankaa.Patients.Patient do
     field(:date_of_birth, :date)
     field(:timezone, :string)
 
-    belongs_to(:user, User, foreign_key: :user_id)
-    has_many(:care_network, Ankaa.Patients.CareNetwork)
-    has_many(:associated_users, through: [:care_network, :user])
+    belongs_to(:owner, User, foreign_key: :user_id) # this person created the care network
+
+    has_many(:memberships, Ankaa.Patients.CareNetwork)
+    has_many(:members, through: [:memberships, :user])
     has_many(:devices, Ankaa.Patients.Device)
 
     timestamps()
@@ -25,7 +26,7 @@ defmodule Ankaa.Patients.Patient do
   def changeset(patient, attrs) do
     patient
     |> cast(attrs, [:external_id, :name, :date_of_birth, :timezone, :user_id])
-    |> validate_required([:name, :user_id])
+    |> validate_required([:name])
     |> unique_constraint(:external_id)
     |> foreign_key_constraint(:user_id)
   end

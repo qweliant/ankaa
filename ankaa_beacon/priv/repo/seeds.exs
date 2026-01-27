@@ -147,7 +147,7 @@ IO.puts("   -> Creating care team...")
 IO.puts("   -> Creating patients...")
 
 {:ok, user_rel} =
-  Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234"})
+  Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234", first_name: "Re-l", last_name: "Mayer"})
 
 {:ok, _} = Accounts.update_user_name(user_rel, %{first_name: "Re-l", last_name: "Mayer"})
 
@@ -156,7 +156,7 @@ patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezon
 Communities.add_member(user_rel, clinic_org.id, "member")
 
 {:ok, user_vincent} =
-  Accounts.register_user(%{email: "vincent.law@example.com", password: "password1234"})
+  Accounts.register_user(%{email: "vincent.law@example.com", password: "password1234", first_name: "Vincent", last_name: "Law"})
 
 {:ok, _} = Accounts.update_user_name(user_vincent, %{first_name: "Vincent", last_name: "Law"})
 
@@ -169,16 +169,16 @@ Communities.add_member(user_rel, commune_org.id, "member")
 IO.puts("   -> Building care networks...")
 
 # Re-l's Network
-Patients.create_patient_association(dr_daedalus, patient_rel, "doctor", "admin")
-Patients.create_patient_association(support_iggy, patient_rel, "caresupport")
-Patients.create_patient_association(tech_raul, patient_rel, "clinic_technician", "contributor")
+Patients.create_patient_association(dr_daedalus, patient_rel, "doctor", :admin, :doctor)
+Patients.create_patient_association(support_iggy, patient_rel, "caresupport", :viewer, :caresupport)
+Patients.create_patient_association(tech_raul, patient_rel, "clinic_technician", :contributor, :tech)
 
 # Vincent's Network
-Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor", "admin")
-Patients.create_patient_association(nurse_kristeva, patient_vincent, "nurse", "moderator")
-Patients.create_patient_association(coord_hoody, patient_vincent, "community_coordinator")
-Patients.create_patient_association(worker_pino, patient_vincent, "social_worker", "contributor")
-Patients.create_patient_association(support_iggy, patient_vincent, "caresupport")
+Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor", :admin, :doctor)
+Patients.create_patient_association(nurse_kristeva, patient_vincent, "nurse", :moderator, :nurse)
+Patients.create_patient_association(coord_hoody, patient_vincent, "community_coordinator", :viewer, :community_coordinator)
+Patients.create_patient_association(worker_pino, patient_vincent, "social_worker", :contributor, :social_worker)
+Patients.create_patient_association(support_iggy, patient_vincent, "caresupport", :viewer, :caresupport)
 
 IO.puts("   -> Seeding Community Content (Feature Parity Check)...")
 

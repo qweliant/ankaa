@@ -19,15 +19,15 @@ defmodule AnkaaWeb.UserRegistrationLive do
         </:subtitle>
       </.header>
 
-      <.simple_form
-        for={@form}
-        id="registration_form"
-        phx-submit="save"
-        phx-change="validate"
-      >
+      <.simple_form for={@form} id="registration_form" phx-submit="save" phx-change="validate">
         <.error :if={@check_errors}>
           Oops, something went wrong! Please check the errors below.
         </.error>
+
+        <div class="grid grid-cols-2 gap-4">
+          <.input field={@form[:first_name]} type="text" label="First Name" required />
+          <.input field={@form[:last_name]} type="text" label="Last Name" required />
+        </div>
 
         <.input field={@form[:email]} type="email" label="Email" required />
         <.input field={@form[:password]} type="password" label="Password" required />
@@ -46,7 +46,6 @@ defmodule AnkaaWeb.UserRegistrationLive do
 
     socket =
       socket
-      # Store the token for later
       |> assign(invite_token: token)
       |> assign(trigger_submit: false, check_errors: false)
       |> assign_form(changeset)
@@ -60,7 +59,6 @@ defmodule AnkaaWeb.UserRegistrationLive do
 
     socket =
       socket
-      # Ensure invite_token is nil
       |> assign(invite_token: nil)
       |> assign(trigger_submit: false, check_errors: false)
       |> assign_form(changeset)
@@ -85,9 +83,10 @@ defmodule AnkaaWeb.UserRegistrationLive do
     case Ankaa.Repo.transaction(multi) do
       {:ok, %{register: user}} ->
         login_token = Accounts.generate_temporary_login_token(user)
+
         return_to =
           case socket.assigns.invite_token do
-            nil -> ~p"/"
+            nil -> ~p"/portal"
             invite_token -> ~p"/invites/accept?token=#{invite_token}"
           end
 

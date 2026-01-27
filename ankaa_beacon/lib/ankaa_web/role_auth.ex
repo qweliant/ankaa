@@ -38,8 +38,8 @@ defmodule AnkaaWeb.RoleAuth do
     on_mount(:require_role, ["caresupport"], nil, nil, socket)
   end
 
-  def on_mount(:require_technical_support, _params, _session, socket) do
-    on_mount(:require_role, ["technical_support", "admin"], nil, nil, socket)
+  def on_mount(:require_tech, _params, _session, socket) do
+    on_mount(:require_role, ["tech", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_clinic_technician, _params, _session, socket) do

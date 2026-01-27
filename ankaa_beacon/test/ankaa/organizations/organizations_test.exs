@@ -60,7 +60,7 @@ defmodule Ankaa.OrganizationTest do
       patient = AccountsFixtures.patient_fixture()
 
       # Assign Doctor B to the patient first
-      {:ok, _} = Patients.create_patient_association(doctor_b, patient.patient, "doctor")
+      {:ok, _} = Patients.create_patient_association(doctor_b, patient.patient, "doctor", :admin, :doctor)
 
       # Now Doctor A looks for colleagues
       colleagues = Patients.list_available_colleagues(doctor_a, patient.patient.id)
@@ -80,8 +80,8 @@ defmodule Ankaa.OrganizationTest do
       Ankaa.Communities.add_member(nurse, org2.id)
 
       patient = AccountsFixtures.patient_fixture()
-      {:ok, _} = Patients.create_patient_association(doctor, patient.patient, "doctor")
-      {:ok, _} = Patients.create_patient_association(nurse, patient.patient, "nurse")
+      {:ok, _} = Patients.create_patient_association(doctor, patient.patient, "doctor", :admin, :doctor)
+      {:ok, _} = Patients.create_patient_association(nurse, patient.patient, "nurse", :contributor, :nurse)
 
       colleagues = Patients.list_available_colleagues(doctor, patient.patient.id)
 

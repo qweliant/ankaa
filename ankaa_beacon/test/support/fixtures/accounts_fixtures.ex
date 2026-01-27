@@ -7,7 +7,9 @@ defmodule Ankaa.AccountsFixtures do
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       email: unique_user_email(),
-      password: valid_user_password()
+      password: valid_user_password(),
+      first_name: "Test",
+      last_name: "User"
     })
   end
 
@@ -26,7 +28,9 @@ defmodule Ankaa.AccountsFixtures do
       attrs
       |> Enum.into(%{
         email: unique_user_email(),
-        password: valid_user_password()
+        password: valid_user_password(),
+        first_name: "Test",
+        last_name: "User"
       })
       |> Ankaa.Accounts.register_user()
 
@@ -53,8 +57,8 @@ defmodule Ankaa.AccountsFixtures do
     user_fixture(Map.merge(%{role: "caresupport"}, attrs))
   end
 
-  def technical_support_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "technical_support"}, attrs))
+  def tech_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{role: "tech"}, attrs))
   end
 
   def admin_fixture(attrs \\ %{}) do

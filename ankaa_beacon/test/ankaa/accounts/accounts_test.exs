@@ -100,7 +100,7 @@ defmodule Ankaa.AccountsTest do
   describe "change_user_registration/2" do
     test "returns a changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
-      assert changeset.required == [:password, :email]
+      assert changeset.required == [:password, :email, :first_name, :last_name]
     end
 
     test "allows fields to be set" do
@@ -560,7 +560,7 @@ defmodule Ankaa.AccountsTest do
       refute User.nurse?(user)
       refute User.admin?(user)
       refute User.caresupport?(user)
-      refute User.technical_support?(user)
+      refute User.tech?(user)
     end
   end
 

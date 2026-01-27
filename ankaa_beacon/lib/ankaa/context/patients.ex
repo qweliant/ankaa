@@ -28,44 +28,28 @@ defmodule Ankaa.Patients do
   end
 
   @doc """
-  Lists patients a user can access based on their role.
-
-  Returns `{:ok, [%Patient{}]}` or `{:error, reason}`.
+  Lists patients.
+  - If Global Admin: Sees ALL patients.
+  - If Regular User: Sees only patients they are linked to in CareNetwork.
 
   ## Examples
 
-      iex> list_patients_for_user(%User{role: "doctor"})
-      {:ok, [%Patient{}, ...]}
-
-      iex> list_patients_for_user(%User{role: "patient"})
+      iex> list_patients_for_user(user)
       {:ok, [%Patient{}, ...]}
 
   """
   def list_patients_for_user(%User{} = user) do
-    cond do
-      user.role == "admin" ->
-        {:ok, list_patients()}
+    if user.role == "admin" do
+      # Admin Bypass: Return all patients
+      {:ok, list_patients()}
+    else
+      query =
+        from p in Patient,
+          join: cn in assoc(p, :memberships),
+          where: cn.user_id == ^user.id,
+          preload: [memberships: cn]
 
-      user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] ->
-        patients =
-          list_care_provider_patients(user)
-          |> Repo.preload([:user, :devices])
-
-        {:ok, patients}
-
-      patient_rec = get_patient_by_user_id(user.id) ->
-        if patient_rec do
-          patients =
-            list_peer_patients(patient_rec)
-            |> Repo.preload([:user, :devices])
-
-          {:ok, patients}
-        else
-          {:error, :unauthorized}
-        end
-
-      true ->
-        {:error, :unauthorized}
+      {:ok, Repo.all(query)}
     end
   end
 
@@ -100,7 +84,7 @@ defmodule Ankaa.Patients do
   def get_patient_by_user_id(user_id), do: Repo.get_by(Patient, user_id: user_id)
 
   @doc """
-  Creates a patient.
+  Creates a patient record
 
   ## Examples
 
@@ -120,6 +104,50 @@ defmodule Ankaa.Patients do
     %Patient{}
     |> Patient.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a Patient and immediately establishes the Creator as the Owner
+  in the CareNetwork (ReBAC).
+  """
+  def create_patient_hub(%User{} = creator, attrs) do
+    # 1. Determine if this is a "Self" profile or "Headless" (Caregiver) profile
+    relationship_input = attrs["relationship"] || attrs[:relationship] || "Creator"
+    is_self = String.downcase(relationship_input) == "patient"
+
+    # 2. Prepare Patient Attrs
+    # If self, link user_id. If caregiver, leave user_id nil (Headless).
+    patient_attrs =
+      if is_self do
+        Map.put(attrs, "user_id", creator.id)
+      else
+        Map.put(attrs, "user_id", nil)
+      end
+
+    Ecto.Multi.new()
+    # Step A: Insert Patient
+    |> Ecto.Multi.insert(:patient, fn _ ->
+      Patient.changeset(%Patient{}, patient_attrs)
+    end)
+    # Step B: Create ReBAC Link (The Bridge)
+    |> Ecto.Multi.run(:membership, fn repo, %{patient: patient} ->
+      # Determine the Context Role (The Hat)
+      role_input = attrs["role"] || attrs[:role]
+
+      %CareNetwork{}
+      |> CareNetwork.changeset(%{
+        user_id: creator.id,
+        patient_id: patient.id,
+        # The Badge (String)
+        relationship: relationship_input,
+        # The Hat (Atom)
+        role: role_input,
+        # The Keys (Atom) - Creator is always Owner
+        permission: :owner
+      })
+      |> repo.insert()
+    end)
+    |> Repo.transaction()
   end
 
   @doc """
@@ -268,8 +296,6 @@ defmodule Ankaa.Patients do
     TreatmentPlan.changeset(plan, attrs)
   end
 
-  # Patient Association functions
-
   @doc """
   Creates a patient association for care network.
 
@@ -277,7 +303,8 @@ defmodule Ankaa.Patients do
   - user: The provider/caregiver
   - patient: The patient hub
   - relationship: Display label ("Doctor", "Mom")
-  - access_role: The permission level (:admin, :contributor, :viewer). Defaults to :viewer.
+  - role: The role (:doctor, :nurse, etc.)
+  - permission: The permission level (:admin, :contributor, :viewer). Defaults to :viewer.
 
   ## Examples
 
@@ -288,38 +315,39 @@ defmodule Ankaa.Patients do
       {:error, :unauthorized_role}
   """
   def create_patient_association(
-        %User{} = user_struct,
+        %User{} = user,
         %Patient{} = patient,
         relationship,
-        access_role \\ :viewer
+        permission \\ :viewer,
+        role
       ) do
-    user = Ankaa.Accounts.get_user!(user_struct.id)
+    role_atom =
+      cond do
+        is_atom(role) -> role
+        is_binary(role) -> String.to_existing_atom(role)
+        true -> :caresupport
+      end
 
-    is_authorized =
-      User.doctor?(user) ||
-        User.nurse?(user) ||
-        User.clinic_technician?(user) ||
-        User.social_worker?(user) ||
-        User.community_coordinator?(user) ||
-        User.caresupport?(user) ||
-        User.admin?(user)
+    permission_atom =
+      cond do
+        is_atom(permission) -> permission
+        is_binary(permission) -> String.to_existing_atom(permission)
+        true -> :viewer
+      end
 
-    if is_authorized do
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: user.id,
-        patient_id: patient.id,
-        relationship: relationship,
-        role: access_role
-      })
-      |> Repo.insert()
-    else
-      {:error, :unauthorized_role}
-    end
+    %CareNetwork{}
+    |> CareNetwork.changeset(%{
+      user_id: user.id,
+      patient_id: patient.id,
+      relationship: relationship,
+      role: role_atom,
+      permission: permission_atom
+    })
+    |> Repo.insert()
   end
 
   @doc """
-  Creates a peer support association between patients.
+  Creates a peer support association between patients. Would be used to create a two way link.
 
   ## Examples
 
@@ -330,10 +358,8 @@ defmodule Ankaa.Patients do
       {:error, :not_a_patient}
   """
   def create_peer_association(%User{} = patient_user, %Patient{} = peer_patient) do
-    # Get the User struct for the second patient
     user2 = Repo.get!(User, peer_patient.user_id)
 
-    # Use a transaction to ensure both or neither are created
     Repo.transaction(fn ->
       # Create link: User 2 is a peer for Patient 1
       %CareNetwork{}
@@ -341,7 +367,8 @@ defmodule Ankaa.Patients do
         user_id: user2.id,
         patient_id: patient_user.patient.id,
         relationship: "peer_support",
-        role: :viewer
+        role: :caresupport,
+        permission: :viewer
       })
       |> Repo.insert!()
 
@@ -351,7 +378,8 @@ defmodule Ankaa.Patients do
         user_id: patient_user.id,
         patient_id: peer_patient.id,
         relationship: "peer_support",
-        role: :viewer
+        role: :caresupport,
+        permission: :viewer
       })
       |> Repo.insert!()
     end)
@@ -386,7 +414,6 @@ defmodule Ankaa.Patients do
   def get_care_network_for_patient(%Patient{} = patient) do
     accepted_members = list_accepted_members(patient)
     pending_members = list_pending_members(patient)
-
     accepted_members ++ pending_members
   end
 
@@ -503,7 +530,9 @@ defmodule Ankaa.Patients do
         attrs = %{
           user_id: user_id,
           patient_id: patient_id,
-          relationship: "Care Support"
+          relationship: "Care Support",
+          role: :caresupport,
+          permission: :contributor
         }
 
         %CareNetwork{}
@@ -560,11 +589,66 @@ defmodule Ankaa.Patients do
   end
 
   @doc """
+  Adds an existing medical professional to a patient's care network.
+  Maps their Global Role to the correct CareNetwork Role.
+  """
+  def add_care_team_member(patient_id, user, role_input) do
+    # 1. Convert input to Atom (The Hat)
+    role_atom =
+      cond do
+        is_atom(role_input) -> role_input
+        is_binary(role_input) -> String.to_existing_atom(role_input)
+        # Fallback
+        true -> :viewer
+      end
+
+    # 2. Map Role -> Default Permission (The Keys)
+    # This logic preserves your "Medical Professional" security model
+    # but bases it on the *assigned context* rather than the global user.
+    permission =
+      case role_atom do
+        :doctor -> :contributor
+        :nurse -> :contributor
+        :clinic_technician -> :viewer
+        :social_worker -> :viewer
+        :admin -> :admin
+        _ -> :viewer
+      end
+
+    %CareNetwork{}
+    |> CareNetwork.changeset(%{
+      user_id: user.id,
+      patient_id: patient_id,
+
+      # Badge: "Doctor", "Nurse" (Capitalized for display)
+      relationship: String.capitalize(to_string(role_atom)),
+
+      # Hat: :doctor, :nurse
+      role: role_atom,
+
+      # Keys: :contributor, :viewer
+      permission: permission
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
   Adds an existing medical professional to a patient's care network by email.
   """
-  def add_care_team_member_by_email(patient_id, email) do
+  def add_care_team_member_by_email(patient_id, email, role) do
     case Ankaa.Accounts.get_user_by_email(email) do
-      %User{} = user -> add_care_team_member(patient_id, user)
+      %User{} = user -> add_care_team_member(patient_id, user, role)
+      nil -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Adds an existing medical professional to a patient's care network by User ID.
+  (Used by the 'Add Colleague' dropdown)
+  """
+  def add_care_team_member_by_id(patient_id, user_id, role) do
+    case Repo.get(User, user_id) do
+      %User{} = user -> add_care_team_member(patient_id, user, role)
       nil -> {:error, :not_found}
     end
   end
@@ -576,8 +660,7 @@ defmodule Ankaa.Patients do
     from(c in CareNetwork,
       join: u in assoc(c, :user),
       where: c.patient_id == ^patient_id,
-      # Exclude the patient record itself
-      where: u.role != "patient",
+      where: c.role in [:doctor, :nurse, :clinic_technician, :social_worker],
       preload: [user: u]
     )
     |> Repo.all()
@@ -588,17 +671,6 @@ defmodule Ankaa.Patients do
   """
   def delete_care_network_member(%CareNetwork{} = member) do
     Repo.delete(member)
-  end
-
-  @doc """
-  Adds an existing medical professional to a patient's care network by User ID.
-  (Used by the 'Add Colleague' dropdown)
-  """
-  def add_care_team_member_by_id(patient_id, user_id) do
-    case Repo.get(User, user_id) do
-      %User{} = user -> add_care_team_member(patient_id, user)
-      nil -> {:error, :not_found}
-    end
   end
 
   # Mock function to generate social flags for the UI
@@ -620,17 +692,15 @@ defmodule Ankaa.Patients do
     end
   end
 
-  # lib/ankaa/patients.ex
-
   @doc """
   Returns a list of patients associated with the given user via the care network.
   Used for Social Workers, Community Coordinators, and Technicians to see their caseload.
   """
   def list_assigned_patients(%Ankaa.Accounts.User{} = user) do
     from(p in Patient,
-      join: c in assoc(p, :care_network),
+      join: c in assoc(p, :memberships),
       where: c.user_id == ^user.id,
-      preload: [:user],
+      preload: [:owner, memberships: c],
       order_by: [asc: p.name]
     )
     |> Repo.all()
@@ -641,6 +711,7 @@ defmodule Ankaa.Patients do
     |> join(:inner, [cn], p in Patient, on: cn.patient_id == p.id)
     |> where([cn, _], cn.user_id == ^user.id)
     |> select([_, p], p)
+    |> preload([cn, _], memberships: cn)
     |> Repo.all()
   end
 
@@ -650,6 +721,7 @@ defmodule Ankaa.Patients do
         where: cn.patient_id == ^patient.id and cn.relationship == "peer_support",
         select: cn.user_id
       )
+
     from(p in Patient,
       where: p.user_id in subquery(peer_user_ids_query)
     )
@@ -670,8 +742,10 @@ defmodule Ankaa.Patients do
       # Safely build the full name, handling potential nil values
       full_name =
         [user.first_name, user.last_name]
+        # Remove nil values
         |> Enum.reject(&is_nil/1)
-        |> Enum.join(" ")
+        # Trim whitespace and join with space
+        |> Enum.map_join(" ", &String.trim/1)
 
       # If the name is blank after joining, fall back to the email
       display_name = if full_name == "", do: user.email, else: full_name
@@ -700,27 +774,5 @@ defmodule Ankaa.Patients do
         status: "pending"
       }
     end)
-  end
-
-  defp add_care_team_member(patient_id, user) do
-    if user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
-      role =
-        case user.role do
-          "clinic_technician" -> :viewer
-          "social_worker" -> :viewer
-          _ -> :contributor
-        end
-
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: user.id,
-        patient_id: patient_id,
-        relationship: String.capitalize(user.role),
-        role: role
-      })
-      |> Repo.insert()
-    else
-      {:error, "User exists but is not a medical professional."}
-    end
   end
 end

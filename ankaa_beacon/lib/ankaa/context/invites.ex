@@ -24,11 +24,18 @@ defmodule Ankaa.Invites do
     "caresupport" => []
   }
 
+  @permission_ranks %{
+    owner: 4,
+    admin: 3,
+    contributor: 2,
+    viewer: 1
+  }
+
   @doc """
   Authorizes, validates, and creates a new invite.
   """
   def send_invitation(inviter_user, patient, invite_params) do
-    with :ok <- authorize_invite(inviter_user, invite_params["invitee_role"]),
+    with :ok <- authorize_invite(inviter_user, patient, invite_params),
          :ok <- validate_self_invite(inviter_user, invite_params["invitee_email"]),
          :ok <-
            validate_existing_user(invite_params["invitee_email"], invite_params["invitee_role"]),
@@ -53,6 +60,7 @@ defmodule Ankaa.Invites do
       |> Map.put("token", token)
       |> Map.put("expires_at", expires_at)
       |> Map.put("status", "pending")
+      |> Map.put("invitee_permission", to_string(invite_attrs["invitee_permission"] || :viewer))
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
     # We use Ecto.Multi to ensure that if the email fails to send, the invite creation is rolled back.
@@ -86,7 +94,6 @@ defmodule Ankaa.Invites do
   It now hashes the incoming token to match what's in the database.
   """
   def get_pending_invite_by_token(token) do
-    # No more decoding or hashing needed!
     from(i in Invite,
       where:
         i.token == ^token and
@@ -126,132 +133,6 @@ defmodule Ankaa.Invites do
 
   @doc false
   # A helper to update the invite status.
-  defp update_invite_status(invite, status) do
-    invite
-    |> Invite.changeset(%{status: status})
-    |> Repo.update()
-  end
-
-  defp accept_as_patient(user, invite) do
-    access_role = String.to_existing_atom(invite.invitee_permission || "owner")
-    Repo.transaction(fn ->
-      with {:ok, patient_record} <- find_or_create_patient_for_user(user),
-           inviter <- Accounts.get_user!(invite.inviter_id),
-           {:ok, _} <- Patients.create_patient_association(inviter, patient_record, inviter.role, access_role),
-           {:ok, _} <-
-             (if invite.organization_id do
-                Communities.add_member(user, invite.organization_id, "admin")
-              else
-                {:ok, nil}
-              end),
-           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        updated_invite
-      else
-        {:error, reason} -> Repo.rollback({:error, reason})
-      end
-    end)
-  end
-
-  defp accept_as_care_provider(user, invite) do
-    Repo.transaction(fn ->
-      with {:ok, user_with_role} <- Accounts.assign_role(user, invite.invitee_role),
-           patient <- Patients.get_patient!(invite.patient_id),
-           hub_access_role = String.to_existing_atom(invite.invitee_permission || "contributor"),
-           {:ok, _relationship} <-
-             Patients.create_patient_association(
-               user_with_role,
-               patient,
-               invite.invitee_role,
-               hub_access_role
-             ),
-           {:ok, _} <-
-             (if invite.organization_id do
-                Communities.add_member(user, invite.organization_id, "member")
-              else
-                {:ok, nil}
-              end),
-           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        updated_invite
-      else
-        {:error, reason} -> Repo.rollback({:error, reason})
-      end
-    end)
-  end
-
-  defp accept_as_care_support(user, invite) do
-    Repo.transaction(fn ->
-      with {:ok, user_with_role} <- Accounts.assign_role(user, "caresupport"),
-           patient <- Patients.get_patient!(invite.patient_id),
-           {:ok, _relationship} <-
-             Patients.create_patient_association(user_with_role, patient, "caresupport"),
-           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
-        updated_invite
-      else
-        {:error, reason} -> Repo.rollback({:error, reason})
-      end
-    end)
-  end
-
-  defp accept_as_colleague(user, invite) do
-    hub_access_role = String.to_existing_atom(invite.invitee_permission || "member")
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(
-      :invite_status,
-      Invite.changeset(invite, %{status: "accepted", accepted_at: DateTime.utc_now()})
-    )
-    |> Ecto.Multi.run(:assign_role, fn _repo, _changes ->
-      Ankaa.Accounts.assign_role(user, invite.invitee_role)
-    end)
-    |> Ecto.Multi.run(:join_organization, fn _repo, _changes ->
-      if invite.organization_id do
-        Communities.add_member(user, invite.organization_id, "member")
-      else
-        # Inviter has no org, do nothing
-        {:ok, user}
-      end
-    end)
-    # If the invite was sent by a Patient, link them.
-    # If it was sent by a Doctor to a colleague (patient_id is nil), skip this.
-    |> Ecto.Multi.run(:create_association, fn _repo, _changes ->
-      if invite.patient_id do
-        patient = Patients.get_patient!(invite.patient_id)
-        relationship = invite.invitee_role
-        Patients.create_patient_association(user, patient, relationship, hub_access_role)
-      else
-        # No patient attached? It's a pure colleague invite. Do nothing.
-        {:ok, nil}
-      end
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{invite: updated_invite}} -> updated_invite
-      {:error, _step, reason, _changes} -> {:error, reason}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp find_or_create_patient_for_user(user) do
-    case Patients.get_patient_by_user_id(user.id) do
-      nil ->
-        # No patient record exists, so we create one.
-        default_name =
-          if user.first_name && user.last_name do
-            # If we have both names, use them.
-            "#{user.first_name} #{user.last_name}"
-          else
-            # Otherwise, fall back to the email address.
-            user.email |> String.split("@") |> List.first() |> String.capitalize()
-          end
-
-        patient_attrs = %{"name" => default_name}
-        Patients.create_patient(patient_attrs, user)
-
-      existing_patient ->
-        # A patient record already exists, so we just return it.
-        {:ok, existing_patient}
-    end
-  end
-
   defp process_target(user, invite) do
     cond do
       invite.invitee_role == "patient" ->
@@ -279,14 +160,133 @@ defmodule Ankaa.Invites do
     end
   end
 
-  defp authorize_invite(inviter_user, invitee_role) do
-    inviter_role = if Accounts.User.patient?(inviter_user), do: "patient", else: inviter_user.role
-    allowed_roles = Map.get(@allowed_invites, inviter_role, [])
+  defp update_invite_status(invite, status) do
+    invite
+    |> Invite.changeset(%{status: status})
+    |> Repo.update()
+  end
 
-    if invitee_role in allowed_roles do
-      :ok
-    else
-      {:error, "A #{inviter_role} is not authorized to invite a #{invitee_role}."}
+  defp accept_as_patient(user, invite) do
+    permission = String.to_existing_atom(invite.invitee_permission || "owner")
+
+    Repo.transaction(fn ->
+      with {:ok, patient_record} <- find_or_create_patient_for_user(user),
+           inviter <- Accounts.get_user!(invite.inviter_id),
+           {:ok, _} <-
+             Patients.create_patient_association(
+               inviter,
+               patient_record,
+               "Patient of {#{inviter.first_name} #{inviter.last_name}}",
+               permission,
+               inviter.role
+             ),
+           {:ok, _} <-
+             (if invite.organization_id do
+                Communities.add_member(user, invite.organization_id, "admin")
+              else
+                {:ok, nil}
+              end),
+           {:ok, updated_invite} <- update_invite_status(invite, "accepted") do
+        updated_invite
+      else
+        {:error, reason} -> Repo.rollback({:error, reason})
+      end
+    end)
+  end
+
+  defp accept_as_care_provider(user, invite) do
+    Repo.transaction(fn ->
+      patient = Patients.get_patient!(invite.patient_id)
+
+      # ReBAC Attributes
+      # Badge: "Doctor"
+      relationship = String.capitalize(invite.invitee_role)
+      # Hat: :doctor
+      role = safe_to_atom(invite.invitee_role)
+      # Keys: :contributor
+      permission = safe_to_atom(invite.invitee_permission || "contributor")
+
+      with {:ok, _} <-
+             Patients.create_patient_association(user, patient, relationship, permission, role),
+           {:ok, _} <-
+             if(invite.organization_id,
+               do: Communities.add_member(user, invite.organization_id, "member"),
+               else: {:ok, nil}
+             ),
+           {:ok, updated} <- update_invite_status(invite, "accepted") do
+        updated
+      else
+        {:error, reason} -> Repo.rollback({:error, reason})
+      end
+    end)
+  end
+
+  defp accept_as_care_support(user, invite) do
+    Repo.transaction(fn ->
+      patient = Patients.get_patient!(invite.patient_id)
+
+      # ReBAC Attributes for Family
+      relationship = invite.invitee_relationship || "Family"
+      role = :caresupport
+      permission = safe_to_atom(invite.invitee_permission || :contributor)
+
+      with {:ok, _} <-
+             Patients.create_patient_association(user, patient, relationship, permission, role),
+           {:ok, updated} <- update_invite_status(invite, "accepted") do
+        updated
+      else
+        {:error, reason} -> Repo.rollback({:error, reason})
+      end
+    end)
+  end
+
+  defp accept_as_colleague(user, invite) do
+    Repo.transaction(fn ->
+      if invite.organization_id do
+        Communities.add_member(user, invite.organization_id, "member")
+      end
+
+      update_invite_status(invite, "accepted")
+    end)
+  end
+
+  defp find_or_create_patient_for_user(user) do
+    case Patients.get_patient_by_user_id(user.id) do
+      nil ->
+        default_name = "#{user.first_name} #{user.last_name}" |> String.trim()
+        default_name = if default_name == "", do: user.email, else: default_name
+
+        Patients.create_patient(%{"name" => default_name}, user)
+
+      existing ->
+        {:ok, existing}
+    end
+  end
+
+  defp authorize_invite(inviter_user, patient, invite_params) do
+    target_role = invite_params["invitee_role"]
+    target_permission = safe_to_atom(invite_params["invitee_permission"] || "viewer")
+
+    case Patients.get_care_network_entry(inviter_user.id, patient.id) do
+      nil ->
+        {:error, "You are not a member of this care network."}
+
+      %Ankaa.Patients.CareNetwork{role: inviter_role, permission: inviter_perm} ->
+        allowed_roles = Map.get(@allowed_invites, inviter_role, [])
+
+        role_check =
+          if target_role in allowed_roles do
+            :ok
+          else
+            {:error, "A #{inviter_role} cannot invite a #{target_role}."}
+          end
+
+        perm_check = validate_permission_hierarchy(inviter_perm, target_permission)
+
+        with :ok <- role_check,
+             :ok <- perm_check do
+          :ok
+        end
     end
   end
 
@@ -299,21 +299,7 @@ defmodule Ankaa.Invites do
   end
 
   defp validate_existing_user(invitee_email, invitee_role) do
-    case Accounts.get_user_by_email(invitee_email) do
-      nil ->
-        # No user exists, so no conflict.
-        :ok
-
-      existing_user ->
-        # A user exists, but their role is different AND not nil
-        if existing_user.role != invitee_role and !is_nil(existing_user.role) do
-          {:error,
-           "A user with email #{invitee_email} already exists with the role '#{existing_user.role}'. You cannot invite them as a '#{invitee_role}'."}
-        else
-          # User exists but role matches (or is nil), which is fine.
-          :ok
-        end
-    end
+    :ok
   end
 
   defp validate_pending_invite(invitee_email, patient_id) do
@@ -328,5 +314,34 @@ defmodule Ankaa.Invites do
     invite
     |> Invite.changeset(%{status: status})
     |> Repo.update()
+  end
+
+  defp safe_to_atom(str) when is_binary(str) do
+    String.to_existing_atom(str)
+  rescue
+    _ ->
+      :viewer
+  end
+
+  defp safe_to_atom(atom) when is_atom(atom), do: atom
+
+  defp validate_permission_hierarchy(inviter_perm, target_perm) do
+    inviter_rank = Map.get(@permission_ranks, inviter_perm, 0)
+    target_rank = Map.get(@permission_ranks, target_perm, 0)
+
+    cond do
+      # Viewers cannot invite anyone
+      inviter_perm == :viewer ->
+        {:error, "Viewers do not have permission to send invites."}
+
+      # Cannot grant higher permission than you possess
+      # e.g. Contributor (2) cannot invite an Admin (3)
+      inviter_rank < target_rank ->
+        {:error,
+         "You cannot grant a permission level (#{target_perm}) higher than your own (#{inviter_perm})."}
+
+      true ->
+        :ok
+    end
   end
 end

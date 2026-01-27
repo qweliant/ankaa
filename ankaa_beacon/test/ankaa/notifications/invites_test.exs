@@ -57,22 +57,23 @@ defmodule Ankaa.InvitesTest do
         "invitee_email" => nurse.email,
         "invitee_role" => "nurse",
         "patient_id" => patient_user.patient.id,
-        "invitee_permission" => "contributor",
-
+        "invitee_permission" => "contributor"
       }
 
       assert {:ok, %Invite{invitee_role: "nurse"}} =
                Invites.create_invite(patient_user, attrs)
     end
 
-    test "a doctor can create an invite for a nurse to join a patient's care network and inviters org", %{
-      doctor_user: doctor_user,
-      nurse_user: nurse,
-      patient_user: patient_user,
-      patient_hub: patient_hub
-    } do
+    test "a doctor can create an invite for a nurse to join a patient's care network and inviters org",
+         %{
+           doctor_user: doctor_user,
+           nurse_user: nurse,
+           patient_user: patient_user,
+           patient_hub: patient_hub
+         } do
       # add the doctor to the org, then invite the nurse to the org with a specific role
       {:ok, _membership} = Ankaa.Communities.add_member(doctor_user, patient_hub.id, "admin")
+
       attrs = %{
         "invitee_email" => nurse.email,
         "invitee_role" => "nurse",
@@ -99,7 +100,9 @@ defmodule Ankaa.InvitesTest do
         Invites.create_invite(patient_user, %{
           "invitee_email" => nurse_user.email,
           "invitee_role" => "nurse",
-          "patient_id" => patient_user.patient.id
+          "patient_id" => patient_user.patient.id,
+          "invitee_permission" => :contributor,
+          "invitee_relationship" => "Nurse"
         })
         |> elem(1)
 
@@ -110,10 +113,10 @@ defmodule Ankaa.InvitesTest do
       care_link =
         Repo.get_by!(CareNetwork, user_id: nurse_user.id, patient_id: patient_user.patient.id)
 
-      assert care_link.relationship == "nurse"
+      assert care_link.relationship == "Nurse"
     end
 
-    test "when a new user accepts a patient invite, it creates a patient record and a link", %{
+    test "when a user accepts a patient invite, it creates a patient record and a link", %{
       doctor_user: doctor_user,
       new_user_to_be_patient: new_user_to_be_patient
     } do
@@ -121,7 +124,9 @@ defmodule Ankaa.InvitesTest do
       invite =
         Invites.create_invite(doctor_user, %{
           "invitee_email" => new_user_to_be_patient.email,
-          "invitee_role" => "patient"
+          "invitee_permission" => :viewer,
+          "invitee_role" => "patient",
+          "invitee_relationship" => "Patient of Dr. #{doctor_user.last_name}"
         })
         |> elem(1)
 
@@ -137,7 +142,103 @@ defmodule Ankaa.InvitesTest do
       care_link =
         Repo.get_by!(CareNetwork, user_id: doctor_user.id, patient_id: new_patient_record.id)
 
-      assert care_link.relationship == "doctor"
+      assert care_link.relationship ==
+               "Patient of {#{new_user_to_be_patient.first_name} #{new_user_to_be_patient.last_name}}"
+
+      assert care_link.permission == :viewer
+    end
+
+    test "accepts as care support: links user to existing patient hub", %{
+      patient_user: patient_user,
+      doctor_user: doctor_user
+    } do
+      caregiver_user = AccountsFixtures.user_fixture(%{email: "mom@example.com"})
+
+      # Action: Doctor invites a family member (Care Support)
+      invite =
+        Invites.create_invite(doctor_user, %{
+          "invitee_email" => caregiver_user.email,
+          "invitee_role" => "caresupport",
+          "invitee_relationship" => "Mother",
+          "patient_id" => patient_user.patient.id,
+          "invitee_permission" => :contributor
+        })
+        |> elem(1)
+
+      # Action: Caregiver accepts
+      assert {:ok, %Invite{status: "accepted"}} = Invites.accept_invite(caregiver_user, invite)
+
+      # Assert: CareNetwork link created between Caregiver and Patient
+      link =
+        Repo.get_by!(CareNetwork, user_id: caregiver_user.id, patient_id: patient_user.patient.id)
+
+      assert link.role == :caresupport
+      assert link.relationship == "Mother"
+      assert link.permission == :contributor
+    end
+
+    test "accepts as colleague (doctor) without patient_id: joins organization only", %{
+      doctor_user: doctor_user,
+      patient_hub: patient_hub
+    } do
+      new_colleague = AccountsFixtures.doctor_fixture(%{email: "colleague@hospital.com"})
+
+      # Action: Doctor invites another doctor to the ORG, but not to a specific patient
+      invite =
+        Invites.create_invite(doctor_user, %{
+          "invitee_email" => new_colleague.email,
+          "invitee_role" => "doctor",
+          "organization_id" => patient_hub.id,
+          "patient_id" => nil,
+          "invitee_permission" => :admin,
+          "invitee_relationship" => "Colleague"
+        })
+        |> elem(1)
+
+      # Action: Colleague accepts
+      assert {:ok, %Invite{status: "accepted"}} = Invites.accept_invite(new_colleague, invite)
+
+      # Assert: User added to Organization
+      # FIX: Query the Membership table directly instead of using the missing helper
+      membership =
+        Repo.get_by!(Ankaa.Community.OrganizationMembership,
+          user_id: new_colleague.id,
+          organization_id: patient_hub.id
+        )
+
+      # Or whatever default role your invite logic assigns
+      assert membership.role == "member"
+      # Assuming add_member defaults to active
+      assert membership.status == "active"
+
+      # Assert: NO patient link created (CareNetwork should be empty for this user)
+      refute Repo.get_by(CareNetwork, user_id: new_colleague.id)
+    end
+
+    test "user accepts patient invite but had no patient record previously", %{
+      doctor_user: doctor_user
+    } do
+      # Scenario: A user signed up via the website, but never created a patient profile.
+      # The doctor invites them to be a patient.
+      existing_user_no_patient =
+        AccountsFixtures.user_fixture(%{email: "headless_user@example.com"})
+
+      # Verify precondition: No patient record exists
+      refute Repo.get_by(Patient, user_id: existing_user_no_patient.id)
+
+      invite =
+        Invites.create_invite(doctor_user, %{
+          "invitee_email" => existing_user_no_patient.email,
+          "invitee_role" => "patient",
+          "invitee_permission" => "viewer"
+        })
+        |> elem(1)
+
+      # Action: Accept
+      assert {:ok, _} = Invites.accept_invite(existing_user_no_patient, invite)
+
+      # Assert: Patient record was created dynamically
+      assert Repo.get_by(Patient, user_id: existing_user_no_patient.id)
     end
   end
 

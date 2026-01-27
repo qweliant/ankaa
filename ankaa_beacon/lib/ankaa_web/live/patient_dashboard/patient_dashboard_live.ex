@@ -19,7 +19,7 @@ defmodule AnkaaWeb.PatientDashboardLive do
     patient = Patients.get_patient!(patient_id)
     devices = Devices.list_devices_for_patient(patient.id)
     contacts = Ankaa.Accounts.list_available_contacts(user)
-
+    membership = Patients.get_membership!(user, patient)
     # TODO: Add security check here later (Patients.can_access?)
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:messages")

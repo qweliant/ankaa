@@ -76,17 +76,20 @@ defmodule AnkaaWeb.RoleRegistrationLive do
   @impl true
   def handle_event("save_role", %{"token" => %{"token" => token}}, socket) do
     role = socket.assigns.selected_role
+    # Normalize token: trim whitespace and lowercase it for easier matching
+    normalized_token = token |> String.trim() |> String.downcase()
 
     cond do
       role == "patient" ->
         {:noreply, assign(socket, show_final_form: true)}
 
-      # test doctor: 1871706713, nurse: 1558084590, social_worker: 1023639283
+      # If they typed the "Magic Word" (the role name itself), skip NPI lookup
+      normalized_token == role ->
+        {:noreply, assign(socket, show_final_form: true)}
+
+      # Otherwise, try NPI lookup for medical roles
       role in @npi_roles ->
         perform_npi_lookup(socket, token)
-
-      token == role ->
-        {:noreply, assign(socket, show_final_form: true)}
 
       true ->
         {:noreply, put_flash(socket, :error, "Invalid Code. Please check and try again.")}
@@ -228,8 +231,17 @@ defmodule AnkaaWeb.RoleRegistrationLive do
                   field={@token_form[:token]}
                   type="text"
                   label={token_label(@selected_role)}
+                  placeholder={token_placeholder(@selected_role)}
                   required
                 />
+                <p class="text-xs text-slate-500 mt-1">
+                  Beta Access: You can type
+                  <span class="font-mono bg-slate-100 px-1 rounded text-purple-700">
+                    {@selected_role}
+                  </span>
+                  to skip verification.
+                </p>
+
                 <:actions>
                   <.button phx-disable-with="Verifying..." class="w-full">
                     {if @selected_role in @npi_roles, do: "Verify NPI & Continue", else: "Continue"}
@@ -299,16 +311,22 @@ defmodule AnkaaWeb.RoleRegistrationLive do
     """
   end
 
+  # Updated to be more instructive for the Beta
   defp token_label(role) do
     case role do
-      "doctor" -> "NPI Number"
-      "nurse" -> "NPI Number (or License #)"
-      "social_worker" -> "NPI Number (or License #)"
+      "doctor" -> "Enter NPI Number"
+      "nurse" -> "Enter NPI or License Number"
+      "social_worker" -> "Enter NPI or License Number"
       "patient" -> "Registration Code (Optional)"
-      "clinic_technician" -> "Clinic Access Code"
-      "community_coordinator" -> "Community Code"
+      "clinic_technician" -> "Enter Clinic Access Code"
+      "community_coordinator" -> "Enter Community Access Code"
       _ -> "Invitation Code"
     end
+  end
+
+  # Added placeholder to reinforce the "magic word" option
+  defp token_placeholder(role) do
+    "Enter code or type '#{role}'"
   end
 
   defp timezone_options do
@@ -347,7 +365,6 @@ defmodule AnkaaWeb.RoleRegistrationLive do
             "last_name" => data.last_name
           }
 
-          # Create a changeset with the data to display in the form
           changeset = Accounts.User.name_changeset(user, prefilled_params)
 
           socket =
@@ -358,6 +375,8 @@ defmodule AnkaaWeb.RoleRegistrationLive do
             )
             |> assign(name_form: to_form(changeset))
             |> assign(show_final_form: true)
+            # Ensure we save the NPI data to state
+            |> assign(npi_data: data)
 
           {:noreply, socket}
 
@@ -365,7 +384,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
           {:noreply, put_flash(socket, :error, "NPI Number not found in registry.")}
       end
     else
-      # If they entered a mock code "doctor" instead of numbers, let them pass for Pre-Alpha dev
+      # Fallback for the "Magic Word" bypass (e.g. typing "doctor")
       if npi_number == socket.assigns.selected_role do
         {:noreply, assign(socket, show_final_form: true)}
       else

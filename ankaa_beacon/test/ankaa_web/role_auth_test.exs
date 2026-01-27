@@ -148,9 +148,9 @@ defmodule AnkaaWeb.RoleAuthTest do
     end
   end
 
-  describe "on_mount :require_technical_support" do
-    test "allows access for technical support roles", %{conn: conn, user: user} do
-      {:ok, updated_user} = Accounts.assign_role(user, "technical_support")
+  describe "on_mount :require_tech" do
+    test "allows access for tech support roles", %{conn: conn, user: user} do
+      {:ok, updated_user} = Accounts.assign_role(user, "tech")
       user_token = Accounts.generate_user_session_token(updated_user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
@@ -159,9 +159,9 @@ defmodule AnkaaWeb.RoleAuthTest do
         assigns: %{__changed__: %{}, flash: %{}, session: session}
       }
 
-      {:cont, socket} = RoleAuth.on_mount(:require_technical_support, %{}, session, socket)
+      {:cont, socket} = RoleAuth.on_mount(:require_tech, %{}, session, socket)
       assert socket.assigns.current_user.id == user.id
-      assert socket.assigns.current_user.role == "technical_support"
+      assert socket.assigns.current_user.role == "tech"
     end
 
     test "redirects unauthorized users", %{conn: conn, user: user} do
@@ -173,7 +173,7 @@ defmodule AnkaaWeb.RoleAuthTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
-      {:halt, socket} = RoleAuth.on_mount(:require_technical_support, %{}, session, socket)
+      {:halt, socket} = RoleAuth.on_mount(:require_tech, %{}, session, socket)
       assert socket.redirected == {:redirect, %{to: "/", status: 302}}
 
       assert Phoenix.Flash.get(socket.assigns.flash, :error) ==

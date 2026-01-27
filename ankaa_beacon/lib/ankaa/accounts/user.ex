@@ -12,7 +12,7 @@ defmodule Ankaa.Accounts.User do
     "doctor",
     "nurse",
     "caresupport",
-    "technical_support",
+    "tech",
     "clinic_technician",
     "community_coordinator",
     "social_worker"
@@ -29,13 +29,14 @@ defmodule Ankaa.Accounts.User do
     field(:npi_number, :string)
     field(:practice_state, :string)
 
-    has_one(:patient, Ankaa.Patients.Patient)
+    has_one(:patient, Ankaa.Patients.Patient, foreign_key: :user_id)
     has_many(:care_network, Ankaa.Patients.CareNetwork)
     has_many(:associated_patients, through: [:care_network, :patient])
+
     has_many(:alerts_resolved, Ankaa.Notifications.Alert, foreign_key: :resolved_by_id)
     has_many(:alerts_dismissed, Ankaa.Notifications.Alert, foreign_key: :dismissed_by_user_id)
-
     has_many(:notifications, Ankaa.Notifications.Notification)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -64,7 +65,8 @@ defmodule Ankaa.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :first_name, :last_name])
+    |> validate_required([:first_name, :last_name])
     |> validate_email(opts)
     |> validate_password(opts)
   end
@@ -228,7 +230,7 @@ defmodule Ankaa.Accounts.User do
   def nurse?(user), do: has_role?(user, "nurse")
   def admin?(user), do: has_role?(user, "admin")
   def caresupport?(user), do: has_role?(user, "caresupport")
-  def technical_support?(user), do: has_role?(user, "technical_support")
+  def tech?(user), do: has_role?(user, "tech")
   def clinic_technician?(user), do: has_role?(user, "clinic_technician")
   def community_coordinator?(user), do: has_role?(user, "community_coordinator")
   def social_worker?(user), do: has_role?(user, "social_worker")

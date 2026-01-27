@@ -18,7 +18,7 @@ defmodule Ankaa.NotificationsTest do
       unrelated_patient_user = AccountsFixtures.patient_fixture()
       device = AccountsFixtures.device_fixture(patient_user.patient)
 
-      Patients.create_patient_association(nurse_user, patient_user.patient, "nurse", "contributor")
+      Patients.create_patient_association(nurse_user, patient_user.patient, "nurse", :contributor, :nurse)
 
       # Return everything in a single context map
       %{
