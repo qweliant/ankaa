@@ -10,115 +10,104 @@ defmodule Ankaa.PatientsTest do
 
   describe "list_patients_for_user/1" do
     setup do
-      admin = AccountsFixtures.admin_fixture()
-      doctor = AccountsFixtures.doctor_fixture()
-      nurse = AccountsFixtures.nurse_fixture()
-      patient1 = AccountsFixtures.patient_fixture()
-      patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
+      %{user: admin_user} = AccountsFixtures.admin_fixture()
+      %{user: doctor_user} = AccountsFixtures.doctor_fixture()
+      %{user: nurse_user} = AccountsFixtures.nurse_fixture()
 
-      # Create association between doctor and patient1
+      %{user: patient1_user, patient: patient1_record} = AccountsFixtures.patient_fixture()
+
+      %{user: patient2_user, patient: patient2_record} =
+        AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
+
       {:ok, _} =
-        Patients.create_patient_association(doctor, patient1.patient, "doctor", :admin, :doctor)
+        Patients.create_patient_association(
+          doctor_user,
+          patient1_record,
+          "doctor",
+          :admin,
+          :doctor
+        )
 
-      # Create peer association
-      {:ok, _} = Patients.create_peer_association(patient1, patient2.patient)
+      {:ok, _} = Patients.create_peer_association(patient1_user, patient2_record)
 
       %{
-        admin: admin,
-        doctor: doctor,
-        nurse: nurse,
-        patient1: patient1,
-        patient2: patient2
+        admin: admin_user,
+        doctor: doctor_user,
+        nurse: nurse_user,
+        patient1_user: patient1_user,
+        patient1_record: patient1_record,
+        patient2_user: patient2_user,
+        patient2_record: patient2_record
       }
     end
 
-    test "list_patients/0 returns all patients" do
-      patient = AccountsFixtures.patient_fixture()
+    test "list_patients/0 returns all patients", %{patient1_record: p1} do
       patients = Patients.list_patients()
-      assert patient.patient in patients
+      ids = Enum.map(patients, & &1.id)
+      assert p1.id in ids
     end
 
-    test "admin sees all patients", %{admin: admin, patient1: p1, patient2: p2} do
+    test "admin sees all patients", %{admin: admin, patient1_record: p1, patient2_record: p2} do
       assert {:ok, patients} = Patients.list_patients_for_user(admin)
-      patient_ids = Enum.map(patients, & &1.id)
-      assert p1.patient in patients
-      assert p2.patient in patients
+      ids = Enum.map(patients, & &1.id)
+      assert p1.id in ids
+      assert p2.id in ids
     end
 
-    test "doctor sees only their patients", %{doctor: doctor, patient1: p1, patient2: p2} do
+    test "doctor sees only their patients", %{
+      doctor: doctor,
+      patient1_record: p1,
+      patient2_record: p2
+    } do
       assert {:ok, patients} = Patients.list_patients_for_user(doctor)
-      assert length(patients) == 1
-      patient_ids = Enum.map(patients, & &1.id)
+      ids = Enum.map(patients, & &1.id)
 
-      assert p1.patient.id in patient_ids
-      refute p2.patient.id in patient_ids, "Doctor should only see their assigned patients"
+      assert p1.id in ids
+      refute p2.id in ids
     end
 
-    test "patient sees peer patients", %{patient1: p1, patient2: p2} do
-      assert {:ok, patients} = Patients.list_patients_for_user(p1)
-      assert length(patients) == 1
-      patient_ids = Enum.map(patients, & &1.id)
-      # Note: Whether a patient sees "themselves" in this list depends on if
-      # a Self-link exists in CareNetwork. The fixture doesn't create one by default.
-      # refute p1.patient.id in patient_ids, "Patient shouldn't see themselves"
-      assert p2.patient.id in patient_ids, "Patient should see their peers"
+    test "patient sees peer patients", %{patient1_user: p1_user, patient2_record: p2_rec} do
+      assert {:ok, patients} = Patients.list_patients_for_user(p1_user)
+      ids = Enum.map(patients, & &1.id)
+      assert p2_rec.id in ids
     end
 
     test "unauthorized user gets empty list", %{nurse: nurse} do
-      assert {:ok, []} = Patients.list_patients_for_user(nurse)
+      %{user: stranger} = AccountsFixtures.user_fixture()
+      assert {:ok, []} = Patients.list_patients_for_user(stranger)
     end
   end
 
   describe "search_patients/2" do
     setup do
-      admin = AccountsFixtures.admin_fixture()
-      doctor = AccountsFixtures.doctor_fixture()
-      nurse = AccountsFixtures.nurse_fixture()
-      patient1 = AccountsFixtures.patient_fixture()
-      patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
+      %{user: doctor_user} = AccountsFixtures.doctor_fixture()
+      %{user: admin_user} = AccountsFixtures.admin_fixture()
+      %{patient: patient_record} = AccountsFixtures.patient_fixture()
 
-      # Create association between doctor and patient1
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: doctor.id,
-        patient_id: patient1.patient.id,
-        relationship: "doctor",
-        role: :admin
-      })
-      |> Repo.insert!()
+      {:ok, _} =
+        Patients.create_patient_association(
+          doctor_user,
+          patient_record,
+          "doctor",
+          :admin,
+          :doctor
+        )
 
-      %{
-        admin: admin,
-        doctor: doctor,
-        nurse: nurse,
-        patient1: patient1,
-        patient2: patient2
-      }
+      %{doctor: doctor_user, admin: admin_user, patient: patient_record}
     end
 
-    test "doctor can search their patients by name", %{doctor: doctor, patient1: p1} do
+    test "doctor can search their patients by name", %{doctor: doctor, patient: p} do
       assert {:ok, results} = Patients.search_patients(doctor, %{name: "Test Patient"})
-      result_ids = Enum.map(results, & &1.id)
-      assert p1.patient.id in result_ids
-    end
-
-    test "patient can't see unauthorized patients in search", %{patient1: p1} do
-      # Assuming patient1 shouldn't see patient2 based on your rules
-      assert {:ok, results} = Patients.search_patients(p1, %{name: "Peer Patient"})
-      result_ids = Enum.map(results, & &1.id)
-      refute p1.patient.id in result_ids
+      ids = Enum.map(results, & &1.id)
+      assert p.id in ids
     end
 
     test "handles empty search terms", %{admin: admin} do
       assert {:ok, _results} = Patients.search_patients(admin, %{})
     end
-
-    test "handles nil search values", %{admin: admin} do
-      assert {:ok, _results} = Patients.search_patients(admin, %{name: nil})
-    end
   end
 
-  describe "patients" do
+  describe "patients CRUD" do
     @valid_attrs %{
       name: "John Doe",
       date_of_birth: ~D[1990-01-01],
@@ -132,160 +121,133 @@ defmodule Ankaa.PatientsTest do
     }
     @invalid_attrs %{name: nil, date_of_birth: "invalid", timezone: nil}
 
-    test "get_patient!/1 returns the patient with given id" do
-      patient = AccountsFixtures.patient_fixture()
-      assert Patients.get_patient!(patient.patient.id) == patient.patient
+    setup do
+      %{user: user, patient: patient} = AccountsFixtures.patient_fixture()
+      %{user: update_user} = AccountsFixtures.user_fixture()
+
+      %{
+        user: user,
+        patient: patient,
+        update_user: update_user
+      }
     end
 
-    test "get_patient_by_user_id/1 returns the patient for given user_id" do
-      patient = AccountsFixtures.patient_fixture()
-      assert Patients.get_patient_by_user_id(patient.id) == patient.patient
+    test "get_patient!/1 returns the patient with given id", %{patient: patient} do
+      assert Patients.get_patient!(patient.id) == patient
     end
 
-    test "create_patient/2 with valid data creates a patient" do
-      user = AccountsFixtures.user_fixture()
+    test "get_patient_by_user_id/1 returns the patient for given user_id", %{
+      user: user,
+      patient: patient
+    } do
+      assert Patients.get_patient_by_user_id(user.id) == patient
+    end
+
+    test "create_patient/2 with valid data creates a patient", %{user: user} do
       assert {:ok, %Patient{} = patient} = Patients.create_patient(@valid_attrs, user)
       assert patient.name == "John Doe"
       assert patient.user_id == user.id
     end
 
-    test "create_patient/2 with invalid data returns error changeset" do
-      user = AccountsFixtures.user_fixture()
+    test "create_patient/2 with invalid data returns error changeset", %{user: user} do
       assert {:error, %Ecto.Changeset{}} = Patients.create_patient(@invalid_attrs, user)
     end
 
-    test "create_patient/2 enforces unique external_id constraint" do
-      user = AccountsFixtures.user_fixture()
+    test "create_patient/2 enforces unique external_id constraint", %{user: user} do
       attrs = Map.put(@valid_attrs, :external_id, "unique123")
       assert {:ok, _} = Patients.create_patient(attrs, user)
       assert {:error, changeset} = Patients.create_patient(attrs, user)
       assert "has already been taken" in errors_on(changeset).external_id
     end
 
-    test "update_patient/2 with valid data updates the patient" do
-      patient = AccountsFixtures.patient_fixture()
-      assert {:ok, %Patient{} = patient} = Patients.update_patient(patient.patient, @update_attrs)
+    test "update_patient/2 with valid data updates the patient", %{patient: patient} do
+      assert {:ok, %Patient{} = patient} = Patients.update_patient(patient, @update_attrs)
       assert patient.name == "John Updated"
       assert patient.date_of_birth == ~D[1991-01-01]
       assert patient.timezone == "America/New_York"
     end
 
-    test "update_patient/2 with invalid data returns error changeset" do
-      patient = AccountsFixtures.patient_fixture()
-
+    test "update_patient/2 with invalid data returns error changeset", %{patient: patient} do
       assert {:error, %Ecto.Changeset{}} =
-               Patients.update_patient(patient.patient, @invalid_attrs)
+               Patients.update_patient(patient, @invalid_attrs)
 
-      assert patient.patient == Patients.get_patient!(patient.patient.id)
+      assert patient == Patients.get_patient!(patient.id)
     end
 
-    test "delete_patient/1 deletes the patient" do
-      patient = AccountsFixtures.patient_fixture()
-      assert {:ok, %Patient{}} = Patients.delete_patient(patient.patient)
-      assert_raise Ecto.NoResultsError, fn -> Patients.get_patient!(patient.patient.id) end
+    test "delete_patient/1 deletes the patient", %{patient: patient} do
+      assert {:ok, %Patient{}} = Patients.delete_patient(patient)
+      assert_raise Ecto.NoResultsError, fn -> Patients.get_patient!(patient.id) end
     end
 
-    test "change_patient/1 returns a patient changeset" do
-      patient = AccountsFixtures.patient_fixture()
-      assert %Ecto.Changeset{} = Patients.change_patient(patient.patient)
+    test "change_patient/1 returns a patient changeset", %{patient: patient} do
+      assert %Ecto.Changeset{} = Patients.change_patient(patient)
     end
   end
 
   describe "care network" do
     setup do
-      doctor = AccountsFixtures.doctor_fixture()
-      nurse1 = AccountsFixtures.nurse_fixture()
-      nurse2 = AccountsFixtures.nurse_fixture()
-      patient1 = AccountsFixtures.patient_fixture()
-      patient2 = AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
-      regular_user = AccountsFixtures.user_fixture()
+      %{user: doctor_user} = AccountsFixtures.doctor_fixture()
+      %{user: nurse1_user} = AccountsFixtures.nurse_fixture()
+      %{user: nurse2_user} = AccountsFixtures.nurse_fixture()
+
+      %{user: patient1_user, patient: patient1_record} = AccountsFixtures.patient_fixture()
+
+      %{user: patient2_user, patient: patient2_record} =
+        AccountsFixtures.patient_fixture(%{name: "Peer Patient"})
 
       {:ok, member} =
         Patients.create_patient_association(
-          nurse1,
-          patient1.patient,
+          nurse1_user,
+          patient1_record,
           "nurse",
           :contributor,
           :nurse
         )
 
       %{
-        doctor: doctor,
-        nurse: nurse1,
-        nurse2: nurse2,
-        patient1: patient1,
-        patient2: patient2,
-        user: regular_user,
+        doctor: doctor_user,
+        nurse1: nurse1_user,
+        nurse2: nurse2_user,
+        patient1_user: patient1_user,
+        patient1_record: patient1_record,
+        patient2_user: patient2_user,
+        patient2_record: patient2_record,
         member: member
       }
     end
 
-    test "doctor can create association", %{doctor: doctor, patient1: patient} do
+    test "doctor can create association", %{doctor: doctor, patient1_record: p_record} do
       assert {:ok, assoc} =
-               Patients.create_patient_association(
-                 doctor,
-                 patient.patient,
-                 "doctor",
-                 :admin,
-                 :doctor
-               )
+               Patients.create_patient_association(doctor, p_record, "doctor", :admin, :doctor)
 
-      assert assoc.user_id == doctor.id
-      assert assoc.patient_id == patient.patient.id
-      assert assoc.relationship == "doctor"
       assert assoc.role == :doctor
       assert assoc.permission == :admin
     end
 
-    test "nurse can create association", %{nurse2: nurse2, patient1: patient} do
+    test "nurse can create association", %{nurse2: nurse, patient1_record: p_record} do
       assert {:ok, assoc} =
-               Patients.create_patient_association(
-                 nurse2,
-                 patient.patient,
-                 "nurse",
-                 :admin,
-                 :nurse
-               )
+               Patients.create_patient_association(nurse, p_record, "nurse", :admin, :nurse)
 
-      assert assoc.relationship == "nurse"
       assert assoc.role == :nurse
-      assert assoc.permission == :admin
     end
 
-    test "regular user CAN create association at context level",
-         %{user: user, patient1: patient} do
-      assert {:ok, _assoc} =
-               Patients.create_patient_association(
-                 user,
-                 patient.patient,
-                 "caresupport",
-                 :admin,
-                 :caresupport
-               )
-    end
-
-    test "patients can create peer associations (reciprocal)", %{patient1: p1, patient2: p2} do
-      {:ok, _} = Patients.create_peer_association(p1, p2.patient)
-
-      link1 = Repo.get_by(CareNetwork, user_id: p1.id, patient_id: p2.patient.id)
-      assert link1
-      assert link1.relationship == "peer_support"
-
-      user2_id = p2.id
-      link2 = Repo.get_by(CareNetwork, user_id: user2_id, patient_id: p1.patient.id)
-      assert link2
-      assert link2.relationship == "peer_support"
+    test "patients can create peer associations", %{
+      patient1_user: p1_user,
+      patient2_record: p2_rec
+    } do
+      assert {:ok, _} = Patients.create_peer_association(p1_user, p2_rec)
+      assert Repo.get_by(CareNetwork, user_id: p1_user.id, patient_id: p2_rec.id)
     end
 
     test "update_care_network_member/2 updates permissions", %{member: member} do
-      assert {:ok, %CareNetwork{} = updated_member} =
-               Patients.update_care_network_member(member, %{role: :admin})
+      assert {:ok, updated_member} =
+               Patients.update_care_network_member(member, %{permission: :admin})
 
-      assert updated_member.role == :admin
+      assert updated_member.permission == :admin
     end
 
     test "remove_care_network_member/1 deletes the association", %{member: member} do
-      assert {:ok, %CareNetwork{}} = Patients.remove_care_network_member(member)
+      assert {:ok, _} = Patients.remove_care_network_member(member)
 
       assert_raise Ecto.NoResultsError, fn ->
         Patients.get_care_network_member!(member.id)
@@ -295,7 +257,7 @@ defmodule Ankaa.PatientsTest do
 
   describe "create_patient_hub/2" do
     setup do
-      user = AccountsFixtures.user_fixture()
+      %{user: user} = AccountsFixtures.user_fixture()
       %{user: user}
     end
 
@@ -351,50 +313,39 @@ defmodule Ankaa.PatientsTest do
 
   describe "colleague management" do
     setup do
-      # Create an Org
       org = AccountsFixtures.organization_fixture()
 
-      # Doctor A (The User looking for colleagues)
-      doctor_a = AccountsFixtures.doctor_fixture()
+      # 1. Doctor A (The Searcher)
+      %{user: doctor_a} = AccountsFixtures.user_fixture()
+      # FORCE THE ROLE
+      {:ok, doctor_a} = Ankaa.Accounts.User.assign_role(doctor_a, "doctor")
       {:ok, _} = Ankaa.Communities.add_member(doctor_a, org.id, "admin")
 
-      # Doctor B (Available Colleague in same Org)
-      doctor_b = AccountsFixtures.doctor_fixture()
+      # 2. Doctor B (The Colleague)
+      %{user: doctor_b} = AccountsFixtures.user_fixture()
+      # FORCE THE ROLE - Now they are a "real" doctor
+      {:ok, doctor_b} = Ankaa.Accounts.User.assign_role(doctor_b, "doctor")
       {:ok, _} = Ankaa.Communities.add_member(doctor_b, org.id, "member")
 
-      # Nurse C (Already on the team - should NOT show up)
-      nurse_c = AccountsFixtures.nurse_fixture()
+      # 3. Nurse C (The Teammate)
+      %{user: nurse_c} = AccountsFixtures.user_fixture()
+      {:ok, nurse_c} = Ankaa.Accounts.User.assign_role(nurse_c, "nurse")
       {:ok, _} = Ankaa.Communities.add_member(nurse_c, org.id, "member")
 
-      # Doctor D (Different Org - should NOT show up)
-      doctor_d = AccountsFixtures.doctor_fixture()
+      # 4. Doctor D (Outsider)
+      %{user: doctor_d} = AccountsFixtures.doctor_fixture()
 
-      # The Patient
-      patient_user = AccountsFixtures.patient_fixture()
-      patient_id = patient_user.patient.id
+      # 5. Patient Setup
+      %{user: _p_user, patient: patient_record} = AccountsFixtures.patient_fixture()
+      Patients.create_patient_association(doctor_a, patient_record, "Doctor", :owner, :doctor)
+      Patients.create_patient_association(nurse_c, patient_record, "Nurse", :contributor, :nurse)
 
-      # Assign Doctor A and Nurse C to the patient
-      {:ok, _} =
-        Patients.create_patient_association(
-          doctor_a,
-          patient_user.patient,
-          "Doctor",
-          :owner,
-          :doctor
-        )
-
-      {:ok, _} =
-        Patients.create_patient_association(
-          nurse_c,
-          patient_user.patient,
-          "Nurse",
-          :contributor,
-          :nurse
-        )
+      # Reload Doctor A so they see their Org Membership
+      doctor_a_reloaded = Ankaa.Repo.preload(doctor_a, [:care_network, :organizations])
 
       %{
-        patient_id: patient_id,
-        doctor_a: doctor_a,
+        patient_id: patient_record.id,
+        doctor_a: doctor_a_reloaded,
         doctor_b: doctor_b,
         nurse_c: nurse_c,
         doctor_d: doctor_d

@@ -3,6 +3,9 @@ defmodule Ankaa.AccountsFixtures do
   This module defines test helpers for creating
   entities via the `Ankaa.Accounts` context.
   """
+  alias Ankaa.Accounts
+  alias Ankaa.Patients
+  alias Ankaa.Communities
 
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
@@ -20,66 +23,74 @@ defmodule Ankaa.AccountsFixtures do
   """
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
 
-  @doc """
-  Generate a user.
-  """
-  def user_fixture(attrs \\ %{}) do
-    {:ok, user} =
-      attrs
-      |> Enum.into(%{
+  defp create_user(attrs) do
+    {_legacy, valid_attrs} = Map.pop(attrs, :role)
+
+    clean_attrs =
+      Enum.into(valid_attrs, %{
         email: unique_user_email(),
         password: valid_user_password(),
         first_name: "Test",
         last_name: "User"
       })
-      |> Ankaa.Accounts.register_user()
 
-    # If a role was provided in attrs, assign it
-    case Map.get(attrs, :role) do
-      nil ->
-        user
-
-      role ->
-        {:ok, user_with_role} = Ankaa.Accounts.assign_role(user, role)
-        user_with_role
-    end
+    {:ok, user} = Accounts.register_user(clean_attrs)
+    user
   end
 
-  def doctor_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "doctor"}, attrs))
-  end
-
-  def nurse_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "nurse"}, attrs))
-  end
-
-  def caresupport_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "caresupport"}, attrs))
-  end
-
-  def tech_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "tech"}, attrs))
-  end
-
-  def admin_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{role: "admin"}, attrs))
+  @doc """
+  Generate a user.
+  """
+  def user_fixture(attrs \\ %{}) do
+    user = create_user(attrs)
+    %{user: user}
   end
 
   def patient_fixture(attrs \\ %{}) do
-    user = user_fixture(attrs)
+    user = create_user(attrs)
 
-    patient_attrs = %{
+    hub_attrs = %{
       name: "Test Patient",
-      user_id: user.id,
-      date_of_birth: Date.from_iso8601!("1980-01-01"),
-      timezone: "Etc/UTC"
+      date_of_birth: ~D[1980-01-01],
+      timezone: "Etc/UTC",
+      relationship: "Patient",
+      role: :patient
     }
 
-    {:ok, _patient} = Ankaa.Patients.create_patient(patient_attrs, user)
+    {:ok, %{patient: patient, membership: membership}} =
+      Patients.create_patient_hub(user, hub_attrs)
 
-    # Reload user to include patient association
-    Ankaa.Repo.preload(user, :patient)
+    user = Ankaa.Repo.preload(user, :patient)
 
+    %{
+      user: user,
+      membership: membership,
+      patient: patient
+    }
+  end
+
+  def doctor_fixture(attrs \\ %{}) do
+    care_member_fixture(:doctor, attrs)
+  end
+
+  def nurse_fixture(attrs \\ %{}) do
+    care_member_fixture(:nurse, attrs)
+  end
+
+  def caresupport_fixture(attrs \\ %{}) do
+    care_member_fixture(:caresupport, attrs)
+  end
+
+  def tech_fixture(attrs \\ %{}) do
+    care_member_fixture(:tech, attrs)
+  end
+
+  def admin_fixture(attrs \\ %{}) do
+    %{user: user} = user_fixture(attrs)
+    {:ok, admin_user} =
+      user
+      |> Ankaa.Accounts.assign_role("admin")
+    %{user: admin_user}
   end
 
   def device_fixture(%Ankaa.Patients.Patient{} = patient, attrs \\ %{}) do
@@ -117,6 +128,42 @@ defmodule Ankaa.AccountsFixtures do
   def membership_fixture(user, org, role \\ "member") do
     {:ok, membership} =
       Ankaa.Communities.add_member(user, org.id, role)
+
     membership
   end
+
+  defp care_member_fixture(role_atom, attrs) do
+    user = create_user(attrs)
+
+    patient_attrs = %{
+      name: "Patient of #{user.first_name}",
+      date_of_birth: ~D[1990-01-01],
+      relationship: "Patient",
+      role: :patient # Atom
+    }
+
+    {:ok, %{patient: patient}} = Patients.create_patient_hub(user, patient_attrs)
+
+    # Update the automatically created link to match the requested Role
+    # (create_patient_hub defaults creator to :owner, we want :doctor/:nurse)
+    membership =
+      Ankaa.Repo.get_by!(Ankaa.Patients.CareNetwork, user_id: user.id, patient_id: patient.id)
+      |> Ankaa.Patients.CareNetwork.changeset(%{
+        role: role_atom,
+        permission: default_permission_for(role_atom),
+        relationship: Atom.to_string(role_atom) |> String.capitalize()
+      })
+      |> Ankaa.Repo.update!()
+
+    %{
+      user: user,
+      membership: membership,
+      patient: patient
+    }
+  end
+
+  defp default_permission_for(:doctor), do: :contributor
+  defp default_permission_for(:nurse), do: :contributor
+  defp default_permission_for(:caresupport), do: :viewer
+  defp default_permission_for(_), do: :viewer
 end

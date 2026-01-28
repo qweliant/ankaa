@@ -12,11 +12,7 @@ defmodule AnkaaWeb.PortalLive.Index do
     communities = Communities.list_organizations_for_user(user)
     my_patient_profile = Patients.get_patient_by_user_id(user.id)
 
-    care_networks =
-      case Patients.list_patients_for_user(user) do
-        {:ok, patients} -> patients
-        {:error, _} -> []
-      end
+    {:ok, care_networks} = Patients.list_patients_for_user(user)
 
     org_changeset = Communities.change_organization(%Ankaa.Community.Organization{})
     patient_changeset = Patient.changeset(%Patient{}, %{})
@@ -261,7 +257,7 @@ defmodule AnkaaWeb.PortalLive.Index do
                   </button>
                 </div>
                 <div class="sm:flex sm:items-start">
-                  <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mx-0 sm:h-10 sm:w-10">
+                  <div class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mx-0 sm:h-10 sm:w-10">
                     <.icon name="hero-building-library" class="h-6 w-6 text-purple-600" />
                   </div>
                   <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
@@ -316,7 +312,7 @@ defmodule AnkaaWeb.PortalLive.Index do
                 </div>
 
                 <div class="sm:flex sm:items-start">
-                  <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                  <div class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
                     <.icon name="hero-heart" class="h-6 w-6 text-blue-600" />
                   </div>
                   <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">

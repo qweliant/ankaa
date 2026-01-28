@@ -40,7 +40,6 @@ defmodule Ankaa.Patients do
   """
   def list_patients_for_user(%User{} = user) do
     if user.role == "admin" do
-      # Admin Bypass: Return all patients
       {:ok, list_patients()}
     else
       query =
@@ -111,6 +110,11 @@ defmodule Ankaa.Patients do
   in the CareNetwork (ReBAC).
   """
   def create_patient_hub(%User{} = creator, attrs) do
+    attrs =
+      attrs
+      |> Enum.into(%{}) # Handles cases where input might be a struct
+      |> Map.new(fn {k, v} -> {to_string(k), v} end)
+
     # 1. Determine if this is a "Self" profile or "Headless" (Caregiver) profile
     relationship_input = attrs["relationship"] || attrs[:relationship] || "Creator"
     is_self = String.downcase(relationship_input) == "patient"
@@ -125,15 +129,12 @@ defmodule Ankaa.Patients do
       end
 
     Ecto.Multi.new()
-    # Step A: Insert Patient
     |> Ecto.Multi.insert(:patient, fn _ ->
       Patient.changeset(%Patient{}, patient_attrs)
     end)
     # Step B: Create ReBAC Link (The Bridge)
     |> Ecto.Multi.run(:membership, fn repo, %{patient: patient} ->
-      # Determine the Context Role (The Hat)
       role_input = attrs["role"] || attrs[:role]
-
       %CareNetwork{}
       |> CareNetwork.changeset(%{
         user_id: creator.id,
@@ -358,31 +359,45 @@ defmodule Ankaa.Patients do
       {:error, :not_a_patient}
   """
   def create_peer_association(%User{} = patient_user, %Patient{} = peer_patient) do
-    user2 = Repo.get!(User, peer_patient.user_id)
+    if is_nil(peer_patient.user_id) do
+      {:error, :peer_is_not_a_user}
+    else
+      peer_user = Repo.get!(User, peer_patient.user_id)
 
-    Repo.transaction(fn ->
-      # Create link: User 2 is a peer for Patient 1
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: user2.id,
-        patient_id: patient_user.patient.id,
-        relationship: "peer_support",
-        role: :caresupport,
-        permission: :viewer
-      })
-      |> Repo.insert!()
+      Repo.transaction(fn ->
+        # Link A: Peer User supports Current Patient (One direction)
+        # Note: We use patient_user.patient here. Ensure patient_user has :patient preloaded!
+        # If patient_user doesn't have .patient preloaded, this line will crash.
+        # Safer to fetch the patient struct or pass it in.
 
-      # Create reciprocal link: User 1 is a peer for Patient 2
-      %CareNetwork{}
-      |> CareNetwork.changeset(%{
-        user_id: patient_user.id,
-        patient_id: peer_patient.id,
-        relationship: "peer_support",
-        role: :caresupport,
-        permission: :viewer
-      })
-      |> Repo.insert!()
-    end)
+        # Assuming patient_user.patient is loaded or we fetch it:
+        current_patient =
+        if Ecto.assoc_loaded?(patient_user.patient),
+          do: patient_user.patient,
+          else: get_patient_by_user_id(patient_user.id)
+
+        %CareNetwork{}
+        |> CareNetwork.changeset(%{
+          user_id: peer_user.id,
+          patient_id: current_patient.id,
+          relationship: "peer_support",
+          role: :caresupport,
+          permission: :viewer
+        })
+        |> Repo.insert!()
+
+        # Link B: Current User supports Peer Patient (Reciprocal direction)
+        %CareNetwork{}
+        |> CareNetwork.changeset(%{
+          user_id: patient_user.id,
+          patient_id: peer_patient.id,
+          relationship: "peer_support",
+          role: :caresupport,
+          permission: :viewer
+        })
+        |> Repo.insert!()
+      end)
+    end
   end
 
   @doc """

@@ -14,7 +14,7 @@ defmodule Ankaa.Patients.CareNetwork do
     :nurse,
     :caresupport,
     :technical_support,
-    :clinic_technician,
+    :tech,
     :social_worker,
     :patient
   ]

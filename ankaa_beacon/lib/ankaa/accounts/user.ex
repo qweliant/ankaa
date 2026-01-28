@@ -32,7 +32,8 @@ defmodule Ankaa.Accounts.User do
     has_one(:patient, Ankaa.Patients.Patient, foreign_key: :user_id)
     has_many(:care_network, Ankaa.Patients.CareNetwork)
     has_many(:associated_patients, through: [:care_network, :patient])
-
+    has_many(:memberships, Ankaa.Community.OrganizationMembership)
+    has_many(:organizations, through: [:memberships, :organization])
     has_many(:alerts_resolved, Ankaa.Notifications.Alert, foreign_key: :resolved_by_id)
     has_many(:alerts_dismissed, Ankaa.Notifications.Alert, foreign_key: :dismissed_by_user_id)
     has_many(:notifications, Ankaa.Notifications.Notification)
