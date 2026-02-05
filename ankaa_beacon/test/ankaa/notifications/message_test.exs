@@ -6,10 +6,10 @@ defmodule Ankaa.MessagesTest do
   alias Ankaa.AccountsFixtures
 
   setup do
-    patient_user = AccountsFixtures.patient_fixture()
+    %{user: patient_user} = AccountsFixtures.patient_fixture()
     patient = patient_user.patient
 
-    doctor = AccountsFixtures.doctor_fixture()
+    %{user: doctor} = AccountsFixtures.doctor_fixture()
 
     {:ok, _assoc} =
       Ankaa.Patients.create_patient_association(doctor, patient, "Doctor", :admin, :doctor)
@@ -69,7 +69,7 @@ defmodule Ankaa.MessagesTest do
 
   describe "conversations and inbox" do
     setup %{patient: patient, doctor: doctor} do
-      nurse = AccountsFixtures.nurse_fixture()
+      %{user: nurse} = AccountsFixtures.nurse_fixture()
       {:ok, _} = Ankaa.Patients.create_patient_association(nurse, patient, "Nurse", :contributor, :nurse)
 
       {:ok, msg1} = Messages.send_passive_check_in(patient, doctor)

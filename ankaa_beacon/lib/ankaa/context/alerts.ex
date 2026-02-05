@@ -102,55 +102,25 @@ defmodule Ankaa.Alerts do
   - For patients, it gets alerts for themselves.
   """
   def get_active_alerts_for_user(%Ankaa.Accounts.User{} = user) do
-    cond do
-      # --- PROVIDER LOGIC (Stays the same) ---
-      user.role in ["doctor", "nurse", "caresupport", "clinic_technician", "social_worker"] ->
-        query =
-          from(n in Notification,
-            where: n.user_id == ^user.id,
-            where: n.status in ["unread", "acknowledged"],
-            join: a in Alert,
-            on: n.notifiable_id == a.id and n.notifiable_type == "Alert",
-            where: a.status == "active",
-            join: p in assoc(a, :patient),
-            order_by: [desc: a.inserted_at],
-            select: {n, a, p}
-          )
+    # What is in my Inbox?
+    # Any user (Doctor, Nurse, Mom, etc.) who received a notification sees it here.
+    inbox_alerts = list_inbox_alerts(user)
 
-        results = Repo.all(query)
+    # What is happening to me?
+    # If this user corresponds to a Patient record, fetch their direct feed.
+    # (We assume get_patient_by_user_id/1 is efficient or user.patient is preloaded)
+    feed_alerts =
+      case Ankaa.Patients.get_patient_by_user_id(user.id) do
+        %Ankaa.Patients.Patient{} = patient ->
+          list_patient_feed_alerts(user, patient)
+        nil ->
+          []
+      end
 
-        Enum.map(results, fn {notification, alert, patient} ->
-          alert_with_patient = %{alert | patient: patient}
-          %{alert: alert_with_patient, notification: notification}
-        end)
-
-      Accounts.User.patient?(user) ->
-        query =
-          from(a in Alert,
-            join: p in assoc(a, :patient),
-            left_join: n in Notification,
-            on:
-              n.notifiable_id == a.id and n.notifiable_type == "Alert" and n.user_id == ^user.id,
-            where: a.patient_id == ^user.patient.id,
-            where: a.status == "active",
-            where: a.severity in ["high", "critical"],
-            where: is_nil(n.id) or n.status != "dismissed",
-            order_by: [desc: a.inserted_at],
-            select: {n, a, p}
-          )
-
-        results = Repo.all(query)
-
-        # Fix the tuple match to handle 3 items
-        Enum.map(results, fn {notification, alert, patient} ->
-          alert_with_patient = %{alert | patient: patient}
-          # Pass the notification (which might be nil, and that's okay!)
-          %{alert: alert_with_patient, notification: notification}
-        end)
-
-      true ->
-        []
-    end
+    # Combine and Deduplicate
+    # (Just in case a user is both a Patient AND has a Notification for the same alert)
+    (inbox_alerts ++ feed_alerts)
+    |> Enum.uniq_by(fn item -> item.alert.id end)
   end
 
   @doc """
@@ -163,6 +133,7 @@ defmodule Ankaa.Alerts do
   """
   def dismiss_alert(alert_id, %Ankaa.Accounts.User{} = user, dismissal_reason) do
     alert = Repo.get!(Alert, alert_id)
+
     if can_dismiss_alert?(alert, user) do
       attrs = %{
         status: "dismissed",
@@ -259,5 +230,59 @@ defmodule Ankaa.Alerts do
       "high" -> true
       "critical" -> user.role in ["doctor", "nurse"]
     end
+  end
+
+  defp list_inbox_alerts(user) do
+    query =
+      from(n in Notification,
+        where: n.user_id == ^user.id,
+        where: n.status in ["unread", "acknowledged"],
+        join: a in Alert,
+        on: n.notifiable_id == a.id and n.notifiable_type == "Alert",
+        where: a.status == "active",
+        join: p in assoc(a, :patient),
+        order_by: [desc: a.inserted_at],
+        select: {n, a, p}
+      )
+
+    Repo.all(query)
+    |> format_results()
+  end
+
+  defp list_patient_feed_alerts(user, patient) do
+    query =
+      from(a in Alert,
+        # Scope: Alerts belonging to this patient
+        where: a.patient_id == ^patient.id,
+        where: a.status == "active",
+
+        # Scope: Only High/Critical shown directly to patients
+        where: a.severity in ["high", "critical"],
+
+        # Optimization: Join Notification just to check dismissal status
+        left_join: n in Notification,
+        on:
+          n.notifiable_id == a.id and
+            n.notifiable_type == "Alert" and
+            n.user_id == ^user.id,
+
+        # Filter: Exclude if the user explicitly dismissed it via a notification
+        where: is_nil(n.id) or n.status != "dismissed",
+        join: p in assoc(a, :patient),
+        order_by: [desc: a.inserted_at],
+        # n might be nil here
+        select: {n, a, p}
+      )
+
+    Repo.all(query)
+    |> format_results()
+  end
+
+  defp format_results(results) do
+    Enum.map(results, fn {notification, alert, patient} ->
+      alert_with_patient = %{alert | patient: patient}
+      # Notification might be nil (for Patient Feed items)
+      %{alert: alert_with_patient, notification: notification}
+    end)
   end
 end

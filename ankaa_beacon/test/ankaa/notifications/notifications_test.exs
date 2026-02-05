@@ -12,15 +12,14 @@ defmodule Ankaa.NotificationsTest do
       # start_supervised!({Registry, keys: :unique, name: Ankaa.Notifications.AlertRegistry})
 
       # Create all the fixtures needed for the tests
-      patient_user = AccountsFixtures.patient_fixture()
-      nurse_user = AccountsFixtures.nurse_fixture()
-      doctor_user = AccountsFixtures.doctor_fixture()
-      unrelated_patient_user = AccountsFixtures.patient_fixture()
+      %{user: patient_user} = AccountsFixtures.patient_fixture()
+      %{user: nurse_user} = AccountsFixtures.nurse_fixture()
+      %{user: doctor_user} = AccountsFixtures.doctor_fixture()
+      %{user: unrelated_patient_user} = AccountsFixtures.patient_fixture()
       device = AccountsFixtures.device_fixture(patient_user.patient)
 
       Patients.create_patient_association(nurse_user, patient_user.patient, "nurse", :contributor, :nurse)
 
-      # Return everything in a single context map
       %{
         patient: patient_user.patient,
         nurse: nurse_user,

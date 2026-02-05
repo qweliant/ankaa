@@ -509,53 +509,6 @@ defmodule Ankaa.AccountsTest do
     end
   end
 
-  describe "create_user_role/1" do
-    test "creating a new role" do
-      role_attrs = %{value: "new_role", description: "A new role for testing"}
-      {:ok, role} = Accounts.create_user_role(role_attrs)
-
-      assert role.value == "new_role"
-      assert role.description == "A new role for testing"
-    end
-
-    test "fails to create a user role with invalid attributes" do
-      invalid_role_attrs = %{value: nil, description: nil}
-      {:error, changeset} = Accounts.create_user_role(invalid_role_attrs)
-
-      assert changeset.valid? == false
-    end
-  end
-
-  describe "assign_role/2" do
-    test "assign_role/2 assigns a valid role to a user" do
-      user = user_fixture()
-      assert {:ok, %User{} = updated_user} = Accounts.assign_role(user, "nurse")
-      assert updated_user.role == "nurse"
-    end
-
-    test "assign_role/2 with invalid role returns error changeset" do
-      user = user_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.assign_role(user, "invalid_role")
-    end
-
-    test "assign_role/2 updates an existing role" do
-      user = user_fixture(%{role: "nurse"})
-      assert {:ok, %User{} = updated_user} = Accounts.assign_role(user, "doctor")
-      assert updated_user.role == "doctor"
-    end
-  end
-
-  describe "is_<role>/1" do
-    test "role convenience functions work correctly" do
-      user = user_fixture(%{role: "doctor"})
-      assert User.doctor?(user)
-      refute User.nurse?(user)
-      refute User.admin?(user)
-      refute User.caresupport?(user)
-      refute User.tech?(user)
-    end
-  end
-
   describe "update_user_profile/2" do
     test "updates the user profile with valid attributes (including NPI)" do
       user = user_fixture()

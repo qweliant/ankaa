@@ -117,7 +117,7 @@ defmodule Ankaa.Invites do
   end
 
   @doc """
-  Accepts an invitation, creates the patient association, and updates the
+  Accepts an invited user and the invitation, creates the patient association, and updates the
   invite status within a single transaction.
   """
   def accept_invite(user, %Invite{} = invite) do
@@ -167,18 +167,19 @@ defmodule Ankaa.Invites do
   end
 
   defp accept_as_patient(user, invite) do
-    permission = String.to_existing_atom(invite.invitee_permission || "owner")
+    permission = String.to_existing_atom(invite.invitee_permission || "viewer")
 
     Repo.transaction(fn ->
       with {:ok, patient_record} <- find_or_create_patient_for_user(user),
            inviter <- Accounts.get_user!(invite.inviter_id),
+           {:ok, _} <- ensure_self_link(user, patient_record),
            {:ok, _} <-
              Patients.create_patient_association(
                inviter,
                patient_record,
-               "Patient of {#{inviter.first_name} #{inviter.last_name}}",
+               "Patient of Dr. #{inviter.first_name} #{inviter.last_name}",
                permission,
-               inviter.role
+               invite.invitee_role
              ),
            {:ok, _} <-
              (if invite.organization_id do
@@ -263,6 +264,22 @@ defmodule Ankaa.Invites do
     end
   end
 
+  defp ensure_self_link(user, patient) do
+    case Patients.get_care_network_entry(user.id, patient.id) do
+      nil ->
+        Patients.create_patient_association(
+          user,
+          patient,
+          "Self",
+          :owner,
+          "patient"
+        )
+
+      found ->
+        {:ok, found}
+    end
+  end
+
   defp authorize_invite(inviter_user, patient, invite_params) do
     target_role = invite_params["invitee_role"]
     target_permission = safe_to_atom(invite_params["invitee_permission"] || "viewer")
@@ -298,7 +315,7 @@ defmodule Ankaa.Invites do
     end
   end
 
-  defp validate_existing_user(invitee_email, invitee_role) do
+  defp validate_existing_user(_invitee_email, invitee_role) do
     :ok
   end
 

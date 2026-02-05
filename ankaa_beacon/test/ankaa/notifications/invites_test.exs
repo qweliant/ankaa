@@ -10,22 +10,32 @@ defmodule Ankaa.InvitesTest do
   alias Ankaa.AccountsFixtures
 
   setup do
-    patient_user = AccountsFixtures.patient_fixture()
-    patient_hub = AccountsFixtures.organization_fixture()
+    # 1. Destructure the Patient Wrapper
+    %{user: patient_user, patient: patient_record} = AccountsFixtures.patient_fixture()
 
-    {:ok, _assoc} = Ankaa.Communities.add_member(patient_user, patient_hub.id, "admin")
-    doctor_user = AccountsFixtures.doctor_fixture()
-    nurse_user = AccountsFixtures.nurse_fixture()
+    # 2. Setup "Patient Hub" (which is just an Organization in this context?)
+    # Wait, in your code 'patient_hub' seems to be an Organization.
+    # Let's call it 'org' to be clear.
+    org = AccountsFixtures.organization_fixture()
 
-    new_user_to_be_patient = AccountsFixtures.user_fixture(%{email: "new.patient@example.com"})
+    # 3. Add patient_user to Org (Passing the STRUCT, not the wrapper)
+    {:ok, _assoc} = Ankaa.Communities.add_member(patient_user, org.id, "admin")
+
+    # 4. Destructure Doctor/Nurse Wrappers
+    %{user: doctor_user} = AccountsFixtures.doctor_fixture()
+    %{user: nurse_user} = AccountsFixtures.nurse_fixture()
+
+    # 5. Destructure New User Wrapper
+    new_user_to_be_patient =
+      AccountsFixtures.user_fixture(%{email: "new.patient@example.com"})
 
     %{
       patient_user: patient_user,
-      patient_record: patient_user.patient,
+      patient_record: patient_record,
       doctor_user: doctor_user,
       nurse_user: nurse_user,
       new_user_to_be_patient: new_user_to_be_patient,
-      patient_hub: patient_hub
+      patient_hub: org
     }
   end
 
@@ -116,34 +126,37 @@ defmodule Ankaa.InvitesTest do
       assert care_link.relationship == "Nurse"
     end
 
-    test "when a user accepts a patient invite, it creates a patient record and a link", %{
-      doctor_user: doctor_user,
-      new_user_to_be_patient: new_user_to_be_patient
-    } do
+    test "when a new user accepts a patient invite, it creates a patient record and a link" do
+      %{user: doctor} = Ankaa.AccountsFixtures.doctor_fixture()
+      unexisting_users_email = "unexisting_user@example.com"
+
       # Action: Doctor invites a new user to become a patient
       invite =
-        Invites.create_invite(doctor_user, %{
-          "invitee_email" => new_user_to_be_patient.email,
+        Invites.create_invite(doctor, %{
+          "invitee_email" => unexisting_users_email,
           "invitee_permission" => :viewer,
           "invitee_role" => "patient",
-          "invitee_relationship" => "Patient of Dr. #{doctor_user.last_name}"
+          "invitee_relationship" => "Patient of Dr. #{doctor.first_name} #{doctor.last_name}",
+          "patient_id" => nil
         })
         |> elem(1)
 
+      # middleware handles rerouting users if they are not a user. i can expect a user to exist
+      new_user = Ankaa.AccountsFixtures.user_fixture(%{email: unexisting_users_email})
+
       # Action: The new user accepts the invite
       assert {:ok, %Invite{status: "accepted"}} =
-               Invites.accept_invite(new_user_to_be_patient, invite)
+               Invites.accept_invite(new_user, invite)
 
       # Assert: A Patient record was created for the new user
-      new_patient_record = Repo.get_by!(Patient, user_id: new_user_to_be_patient.id)
+      new_patient_record = Repo.get_by!(Patient, user_id: new_user.id)
       assert new_patient_record
 
       # Assert: A CareNetwork link was created between the doctor and the new patient
       care_link =
-        Repo.get_by!(CareNetwork, user_id: doctor_user.id, patient_id: new_patient_record.id)
+        Repo.get_by!(CareNetwork, user_id: doctor.id, patient_id: new_patient_record.id)
 
-      assert care_link.relationship ==
-               "Patient of {#{new_user_to_be_patient.first_name} #{new_user_to_be_patient.last_name}}"
+      assert care_link.relationship == "Patient of Dr. #{doctor.first_name} #{doctor.last_name}"
 
       assert care_link.permission == :viewer
     end
@@ -177,51 +190,43 @@ defmodule Ankaa.InvitesTest do
       assert link.permission == :contributor
     end
 
-    test "accepts as colleague (doctor) without patient_id: joins organization only", %{
+    test "works as colleague (doctor) without patient_id: joins organization only", %{
       doctor_user: doctor_user,
-      patient_hub: patient_hub
+      patient_hub: hub
     } do
-      new_colleague = AccountsFixtures.doctor_fixture(%{email: "colleague@hospital.com"})
+      new_colleague = AccountsFixtures.user_fixture(%{email: "colleague@hospital.com"})
 
-      # Action: Doctor invites another doctor to the ORG, but not to a specific patient
       invite =
         Invites.create_invite(doctor_user, %{
           "invitee_email" => new_colleague.email,
           "invitee_role" => "doctor",
-          "organization_id" => patient_hub.id,
+          "organization_id" => hub.id,
           "patient_id" => nil,
           "invitee_permission" => :admin,
           "invitee_relationship" => "Colleague"
         })
         |> elem(1)
 
-      # Action: Colleague accepts
       assert {:ok, %Invite{status: "accepted"}} = Invites.accept_invite(new_colleague, invite)
 
-      # Assert: User added to Organization
-      # FIX: Query the Membership table directly instead of using the missing helper
       membership =
         Repo.get_by!(Ankaa.Community.OrganizationMembership,
           user_id: new_colleague.id,
-          organization_id: patient_hub.id
+          organization_id: hub.id
         )
 
-      # Or whatever default role your invite logic assigns
       assert membership.role == "member"
-      # Assuming add_member defaults to active
-      assert membership.status == "active"
 
-      # Assert: NO patient link created (CareNetwork should be empty for this user)
       refute Repo.get_by(CareNetwork, user_id: new_colleague.id)
     end
 
-    test "user accepts patient invite but had no patient record previously", %{
-      doctor_user: doctor_user
-    } do
+    test "when existing user accepts an invite as the patient invite but had no patient record previously",
+         %{
+           doctor_user: doctor_user
+         } do
       # Scenario: A user signed up via the website, but never created a patient profile.
       # The doctor invites them to be a patient.
-      existing_user_no_patient =
-        AccountsFixtures.user_fixture(%{email: "headless_user@example.com"})
+      existing_user_no_patient = AccountsFixtures.user_fixture(%{email: "headless_user@example.com"})
 
       # Verify precondition: No patient record exists
       refute Repo.get_by(Patient, user_id: existing_user_no_patient.id)
@@ -230,9 +235,15 @@ defmodule Ankaa.InvitesTest do
         Invites.create_invite(doctor_user, %{
           "invitee_email" => existing_user_no_patient.email,
           "invitee_role" => "patient",
-          "invitee_permission" => "viewer"
+          "invitee_permission" => :viewer,
+          "invitee_relationship" => "Patient of Dr. #{doctor_user.last_name}",
+          "patient_id" => nil
         })
         |> elem(1)
+
+      # Verify precondition: Invite is pending
+      sent_invite = Invites.get_pending_invite_by_token(invite.token)
+      assert sent_invite.id == invite.id
 
       # Action: Accept
       assert {:ok, _} = Invites.accept_invite(existing_user_no_patient, invite)

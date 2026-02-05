@@ -10,7 +10,7 @@ defmodule Ankaa.PatientsTest do
 
   describe "list_patients_for_user/1" do
     setup do
-      %{user: admin_user} = AccountsFixtures.admin_fixture()
+      admin_user = AccountsFixtures.admin_fixture()
       %{user: doctor_user} = AccountsFixtures.doctor_fixture()
       %{user: nurse_user} = AccountsFixtures.nurse_fixture()
 
@@ -73,7 +73,7 @@ defmodule Ankaa.PatientsTest do
     end
 
     test "unauthorized user gets empty list", %{nurse: nurse} do
-      %{user: stranger} = AccountsFixtures.user_fixture()
+      stranger = AccountsFixtures.user_fixture()
       assert {:ok, []} = Patients.list_patients_for_user(stranger)
     end
   end
@@ -81,9 +81,10 @@ defmodule Ankaa.PatientsTest do
   describe "search_patients/2" do
     setup do
       %{user: doctor_user} = AccountsFixtures.doctor_fixture()
-      %{user: admin_user} = AccountsFixtures.admin_fixture()
+      admin_user = AccountsFixtures.admin_fixture()
       %{patient: patient_record} = AccountsFixtures.patient_fixture()
 
+      
       {:ok, _} =
         Patients.create_patient_association(
           doctor_user,
@@ -123,7 +124,7 @@ defmodule Ankaa.PatientsTest do
 
     setup do
       %{user: user, patient: patient} = AccountsFixtures.patient_fixture()
-      %{user: update_user} = AccountsFixtures.user_fixture()
+      update_user = AccountsFixtures.user_fixture()
 
       %{
         user: user,
@@ -257,7 +258,7 @@ defmodule Ankaa.PatientsTest do
 
   describe "create_patient_hub/2" do
     setup do
-      %{user: user} = AccountsFixtures.user_fixture()
+      user = AccountsFixtures.user_fixture()
       %{user: user}
     end
 
@@ -316,19 +317,19 @@ defmodule Ankaa.PatientsTest do
       org = AccountsFixtures.organization_fixture()
 
       # 1. Doctor A (The Searcher)
-      %{user: doctor_a} = AccountsFixtures.user_fixture()
+      doctor_a = AccountsFixtures.user_fixture()
       # FORCE THE ROLE
       {:ok, doctor_a} = Ankaa.Accounts.User.assign_role(doctor_a, "doctor")
       {:ok, _} = Ankaa.Communities.add_member(doctor_a, org.id, "admin")
 
       # 2. Doctor B (The Colleague)
-      %{user: doctor_b} = AccountsFixtures.user_fixture()
+      doctor_b = AccountsFixtures.user_fixture()
       # FORCE THE ROLE - Now they are a "real" doctor
       {:ok, doctor_b} = Ankaa.Accounts.User.assign_role(doctor_b, "doctor")
       {:ok, _} = Ankaa.Communities.add_member(doctor_b, org.id, "member")
 
       # 3. Nurse C (The Teammate)
-      %{user: nurse_c} = AccountsFixtures.user_fixture()
+      nurse_c = AccountsFixtures.user_fixture()
       {:ok, nurse_c} = Ankaa.Accounts.User.assign_role(nurse_c, "nurse")
       {:ok, _} = Ankaa.Communities.add_member(nurse_c, org.id, "member")
 

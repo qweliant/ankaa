@@ -112,7 +112,8 @@ defmodule Ankaa.Patients do
   def create_patient_hub(%User{} = creator, attrs) do
     attrs =
       attrs
-      |> Enum.into(%{}) # Handles cases where input might be a struct
+      # Handles cases where input might be a struct
+      |> Enum.into(%{})
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
     # 1. Determine if this is a "Self" profile or "Headless" (Caregiver) profile
@@ -135,6 +136,7 @@ defmodule Ankaa.Patients do
     # Step B: Create ReBAC Link (The Bridge)
     |> Ecto.Multi.run(:membership, fn repo, %{patient: patient} ->
       role_input = attrs["role"] || attrs[:role]
+
       %CareNetwork{}
       |> CareNetwork.changeset(%{
         user_id: creator.id,
@@ -372,9 +374,9 @@ defmodule Ankaa.Patients do
 
         # Assuming patient_user.patient is loaded or we fetch it:
         current_patient =
-        if Ecto.assoc_loaded?(patient_user.patient),
-          do: patient_user.patient,
-          else: get_patient_by_user_id(patient_user.id)
+          if Ecto.assoc_loaded?(patient_user.patient),
+            do: patient_user.patient,
+            else: get_patient_by_user_id(patient_user.id)
 
         %CareNetwork{}
         |> CareNetwork.changeset(%{
@@ -570,20 +572,26 @@ defmodule Ankaa.Patients do
 
   @doc """
   Lists available colleagues in the same organization who are not yet assigned to the patient's care network.
-
+  # -------------------------------------------------------------------
+  ## CLAUSE 1: "Add to Patient Team" Context
+  ## Use this when you are inside a Patient Dashboard.
+  ## Logic: (My Org Members) - (Me) - (Already on Team)
+  # -------------------------------------------------------------------
   ## Examples
 
       iex> list_available_colleagues(doctor_user, patient_id)
       [%User{}, ...]
 
   """
-  def list_available_colleagues(%User{} = doctor, patient_id) do
+  def list_available_colleagues(%User{} = doctor, patient_id) when is_binary(patient_id) do
+    # My Scope: Which Organizations am I in?
     doctor_org_ids_query =
       from(m in OrganizationMembership,
         where: m.user_id == ^doctor.id,
         select: m.organization_id
       )
 
+    # Exclusion List: Who is already helping this specific patient?
     assigned_user_ids_query =
       from(c in CareNetwork,
         where: c.patient_id == ^patient_id,
@@ -591,14 +599,50 @@ defmodule Ankaa.Patients do
       )
 
     from(u in User,
+      # Join strictly on membership to ensure they are in an Org
+      join: m in OrganizationMembership,
+      on: m.user_id == u.id,
+
+      # Must be in one of MY organizations
+      where: m.organization_id in subquery(doctor_org_ids_query),
+
+      # Exclude ME
+      where: u.id != ^doctor.id,
+
+      # Exclude EXISTING team members
+      where: u.id not in subquery(assigned_user_ids_query),
+      distinct: u.id,
+      order_by: [asc: u.last_name, asc: u.first_name]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+    Lists available colleagues in the same organization who are not yet assigned to the patient's care network.
+    # -------------------------------------------------------------------
+    ## CLAUSE 2: "General Directory" Context
+    ## Use this for a general "My Colleagues" page.
+    ## Logic: (My Org Members) - (Me)
+    # -------------------------------------------------------------------
+    ## Examples
+
+        iex> list_available_colleagues(doctor_user, patient_id)
+        [%User{}, ...]
+  """
+  def list_available_colleagues(%User{} = doctor) do
+    doctor_org_ids_query =
+      from(m in OrganizationMembership,
+        where: m.user_id == ^doctor.id,
+        select: m.organization_id
+      )
+
+    from(u in User,
       join: m in OrganizationMembership,
       on: m.user_id == u.id,
       where: m.organization_id in subquery(doctor_org_ids_query),
       where: u.id != ^doctor.id,
-      where: u.id not in subquery(assigned_user_ids_query),
-      where: u.role in ["doctor", "nurse", "clinic_technician", "social_worker"],
       distinct: u.id,
-      order_by: [asc: u.last_name]
+      order_by: [asc: u.last_name, asc: u.first_name]
     )
     |> Repo.all()
   end

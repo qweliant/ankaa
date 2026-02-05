@@ -67,15 +67,15 @@ defmodule AnkaaWeb.UserRegistrationLiveTest do
     end
 
     test "with an invite token, registers and navigates to accept the invite", %{conn: conn} do
-      doctor_inviter = AccountsFixtures.doctor_fixture()
-      patient = AccountsFixtures.patient_fixture()
+      %{user: doctor_inviter} = AccountsFixtures.doctor_fixture()
+      %{user: patient_user, patient: patient} = AccountsFixtures.patient_fixture()
       invitee_email = unique_user_email()
 
       invite_attrs = %{
         "invitee_email" => invitee_email,
         "invitee_role" => "patient",
         "invitee_permission" => "owner",
-        "patient_id" => patient.patient.id
+        "patient_id" => patient.id
       }
 
       {:ok, invite} = Invites.create_invite(doctor_inviter, invite_attrs)
