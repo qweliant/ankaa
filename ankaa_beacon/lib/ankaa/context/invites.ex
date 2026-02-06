@@ -142,7 +142,7 @@ defmodule Ankaa.Invites do
         accept_as_care_support(user, invite)
 
       # Care provider Flow (Doctor, Nurse, Tech, Social Worker)
-      invite.invitee_role in ["doctor", "nurse", "clinic_technician", "social_worker"] ->
+      invite.invitee_role in ["doctor", "nurse", "tech", "social_worker"] ->
         # Check the Invite Target to decide the strategy
         if invite.patient_id do
           # If there is a patient attached, they are a Care Provider

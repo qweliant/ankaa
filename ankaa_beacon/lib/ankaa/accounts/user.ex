@@ -7,16 +7,6 @@ defmodule Ankaa.Accounts.User do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-  @roles [
-    "admin",
-    "doctor",
-    "nurse",
-    "caresupport",
-    "tech",
-    "clinic_technician",
-    "community_coordinator",
-    "social_worker"
-  ]
   schema "users" do
     field(:email, :string)
     field(:first_name, :string)
@@ -194,50 +184,6 @@ defmodule Ankaa.Accounts.User do
       add_error(changeset, :current_password, "is not valid")
     end
   end
-
-  @doc """
-  A changeset for updating a user's role.
-  """
-  def role_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:role])
-    |> validate_required([:role])
-    |> validate_inclusion(:role, @roles)
-    |> foreign_key_constraint(:role, name: :users_role_fkey, message: "is not a valid role")
-  end
-
-  @doc """
-  Assigns a role to a user.
-  """
-  def assign_role(user, role) when is_binary(role) do
-    user
-    |> role_changeset(%{role: role})
-    |> Ankaa.Repo.update()
-    |> case do
-      {:ok, user} -> {:ok, user}
-      {:error, changeset} -> {:error, changeset}
-    end
-  end
-
-  @doc """
-  Checks if a user has a specific role.
-  """
-  def has_role?(%__MODULE__{role: user_role}, role) when is_binary(role) do
-    user_role == role
-  end
-
-  # Role checking functions
-  def doctor?(user), do: has_role?(user, "doctor")
-  def nurse?(user), do: has_role?(user, "nurse")
-  def admin?(user), do: has_role?(user, "admin")
-  def caresupport?(user), do: has_role?(user, "caresupport")
-  def tech?(user), do: has_role?(user, "tech")
-  def clinic_technician?(user), do: has_role?(user, "clinic_technician")
-  def community_coordinator?(user), do: has_role?(user, "community_coordinator")
-  def social_worker?(user), do: has_role?(user, "social_worker")
-
-  def patient?(%__MODULE__{patient: %Ankaa.Patients.Patient{}}), do: true
-  def patient?(_), do: false
 
   @doc """
   Changeset for updating provider profile details (Name + NPI).

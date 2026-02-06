@@ -15,7 +15,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
     {"doctor", "Doctor", "I am a healthcare provider overseeing patients"},
     {"nurse", "Nurse", "I am a nurse supporting patients"},
     {"caresupport", "Care support", "I help take care of a patient"},
-    {"clinic_technician", "Clinic Technician",
+    {"tech", "Clinic Technician",
      "I work at a dialysis clinic and oversee patient data."},
     {"community_coordinator", "Community Coordinator",
      "I manage a community of dialysis patients."},
@@ -318,7 +318,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
       "nurse" -> "Enter NPI or License Number"
       "social_worker" -> "Enter NPI or License Number"
       "patient" -> "Registration Code (Optional)"
-      "clinic_technician" -> "Enter Clinic Access Code"
+      "tech" -> "Enter Clinic Access Code"
       "community_coordinator" -> "Enter Community Access Code"
       _ -> "Invitation Code"
     end
@@ -345,7 +345,7 @@ defmodule AnkaaWeb.RoleRegistrationLive do
       "doctor" -> "hero-user-plus"
       "nurse" -> "hero-clipboard-document-check"
       "caresupport" -> "hero-users"
-      "clinic_technician" -> "hero-computer-desktop"
+      "tech" -> "hero-computer-desktop"
       "community_coordinator" -> "hero-chat-bubble-left-right"
       "social_worker" -> "hero-lifebuoy"
       _ -> "hero-user"

@@ -24,7 +24,7 @@ defmodule Ankaa.Repo.Migrations.AddNewUserRoles do
   def down do
     # Remove the new roles
     execute(
-      "DELETE FROM user_roles WHERE value IN ('clinic_technician', 'community_coordinator', 'social_worker')"
+      "DELETE FROM user_roles WHERE value IN ('tech', 'community_coordinator', 'social_worker')"
     )
   end
 end

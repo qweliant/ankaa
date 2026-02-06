@@ -95,7 +95,7 @@ IO.puts("   -> Creating care team...")
       first_name: "Raul",
       last_name: "Creed"
     },
-    "clinic_technician",
+    "tech",
     clinic_org.id,
     "member"
   )
@@ -171,7 +171,7 @@ IO.puts("   -> Building care networks...")
 # Re-l's Network
 Patients.create_patient_association(dr_daedalus, patient_rel, "doctor", :admin, :doctor)
 Patients.create_patient_association(support_iggy, patient_rel, "caresupport", :viewer, :caresupport)
-Patients.create_patient_association(tech_raul, patient_rel, "clinic_technician", :contributor, :tech)
+Patients.create_patient_association(tech_raul, patient_rel, "tech", :contributor, :tech)
 
 # Vincent's Network
 Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor", :admin, :doctor)

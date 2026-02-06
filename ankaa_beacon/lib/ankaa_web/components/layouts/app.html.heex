@@ -43,11 +43,7 @@
             <div class="flex shrink-0 items-center gap-3">
               <img src={~p"/images/favicon.svg"} alt="Ankaa" class="h-9 w-9" />
 
-              <% target_link=cond do !@current_user -> ~p"/"
-                !@current_user.role && !@current_user.patient -> ~p"/register"
-                true -> ~p"/portal"
-                end
-                %>
+              <% target_link=if !@current_user, do: ~p"/", else: ~p"/portal" %>
 
                 <.link href={target_link}
                   class="text-xl font-black tracking-tight text-slate-900 hover:text-purple-700 transition-colors">

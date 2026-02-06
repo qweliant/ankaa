@@ -1,0 +1,222 @@
+<div class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="mb-10 border-b border-gray-200 pb-6">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+            Welcome, {@current_user.first_name || @current_user.email}
+        </h2>
+        <p class="mt-1 text-sm text-gray-500">Select a workspace to get started.</p>
+    </div>
+
+    <div class="mb-12">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Care Networks</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <%= if @my_patient_profile do %>
+                <.link navigate={~p"/p/#{@my_patient_profile.id}/dashboard"}
+                    class="group relative flex flex-col justify-between rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition hover:shadow-md hover:ring-gray-900/10">
+                    <div>
+                        <div
+                            class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 group-hover:bg-red-100 transition-colors">
+                            <.icon name="hero-heart" class="h-6 w-6 text-red-600" />
+                        </div>
+                        <h3 class="mt-4 font-semibold text-gray-900">My Health</h3>
+                        <p class="mt-1 text-sm text-gray-500">Track your vitals and sessions.</p>
+                    </div>
+                    <div class="mt-4 text-sm font-semibold text-red-600">
+                        Open Dashboard <span aria-hidden="true">&rarr;</span>
+                    </div>
+                </.link>
+                <% end %>
+
+                    <%= for patient <- @care_networks do %>
+                        <.link navigate={~p"/p/#{patient.id}/dashboard"}
+                            class="group relative flex flex-col justify-between rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition hover:shadow-md hover:ring-gray-900/10">
+                            <div>
+                                <div
+                                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                                    <.icon name="hero-user" class="h-6 w-6 text-blue-600" />
+                                </div>
+                                <h3 class="mt-4 font-semibold text-gray-900">{patient.name}</h3>
+                                <p class="mt-1 text-sm text-gray-500">{role_label(patient)}</p>
+                            </div>
+                            <div class="mt-4 text-sm font-semibold text-blue-600">
+                                Open Dashboard <span aria-hidden="true">&rarr;</span>
+                            </div>
+                        </.link>
+                        <% end %>
+
+                            <button phx-click="toggle_create_patient"
+                                class="group relative flex h-full min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-transparent p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                <div
+                                    class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 group-hover:bg-blue-100 transition-colors">
+                                    <.icon name="hero-user-plus"
+                                        class="h-6 w-6 text-gray-400 group-hover:text-blue-600" />
+                                </div>
+                                <h3 class="mt-2 text-sm font-semibold text-gray-900">Create Care Network</h3>
+                                <p class="mt-1 text-sm text-gray-500">Set up a hub for a patient</p>
+                            </button>
+        </div>
+    </div>
+
+    <div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">My Communities</h3>
+        </div>
+
+        <ul role="list" class="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <%= for org <- @communities do %>
+                <li class="col-span-1">
+                    <.link navigate={~p"/c/#{org.id}/dashboard"}
+                        class="group relative flex h-full flex-col justify-between rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition hover:shadow-md hover:ring-gray-900/10">
+                        <div>
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 group-hover:bg-purple-100 transition-colors">
+                                <.icon name="hero-building-office-2" class="h-6 w-6 text-purple-600" />
+                            </div>
+                            <h3 class="mt-4 font-semibold text-gray-900 truncate">{org.name}</h3>
+                            <p class="mt-1 text-sm text-gray-500 line-clamp-2">
+                                {org.description || "Community Hub"}
+                            </p>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-purple-600">
+                            Enter Hub <span aria-hidden="true">&rarr;</span>
+                        </div>
+                    </.link>
+                </li>
+                <% end %>
+
+                    <li class="col-span-1">
+                        <button phx-click="toggle_create_org"
+                            class="group relative flex h-full min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-transparent p-6 text-center hover:border-purple-400 hover:bg-purple-50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+                            <div
+                                class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 group-hover:bg-purple-100 transition-colors">
+                                <.icon name="hero-plus" class="h-6 w-6 text-gray-400 group-hover:text-purple-600" />
+                            </div>
+                            <h3 class="mt-2 text-sm font-semibold text-gray-900">Create New Community</h3>
+                            <p class="mt-1 text-sm text-gray-500">Start a support group</p>
+                        </button>
+                    </li>
+        </ul>
+    </div>
+
+    <div class="mt-20 border-t border-gray-100 pt-8">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+            <p>Safehemo Beta v0.1.0</p>
+            <div class="flex items-center gap-6">
+                <a href="#" class="hover:text-purple-600 transition-colors">Submit Feedback</a>
+                <a href="#" class="hover:text-purple-600 transition-colors">Join Discussion</a>
+                <a href="#" class="hover:text-rose-600 transition-colors">Report a Bug</a>
+            </div>
+        </div>
+    </div>
+
+    <.modal id="create-org-modal" :if={@show_create_org_modal} show on_cancel={JS.push("toggle_create_org")}>
+        <div class="sm:flex sm:items-start">
+            <div
+                class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mx-0 sm:h-10 sm:w-10">
+                <.icon name="hero-building-library" class="h-6 w-6 text-purple-600" />
+            </div>
+            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                <h3 class="text-base font-semibold leading-6 text-gray-900">Create a Community</h3>
+                <div class="mt-2">
+                    <.simple_form for={@org_form} phx-submit="create_community">
+                        <.input field={@org_form[:name]} label="Community Name" required />
+                        <.input field={@org_form[:description]} type="textarea" label="Description" />
+                        <:actions>
+                            <.button class="w-full">Create Community</.button>
+                        </:actions>
+                    </.simple_form>
+                </div>
+            </div>
+        </div>
+    </.modal>
+
+    <.modal id="create-patient-modal" :if={@show_create_patient_modal} show on_cancel={JS.push("toggle_create_patient")}>
+
+        <%= if @modal_step==:role_selection do %>
+            <.header class="text-center">
+                Create Care Network
+                <:subtitle>Who are you in relation to this patient?</:subtitle>
+            </.header>
+            <% else %>
+                <.header class="text-center">
+                    <%= if @selected_role=="patient" do %>
+                        Setup Your Profile
+                        <% else %>
+                            Patient Details
+                            <% end %>
+                                <:subtitle>Step 2 of 2</:subtitle>
+                </.header>
+                <% end %>
+
+        <%= if @modal_step==:role_selection do %>
+            <div class="mt-6 grid grid-cols-1 gap-3">
+                <%= for {role_id, label, desc, icon} <- @hub_roles do %>
+                    <button phx-click="select_hub_role" phx-value-role={role_id}
+                        class="flex items-center p-4 w-full text-left rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                        <div
+                            class="p-2 bg-gray-100 rounded-md group-hover:bg-blue-200 text-gray-500 group-hover:text-blue-700">
+                            <.icon name={icon} class="w-6 h-6" />
+                        </div>
+                        <div class="ml-4">
+                            <p class="font-semibold text-gray-900">{label}</p>
+                            <p class="text-sm text-gray-500">{desc}</p>
+                        </div>
+                        <div class="ml-auto">
+                            <.icon name="hero-chevron-right" class="w-5 h-5 text-gray-300 group-hover:text-blue-500" />
+                        </div>
+                    </button>
+                    <% end %>
+            </div>
+            <% end %>
+
+                <%= if @modal_step==:details do %>
+                    <div class="mt-6">
+                        <button phx-click="back_to_role_selection"
+                            class="mb-4 text-sm text-gray-500 hover:text-gray-900 flex items-center">
+                            <.icon name="hero-arrow-left" class="w-4 h-4 mr-1" /> Back
+                        </button>
+
+                        <.simple_form for={@patient_form} phx-submit="create_patient" phx-change="validate_patient">
+
+                            <.input field={@patient_form[:role]} type="hidden" />
+
+                            <%= if @selected_role in ["doctor", "nurse" , "social_worker" ] do %>
+                                <div class="bg-blue-50 p-4 rounded-md border border-blue-100 mb-6">
+                                    <h4 class="text-sm font-semibold text-blue-900 mb-2 flex items-center">
+                                        <.icon name="hero-identification" class="w-4 h-4 mr-2" />
+                                        Provider Verification
+                                    </h4>
+
+                                    <.input field={@patient_form[:npi]} label="NPI Number (Optional)"
+                                        placeholder="10-digit NPI" phx-debounce="1000" />
+
+                                    <%= if @npi_data do %>
+                                        <div
+                                            class="mt-2 text-xs text-green-700 flex items-center bg-green-50 p-2 rounded">
+                                            <.icon name="hero-check-circle" class="w-4 h-4 mr-1" />
+                                            Verified: {@npi_data.first_name} {@npi_data.last_name}
+                                        </div>
+                                        <% end %>
+                                </div>
+                                <% end %>
+
+                                    <.input field={@patient_form[:name]} label={if @selected_role=="patient" ,
+                                        do: "Your Name" , else: "Patient Name" } placeholder="e.g. John Doe" required />
+
+                                    <.input field={@patient_form[:relationship]} label="Relationship Label"
+                                        placeholder={if @selected_role=="patient" , do: "Self" ,
+                                        else: "e.g. Dr. Smith, Mom" } value={@patient_form[:relationship].value}
+                                        required />
+
+                                    <:actions>
+                                        <.button class="w-full bg-blue-600 hover:bg-blue-700">
+                                            Create Dashboard
+                                        </.button>
+                                    </:actions>
+                        </.simple_form>
+                    </div>
+                    <% end %>
+    </.modal>
+</div>

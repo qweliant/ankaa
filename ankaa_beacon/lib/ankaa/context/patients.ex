@@ -117,25 +117,36 @@ defmodule Ankaa.Patients do
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
     # 1. Determine if this is a "Self" profile or "Headless" (Caregiver) profile
+    role_input = attrs["role"] || attrs[:role]
     relationship_input = attrs["relationship"] || attrs[:relationship] || "Creator"
-    is_self = String.downcase(relationship_input) == "patient"
+    npi_input = attrs["npi"]
 
-    # 2. Prepare Patient Attrs
-    # If self, link user_id. If caregiver, leave user_id nil (Headless).
+    is_self =
+      (role_input == "patient") or
+      (String.downcase(relationship_input) in ["patient", "self", "me"])
+
     patient_attrs =
       if is_self do
-        Map.put(attrs, "user_id", creator.id)
+        Map.merge(attrs, %{"user_id" => creator.id})
       else
         Map.put(attrs, "user_id", nil)
       end
 
+    # enter the npi for the user as well
     Ecto.Multi.new()
+    |> Ecto.Multi.update(:update_user_npi, fn _ ->
+      if npi_input && npi_input != "" do
+        Ankaa.Accounts.User.registration_changeset(creator, %{npi_number: npi_input})
+      else
+        Ecto.Changeset.change(creator)
+      end
+    end)
     |> Ecto.Multi.insert(:patient, fn _ ->
       Patient.changeset(%Patient{}, patient_attrs)
     end)
-    # Step B: Create ReBAC Link (The Bridge)
+    # Create ReBAC Link (The Bridge)
     |> Ecto.Multi.run(:membership, fn repo, %{patient: patient} ->
-      role_input = attrs["role"] || attrs[:role]
+     final_role = if is_nil(role_input) and is_self, do: "patient", else: role_input
 
       %CareNetwork{}
       |> CareNetwork.changeset(%{
@@ -668,7 +679,7 @@ defmodule Ankaa.Patients do
       case role_atom do
         :doctor -> :contributor
         :nurse -> :contributor
-        :clinic_technician -> :viewer
+        :tech -> :viewer
         :social_worker -> :viewer
         :admin -> :admin
         _ -> :viewer
@@ -719,7 +730,7 @@ defmodule Ankaa.Patients do
     from(c in CareNetwork,
       join: u in assoc(c, :user),
       where: c.patient_id == ^patient_id,
-      where: c.role in [:doctor, :nurse, :clinic_technician, :social_worker],
+      where: c.role in [:doctor, :nurse, :tech, :social_worker],
       preload: [user: u]
     )
     |> Repo.all()
@@ -763,6 +774,48 @@ defmodule Ankaa.Patients do
       order_by: [asc: p.name]
     )
     |> Repo.all()
+  end
+
+  def patient?(%Ankaa.Accounts.User{} = user) do
+    case Repo.get_by(Patient, user_id: user.id) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  def doctor?(%Ankaa.Accounts.User{} = user) do
+    case Repo.get_by(CareNetwork, user_id: user.id, role: :doctor) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  def nurse?(%Ankaa.Accounts.User{} = user) do
+    case Repo.get_by(CareNetwork, user_id: user.id, role: :nurse) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  def tech?(%Ankaa.Accounts.User{} = user) do
+    case Repo.get_by(CareNetwork, user_id: user.id, role: :technical_support) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  def social_worker?(%Ankaa.Accounts.User{} = user) do
+    case Repo.get_by(CareNetwork, user_id: user.id, role: :social_worker) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  def care_support?(%Ankaa.Accounts.User{} = user) do
+    case Repo.get_by(CareNetwork, user_id: user.id, role: :caresupport) do
+      nil -> false
+      _ -> true
+    end
   end
 
   defp list_care_provider_patients(user) do

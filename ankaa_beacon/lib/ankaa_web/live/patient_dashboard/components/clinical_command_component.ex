@@ -106,7 +106,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
       can_manage_team? =
         @current_user.role in ["admin", "contributor", "owner"] or
           @patient.user_id == @current_user.id or
-          @current_user.role in ["doctor", "nurse", "clinic_technician"] %>
+          @current_user.role in ["doctor", "nurse", "tech"] %>
       <div class="sm:flex sm:items-center sm:justify-between">
         <div class="sm:flex-auto flex items-center gap-2">
           <div>
@@ -600,7 +600,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
     is_admin = current_user.role == "admin"
     is_patient_owner = patient.user_id == current_user.id
     is_self_removal = membership_to_remove.user_id == current_user.id
-    is_clinician = current_user.role in ["doctor", "nurse", "clinic_technician"]
+    is_clinician = current_user.role in ["doctor", "nurse", "tech"]
 
     target_is_owner = membership_to_remove.user_id == patient.user_id
 
@@ -636,7 +636,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
     user = socket.assigns.current_user
     patient = socket.assigns.patient
 
-    if user.role in ["doctor", "nurse", "clinic_technician", "social_worker"] do
+    if user.role in ["doctor", "nurse", "tech", "social_worker"] do
       alert_struct = Alerts.get_alert!(alert_id)
 
       case Alerts.acknowledge_critical_alert(alert_struct, user.id) do

@@ -13,7 +13,7 @@ defmodule Ankaa.Notifications.Invite do
     "nurse",
     "doctor",
     "patient",
-    "clinic_technician",
+    "tech",
     "community_coordinator",
     "social_worker"
   ]

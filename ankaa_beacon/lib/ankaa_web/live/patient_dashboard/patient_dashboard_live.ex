@@ -4,7 +4,6 @@ defmodule AnkaaWeb.PatientDashboardLive do
 
   alias Ankaa.Patients
   alias Ankaa.Devices
-  alias Ankaa.Accounts
 
   alias AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent
   alias AnkaaWeb.PatientDashboard.Components.FamilyPeaceComponent
@@ -19,7 +18,8 @@ defmodule AnkaaWeb.PatientDashboardLive do
     patient = Patients.get_patient!(patient_id)
     devices = Devices.list_devices_for_patient(patient.id)
     contacts = Ankaa.Accounts.list_available_contacts(user)
-    membership = Patients.get_membership!(user, patient)
+    membership = Patients.get_care_network_entry(user.id, patient.id)
+    Logger.info("Mounting PatientDashboardLive for patient #{inspect(patient, pretty: true)} and user #{user.id} with membership #{inspect(membership.role)}")
     # TODO: Add security check here later (Patients.can_access?)
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Ankaa.PubSub, "user:#{user.id}:messages")
@@ -28,16 +28,16 @@ defmodule AnkaaWeb.PatientDashboardLive do
 
     view_type =
       cond do
-        Accounts.patient?(user) and user.patient.id == patient.id ->
+        patient.user_id == user.id ->
           :patient_self
 
-        Accounts.doctor?(user) or Accounts.nurse?(user) or Accounts.clinic_technician?(user) ->
+        membership && membership.role in [:doctor, :nurse, :tech] ->
           :clinical
 
-        Accounts.has_role?(user, "social_worker") ->
+        membership && membership.role == :social_worker ->
           :social
 
-        Accounts.caresupport?(user) ->
+        membership && membership.role == :caresupport ->
           :family
 
         true ->

@@ -74,7 +74,7 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.UserAuth, :ensure_authenticated},
         {AnkaaWeb.AlertHook, :subscribe_alerts}
       ] do
-      live("/register", RoleRegistrationLive, :new)
+      # live("/register", RoleRegistrationLive, :new)
       live("/portal", PortalLive.Index, :index)
       live("/users/settings", UserSettingsLive, :edit)
       live("/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email)

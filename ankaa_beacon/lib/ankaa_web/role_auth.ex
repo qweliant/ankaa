@@ -27,11 +27,11 @@ defmodule AnkaaWeb.RoleAuth do
   end
 
   def on_mount(:require_clinical_staff, _params, _session, socket) do
-    on_mount(:require_role, ["doctor", "nurse", "clinic_technician", "admin"], nil, nil, socket)
+    on_mount(:require_role, ["doctor", "nurse", "tech", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_doctor_or_nurse, _params, _session, socket) do
-    on_mount(:require_role, ["doctor", "nurse", "clinic_technician", "admin"], nil, nil, socket)
+    on_mount(:require_role, ["doctor", "nurse", "tech", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_caresupport, _params, _session, socket) do
@@ -40,10 +40,6 @@ defmodule AnkaaWeb.RoleAuth do
 
   def on_mount(:require_tech, _params, _session, socket) do
     on_mount(:require_role, ["tech", "admin"], nil, nil, socket)
-  end
-
-  def on_mount(:require_clinic_technician, _params, _session, socket) do
-    on_mount(:require_role, ["clinic_technician", "admin"], nil, nil, socket)
   end
 
   def on_mount(:require_community_coordinator, _params, _session, socket) do
@@ -74,20 +70,7 @@ defmodule AnkaaWeb.RoleAuth do
     socket = mount_current_user(socket)
     user = socket.assigns.current_user
 
-    has_role =
-      user &&
-        user.role in [
-          "doctor",
-          "nurse",
-          "clinic_technician",
-          "social_worker",
-          "community_coordinator",
-          "admin"
-        ]
-
-    is_patient = user && Ankaa.Accounts.User.patient?(user)
-
-    if has_role or is_patient do
+    if user do
       {:cont, socket}
     else
       socket =
