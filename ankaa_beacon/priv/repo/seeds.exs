@@ -35,8 +35,6 @@ create_staff = fn attrs, role, org_id, org_role ->
     else
       {:ok, new_user} = Accounts.register_user(attrs)
       {:ok, named_user} = Accounts.update_user_profile(new_user, attrs)
-      {:ok, role_user} = Accounts.assign_role(named_user, role)
-      role_user
     end
 
   if org_id do
@@ -85,6 +83,7 @@ IO.puts("   -> Creating care team...")
     clinic_org.id,
     "moderator"
   )
+
 
 # Tech (In Clinic) - Raul manages the systems
 {:ok, tech_raul} =
@@ -152,7 +151,13 @@ IO.puts("   -> Creating patients...")
 {:ok, _} = Accounts.update_user_name(user_rel, %{first_name: "Re-l", last_name: "Mayer"})
 
 patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezone: "Etc/UTC"}
-{:ok, patient_rel} = Patients.create_patient(patient_attrs_rel, user_rel)
+{:ok, %{patient: patient_rel}} = Patients.create_patient_hub(user_rel, %{
+  "name" => "Re-l Mayer",
+  "date_of_birth" => ~D[2000-01-01],
+  "timezone" => "Etc/UTC",
+  "role" => "patient",
+  "relationship" => "Self"
+})
 Communities.add_member(user_rel, clinic_org.id, "member")
 
 {:ok, user_vincent} =
@@ -160,8 +165,14 @@ Communities.add_member(user_rel, clinic_org.id, "member")
 
 {:ok, _} = Accounts.update_user_name(user_vincent, %{first_name: "Vincent", last_name: "Law"})
 
-patient_attrs_vincent = %{name: "Vincent Law", date_of_birth: ~D[1995-05-05], timezone: "Etc/UTC"}
-{:ok, patient_vincent} = Patients.create_patient(patient_attrs_vincent, user_vincent)
+{:ok, %{patient: patient_vincent}} = Patients.create_patient_hub(user_vincent, %{
+  "name" => "Vincent Law",
+  "date_of_birth" => ~D[1995-05-05],
+  "timezone" => "Etc/UTC",
+  "role" => "patient",
+  "relationship" => "Self"
+})
+
 Communities.add_member(user_vincent, commune_org.id, "member")
 Communities.add_member(worker_pino, commune_org.id, "member")
 Communities.add_member(user_rel, commune_org.id, "member")

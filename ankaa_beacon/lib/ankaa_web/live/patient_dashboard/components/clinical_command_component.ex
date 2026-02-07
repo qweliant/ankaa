@@ -544,6 +544,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
     email = String.trim(email)
     patient = socket.assigns.patient
     current_user = socket.assigns.current_user
+    # also pass users role in
 
     case Patients.add_care_team_member_by_email(patient.id, email) do
       {:ok, _new_member} ->

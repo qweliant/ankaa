@@ -1,4 +1,12 @@
 defmodule AnkaaWeb.RoleAuth do
+  @moduledoc """
+  Provides on_mount hooks for role-based access control in LiveViews.
+  Usage:
+  - To require a specific role: `on_mount(:require_role, ["doctor", "nurse"])`
+  - To require a patient: `on_mount(:require_patient)`
+  - To require community access: `on_mount(:require_community_access)`
+  - To require specific roles: `on_mount(:require_doctor)`, `on_mount(:require_nurse)`, etc.
+  """
   import Phoenix.LiveView
   import Phoenix.Component
   use AnkaaWeb, :verified_routes
@@ -53,7 +61,7 @@ defmodule AnkaaWeb.RoleAuth do
   def on_mount(:require_patient, _params, _session, socket) do
     socket = mount_current_user(socket)
 
-    if socket.assigns.current_user && Ankaa.Accounts.User.patient?(socket.assigns.current_user) do
+    if socket.assigns.current_user && Ankaa.Patients.patient?(socket.assigns.current_user) do
       {:cont, socket}
     else
       socket =

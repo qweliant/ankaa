@@ -6,7 +6,7 @@ defmodule Ankaa.Accounts do
   import Ecto.Query, warn: false
   alias Ankaa.Repo
 
-  alias Ankaa.Accounts.{User, UserToken, UserNotifier, UserRole}
+  alias Ankaa.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
 

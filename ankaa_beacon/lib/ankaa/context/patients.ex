@@ -155,7 +155,7 @@ defmodule Ankaa.Patients do
         # The Badge (String)
         relationship: relationship_input,
         # The Hat (Atom)
-        role: role_input,
+        role: final_role,
         # The Keys (Atom) - Creator is always Owner
         permission: :owner
       })
@@ -543,6 +543,19 @@ defmodule Ankaa.Patients do
 
   @doc """
   Gets the specific CareNetwork entry for a given user and patient.
+
+  - Parameters:
+    - user_id: The ID of the user (care provider)
+    - patient_id: The ID of the patient
+
+  ## Examples
+
+      iex> get_care_network_entry("user_id_123", "patient_id_abc")
+      %CareNetwork{user_id: "user_id_123", patient_id: "patient_id_abc", ...}
+
+      iex> get_care_network_entry("user_id_123", "patient_id_nonexistent")
+      nil
+
   """
   def get_care_network_entry(user_id, patient_id) do
     Repo.get_by(CareNetwork, user_id: user_id, patient_id: patient_id)
@@ -661,6 +674,11 @@ defmodule Ankaa.Patients do
   @doc """
   Adds an existing medical professional to a patient's care network.
   Maps their Global Role to the correct CareNetwork Role.
+
+  - Parameters:
+    - patient_id: The ID of the patient to add to
+    - user: The User struct of the medical professional being added
+    - role_input: The role they should have in the care network (e.g. "doctor", "nurse")
   """
   def add_care_team_member(patient_id, user, role_input) do
     # 1. Convert input to Atom (The Hat)
@@ -704,6 +722,12 @@ defmodule Ankaa.Patients do
 
   @doc """
   Adds an existing medical professional to a patient's care network by email.
+
+  - Parameters:
+    - patient_id: The ID of the patient to add to
+    - email: The email of the medical professional being added
+    - role: The role they should have in the care network (e.g. "doctor", "nurse")
+
   """
   def add_care_team_member_by_email(patient_id, email, role) do
     case Ankaa.Accounts.get_user_by_email(email) do

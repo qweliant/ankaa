@@ -113,6 +113,7 @@ defmodule Ankaa.Alerts do
       case Ankaa.Patients.get_patient_by_user_id(user.id) do
         %Ankaa.Patients.Patient{} = patient ->
           list_patient_feed_alerts(user, patient)
+
         nil ->
           []
       end
@@ -179,6 +180,23 @@ defmodule Ankaa.Alerts do
     end
   end
 
+  def can_dismiss_alert?(alert, user) do
+    if alert.severity in ["info", "low", "medium"] do
+      true
+    else
+      check_clinical_permission(user, alert.patient_id)
+    end
+  end
+
+  defp check_clinical_permission(user, patient_id) do
+    query =
+      from cn in CareNetwork,
+      where: cn.user_id == ^user.id and cn.patient_id == ^patient_id,
+      where: cn.role in [:doctor, :nurse, :tech]
+
+    Repo.exists?(query)
+  end
+
   defp broadcast_alert_updated(alert) do
     care_network_user_ids = get_care_network_for_alerts(alert.patient_id)
 
@@ -222,14 +240,6 @@ defmodule Ankaa.Alerts do
         {:alert_dismissed, alert.id}
       )
     end)
-  end
-
-  defp can_dismiss_alert?(alert, user) do
-    case alert.severity do
-      "info" -> true
-      "high" -> true
-      "critical" -> user.role in ["doctor", "nurse"]
-    end
   end
 
   defp list_inbox_alerts(user) do
