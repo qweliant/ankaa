@@ -13,7 +13,6 @@ defmodule Ankaa.Patients.CareNetwork do
     :doctor,
     :nurse,
     :caresupport,
-    :technical_support,
     :tech,
     :social_worker,
     :patient
@@ -47,5 +46,4 @@ defmodule Ankaa.Patients.CareNetwork do
 
   def valid_roles, do: @roles
   def valid_permissions, do: @permissions
-  def valid_relationships, do: @relationships
 end

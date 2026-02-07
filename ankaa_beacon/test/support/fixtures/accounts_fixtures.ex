@@ -5,7 +5,6 @@ defmodule Ankaa.AccountsFixtures do
   """
   alias Ankaa.Accounts
   alias Ankaa.Patients
-  alias Ankaa.Communities
 
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{

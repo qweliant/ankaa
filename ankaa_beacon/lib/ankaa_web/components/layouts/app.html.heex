@@ -4,7 +4,7 @@
 
       <div class="flex items-center gap-6">
 
-        <%= if assigns[:patient] && @current_user.role !="patient" do %>
+        <%= if assigns[:patient] do %>
           <.link navigate={~p"/portal"}
             class="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-purple-600 transition-colors">
             <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-purple-100 transition-colors">
@@ -70,9 +70,6 @@
             <div class="text-right hidden sm:block">
               <p class="text-sm font-bold text-slate-700 leading-none mb-0.5">
                 {@current_user.email}
-              </p>
-              <p class="text-[10px] uppercase tracking-wider font-semibold text-purple-600">
-                {@current_user.role || "Member"}
               </p>
             </div>
 

@@ -18,10 +18,11 @@ defmodule Ankaa.Invites do
   @rand_size 32
 
   @allowed_invites %{
-    "patient" => ["caresupport", "doctor", "nurse"],
-    "doctor" => ["patient"],
-    "nurse" => ["patient"],
-    "caresupport" => []
+    doctor: [:doctor, :nurse, :tech, :social_worker, :caresupport, :patient],
+    patient: [:doctor, :nurse, :tech, :social_worker, :caresupport],
+    nurse: [:nurse, :tech, :social_worker, :caresupport],
+    tech: [:caresupport],
+    social_worker: [:caresupport]
   }
 
   @permission_ranks %{
@@ -281,24 +282,32 @@ defmodule Ankaa.Invites do
   end
 
   defp authorize_invite(inviter_user, patient, invite_params) do
-    target_role = invite_params["invitee_role"]
-    target_permission = safe_to_atom(invite_params["invitee_permission"] || "viewer")
-
+    target_role_atom = normalize_role(invite_params["invitee_role"])
     case Patients.get_care_network_entry(inviter_user.id, patient.id) do
       nil ->
         {:error, "You are not a member of this care network."}
 
-      %Ankaa.Patients.CareNetwork{role: inviter_role, permission: inviter_perm} ->
-        allowed_roles = Map.get(@allowed_invites, inviter_role, [])
+      %Ankaa.Patients.CareNetwork{role: inviter_role_raw, permission: inviter_perm} ->
+        # 3. Normalize Inviter: Ensure DB role is also an Atom
+        inviter_role_atom = normalize_role(inviter_role_raw)
+
+        # 4. Debug: See exactly what we are comparing in your terminal
+        Logger.warning("Checking roles: inviter_role_atom=#{inviter_role_atom}, target_role_atom=#{target_role_atom}")
+
+        # 5. The Check
+        allowed_roles = Map.get(@allowed_invites, inviter_role_atom, [])
 
         role_check =
-          if target_role in allowed_roles do
+          if target_role_atom in allowed_roles do
             :ok
           else
-            {:error, "A #{inviter_role} cannot invite a #{target_role}."}
+            # Error message uses the raw inputs so you can read them
+            {:error, "A #{inviter_role_raw} cannot invite a #{invite_params["invitee_role"]}."}
           end
 
-        perm_check = validate_permission_hierarchy(inviter_perm, target_permission)
+        # Permission check (assuming this works fine)
+        target_perm = normalize_role(invite_params["invitee_permission"] || "viewer")
+        perm_check = validate_permission_hierarchy(inviter_perm, target_perm)
 
         with :ok <- role_check,
              :ok <- perm_check do
@@ -306,6 +315,17 @@ defmodule Ankaa.Invites do
         end
     end
   end
+
+  defp normalize_role(val) when is_binary(val) do
+    try do
+      String.to_existing_atom(val)
+    rescue
+      _ -> :invalid_role
+    end
+  end
+
+  defp normalize_role(val) when is_atom(val), do: val
+  defp normalize_role(_), do: :invalid_role
 
   defp validate_self_invite(inviter_user, invitee_email) do
     if inviter_user.email == invitee_email do
@@ -315,7 +335,7 @@ defmodule Ankaa.Invites do
     end
   end
 
-  defp validate_existing_user(_invitee_email, invitee_role) do
+  defp validate_existing_user(_invitee_email, _invitee_role) do
     :ok
   end
 

@@ -10,7 +10,6 @@ defmodule Ankaa.Alerts do
   alias Ankaa.Emergency.EMSAlertTimer
   alias Ankaa.Notifications.Notification
   alias Ankaa.Patients
-  alias Ankaa.Accounts
 
   def create_alert(attrs) do
     patient_id = attrs["patient_id"] || attrs[:patient_id]

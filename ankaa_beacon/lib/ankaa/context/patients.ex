@@ -822,7 +822,7 @@ defmodule Ankaa.Patients do
   end
 
   def tech?(%Ankaa.Accounts.User{} = user) do
-    case Repo.get_by(CareNetwork, user_id: user.id, role: :technical_support) do
+    case Repo.get_by(CareNetwork, user_id: user.id, role: :tech) do
       nil -> false
       _ -> true
     end
@@ -842,27 +842,27 @@ defmodule Ankaa.Patients do
     end
   end
 
-  defp list_care_provider_patients(user) do
-    CareNetwork
-    |> join(:inner, [cn], p in Patient, on: cn.patient_id == p.id)
-    |> where([cn, _], cn.user_id == ^user.id)
-    |> select([_, p], p)
-    |> preload([cn, _], memberships: cn)
-    |> Repo.all()
-  end
+  # defp list_care_provider_patients(user) do
+  #   CareNetwork
+  #   |> join(:inner, [cn], p in Patient, on: cn.patient_id == p.id)
+  #   |> where([cn, _], cn.user_id == ^user.id)
+  #   |> select([_, p], p)
+  #   |> preload([cn, _], memberships: cn)
+  #   |> Repo.all()
+  # end
 
-  defp list_peer_patients(%Patient{} = patient) do
-    peer_user_ids_query =
-      from(cn in CareNetwork,
-        where: cn.patient_id == ^patient.id and cn.relationship == "peer_support",
-        select: cn.user_id
-      )
+  # defp list_peer_patients(%Patient{} = patient) do
+  #   peer_user_ids_query =
+  #     from(cn in CareNetwork,
+  #       where: cn.patient_id == ^patient.id and cn.relationship == "peer_support",
+  #       select: cn.user_id
+  #     )
 
-    from(p in Patient,
-      where: p.user_id in subquery(peer_user_ids_query)
-    )
-    |> Repo.all()
-  end
+  #   from(p in Patient,
+  #     where: p.user_id in subquery(peer_user_ids_query)
+  #   )
+  #   |> Repo.all()
+  # end
 
   defp list_accepted_members(%Patient{} = patient) do
     query =
