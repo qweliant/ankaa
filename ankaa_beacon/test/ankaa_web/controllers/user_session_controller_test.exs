@@ -10,19 +10,19 @@ defmodule AnkaaWeb.UserSessionControllerTest do
   describe "POST /users/login" do
     test "logs the user in", %{conn: conn, user: user} do
       conn =
-        post(conn, ~p"/users/login", %{
-          "user" => %{"email" => user.email, "password" => valid_user_password()}
-        })
+      post(conn, ~p"/users/login", %{
+        "user" => %{"email" => user.email, "password" => valid_user_password()}
+      })
 
       assert get_session(conn, :user_token)
       assert redirected_to(conn) == ~p"/"
 
-      # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/portal")
       response = html_response(conn, 200)
       assert response =~ user.email
-      assert response =~ ~p"/users/settings"
-      assert response =~ ~p"/users/logout"
+      assert response =~ "Care Networks"
+      assert response =~ "Create Care Network"
+      assert response =~ "My Communities"
     end
 
     test "logs the user in with remember me", %{conn: conn, user: user} do
@@ -69,7 +69,9 @@ defmodule AnkaaWeb.UserSessionControllerTest do
 
       assert redirected_to(conn) == ~p"/"
       conn = get(conn, ~p"/portal")
-      assert html_response(conn, 200) =~ "Create a hub"
+      response = html_response(conn, 200)
+      assert response =~ user.email
+      assert response =~ "Care Networks"
     end
 
     test "login following password update", %{conn: conn, user: user} do

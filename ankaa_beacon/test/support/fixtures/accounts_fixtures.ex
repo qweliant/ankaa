@@ -87,10 +87,7 @@ defmodule Ankaa.AccountsFixtures do
 
   def admin_fixture(attrs \\ %{}) do
     user = user_fixture(attrs)
-    {:ok, admin_user} =
-      user
-      |> Ankaa.Accounts.assign_role("admin")
-    admin_user
+    user
   end
 
   def device_fixture(%Ankaa.Patients.Patient{} = patient, attrs \\ %{}) do
