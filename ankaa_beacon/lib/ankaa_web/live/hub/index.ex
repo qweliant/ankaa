@@ -18,8 +18,14 @@ defmodule AnkaaWeb.PortalLive.Index do
     communities = Communities.list_organizations_for_user(user)
     my_patient_profile = Patients.get_patient_by_user_id(user.id)
 
-    {:ok, care_networks} = Patients.list_patients_for_user(user)
-
+    {:ok, all_networks} = Patients.list_patients_for_user(user)
+    
+    care_networks =
+      if my_patient_profile do
+        Enum.reject(all_networks, fn p -> p.id == my_patient_profile.id end)
+      else
+        all_networks
+      end
     org_changeset = Communities.change_organization(%Ankaa.Community.Organization{})
     form_changeset = create_patient_form_changeset(%{})
 

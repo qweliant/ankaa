@@ -10,6 +10,15 @@ defmodule Ankaa.Communities do
   @doc """
   Adds a user to an organization with a specific contextual role.
   Replaces the old 'assign_organization'.
+
+  - Parameters:
+    - user: %User{} struct of the user to add
+    - organization_id: ID of the organization to join
+    - role: String representing the user's role in this org (e.g. "admin", "coordinator", "patient", "family", "social_worker")
+
+  Returns {:ok, %OrganizationMembership{}} or {:error, %Ecto.Changeset{}}
+
+  Note: This does NOT check if the user is already a member. The calling code should handle that if needed.
   """
   def add_member(%User{} = user, organization_id, role \\ "member") do
     %OrganizationMembership{}

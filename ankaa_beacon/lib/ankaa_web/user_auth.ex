@@ -232,10 +232,6 @@ defmodule AnkaaWeb.UserAuth do
     cond do
       !user ->
         ~p"/"
-
-      is_nil(user.role) and is_nil(user.patient) ->
-         ~p"/register"
-
       true ->
         ~p"/portal"
     end

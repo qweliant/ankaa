@@ -27,7 +27,12 @@ IO.puts("   -> Creating organizations...")
   })
 
 create_staff = fn attrs, role, org_id, org_role ->
-  user = Accounts.get_user_by_email(attrs.email)
+  user =
+    case Accounts.get_user_by_email(attrs.email) do
+      {:ok, found} -> found
+      %Ankaa.Accounts.User{} = found -> found
+      nil -> nil
+    end
 
   user =
     if user do
@@ -35,8 +40,8 @@ create_staff = fn attrs, role, org_id, org_role ->
     else
       {:ok, new_user} = Accounts.register_user(attrs)
       {:ok, named_user} = Accounts.update_user_profile(new_user, attrs)
+      named_user
     end
-
   if org_id do
     case Communities.add_member(user, org_id, org_role) do
       {:ok, _} ->
@@ -83,7 +88,6 @@ IO.puts("   -> Creating care team...")
     clinic_org.id,
     "moderator"
   )
-
 
 # Tech (In Clinic) - Raul manages the systems
 {:ok, tech_raul} =
@@ -146,32 +150,46 @@ IO.puts("   -> Creating care team...")
 IO.puts("   -> Creating patients...")
 
 {:ok, user_rel} =
-  Accounts.register_user(%{email: "rel.mayer@example.com", password: "password1234", first_name: "Re-l", last_name: "Mayer"})
+  Accounts.register_user(%{
+    email: "rel.mayer@example.com",
+    password: "password1234",
+    first_name: "Re-l",
+    last_name: "Mayer"
+  })
 
 {:ok, _} = Accounts.update_user_name(user_rel, %{first_name: "Re-l", last_name: "Mayer"})
 
 patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezone: "Etc/UTC"}
-{:ok, %{patient: patient_rel}} = Patients.create_patient_hub(user_rel, %{
-  "name" => "Re-l Mayer",
-  "date_of_birth" => ~D[2000-01-01],
-  "timezone" => "Etc/UTC",
-  "role" => "patient",
-  "relationship" => "Self"
-})
+
+{:ok, %{patient: patient_rel}} =
+  Patients.create_patient_hub(user_rel, %{
+    "name" => "Re-l Mayer",
+    "date_of_birth" => ~D[2000-01-01],
+    "timezone" => "Etc/UTC",
+    "role" => "patient",
+    "relationship" => "Self"
+  })
+
 Communities.add_member(user_rel, clinic_org.id, "member")
 
 {:ok, user_vincent} =
-  Accounts.register_user(%{email: "vincent.law@example.com", password: "password1234", first_name: "Vincent", last_name: "Law"})
+  Accounts.register_user(%{
+    email: "vincent.law@example.com",
+    password: "password1234",
+    first_name: "Vincent",
+    last_name: "Law"
+  })
 
 {:ok, _} = Accounts.update_user_name(user_vincent, %{first_name: "Vincent", last_name: "Law"})
 
-{:ok, %{patient: patient_vincent}} = Patients.create_patient_hub(user_vincent, %{
-  "name" => "Vincent Law",
-  "date_of_birth" => ~D[1995-05-05],
-  "timezone" => "Etc/UTC",
-  "role" => "patient",
-  "relationship" => "Self"
-})
+{:ok, %{patient: patient_vincent}} =
+  Patients.create_patient_hub(user_vincent, %{
+    "name" => "Vincent Law",
+    "date_of_birth" => ~D[1995-05-05],
+    "timezone" => "Etc/UTC",
+    "role" => "patient",
+    "relationship" => "Self"
+  })
 
 Communities.add_member(user_vincent, commune_org.id, "member")
 Communities.add_member(worker_pino, commune_org.id, "member")
@@ -181,15 +199,44 @@ IO.puts("   -> Building care networks...")
 
 # Re-l's Network
 Patients.create_patient_association(dr_daedalus, patient_rel, "doctor", :admin, :doctor)
-Patients.create_patient_association(support_iggy, patient_rel, "caresupport", :viewer, :caresupport)
+
+Patients.create_patient_association(
+  support_iggy,
+  patient_rel,
+  "caresupport",
+  :viewer,
+  :caresupport
+)
+
 Patients.create_patient_association(tech_raul, patient_rel, "tech", :contributor, :tech)
 
 # Vincent's Network
 Patients.create_patient_association(dr_daedalus, patient_vincent, "doctor", :admin, :doctor)
 Patients.create_patient_association(nurse_kristeva, patient_vincent, "nurse", :moderator, :nurse)
-Patients.create_patient_association(coord_hoody, patient_vincent, "community_coordinator", :viewer, :community_coordinator)
-Patients.create_patient_association(worker_pino, patient_vincent, "social_worker", :contributor, :social_worker)
-Patients.create_patient_association(support_iggy, patient_vincent, "caresupport", :viewer, :caresupport)
+
+Patients.create_patient_association(
+  coord_hoody,
+  patient_vincent,
+  "community_coordinator",
+  :viewer,
+  :community_coordinator
+)
+
+Patients.create_patient_association(
+  worker_pino,
+  patient_vincent,
+  "social_worker",
+  :contributor,
+  :social_worker
+)
+
+Patients.create_patient_association(
+  support_iggy,
+  patient_vincent,
+  "caresupport",
+  :viewer,
+  :caresupport
+)
 
 IO.puts("   -> Seeding Community Content (Feature Parity Check)...")
 
@@ -236,7 +283,8 @@ Communities.create_post(%{
   "organization_id" => clinic_org.id,
   "author_id" => dr_daedalus.id,
   "title" => "Mandatory Cytogene Scanning Phase 4",
-  "body" => "All citizens of Class B and C must report to the Medical Bureau for genetic stability checks. We have detected minor deviations in the WombSys output. Your cooperation ensures the stability of the Dome.",
+  "body" =>
+    "All citizens of Class B and C must report to the Medical Bureau for genetic stability checks. We have detected minor deviations in the WombSys output. Your cooperation ensures the stability of the Dome.",
   "type" => "announcement",
   "is_pinned" => true
 })
@@ -245,17 +293,18 @@ Communities.create_post(%{
   "organization_id" => clinic_org.id,
   "author_id" => tech_raul.id,
   "title" => "Security Alert: AutoReiv Malfunctions",
-  "body" => "Reports of 'self-aware' behavior in medical AutoReivs are increasing. If your Entourage unit begins asking philosophical questions or ignoring commands, it may be infected with the Cogito virus. Isolate immediately.",
+  "body" =>
+    "Reports of 'self-aware' behavior in medical AutoReivs are increasing. If your Entourage unit begins asking philosophical questions or ignoring commands, it may be infected with the Cogito virus. Isolate immediately.",
   "type" => "announcement",
   "is_pinned" => false
 })
-
 
 Communities.create_post(%{
   "organization_id" => clinic_org.id,
   "author_id" => tech_raul.id,
   "title" => "Report Unregistered Immigrants",
-  "body" => "The purity of Romdeau depends on strict population control. Report any sightings of individuals from the Commune attempting to bypass health checkpoints.",
+  "body" =>
+    "The purity of Romdeau depends on strict population control. Report any sightings of individuals from the Commune attempting to bypass health checkpoints.",
   "type" => "action_item",
   "action_label" => "Report Violation",
   "action_target" => "security@bureau.romdeau.gov",
@@ -268,7 +317,8 @@ Communities.create_resource(%{
   "title" => "Entourage Unit Maintenance Guide",
   "url" => "https://example.com/autoreiv-maintenance",
   "category" => "Technical",
-  "description" => "Standard operating procedures for Entourage-type AutoReivs. Includes Turing Application reset codes."
+  "description" =>
+    "Standard operating procedures for Entourage-type AutoReivs. Includes Turing Application reset codes."
 })
 
 Communities.create_resource(%{
@@ -276,14 +326,16 @@ Communities.create_resource(%{
   "title" => "WombSys: Infant Care Protocols",
   "url" => "https://example.com/wombsys",
   "category" => "Lifestyle",
-  "description" => "Guidelines for citizens receiving new assignments from the artificial womb system."
+  "description" =>
+    "Guidelines for citizens receiving new assignments from the artificial womb system."
 })
 
 Communities.create_board_item(%{
   "organization_id" => clinic_org.id,
   "user_id" => dr_daedalus.id,
   "item_name" => "Amrita Cell Samples",
-  "description" => "Requiring high-purity Amrita cells for Project Proxy. Level 5 Clearance required.",
+  "description" =>
+    "Requiring high-purity Amrita cells for Project Proxy. Level 5 Clearance required.",
   "type" => "requesting",
   "status" => "approved"
 })
@@ -294,7 +346,8 @@ Communities.create_board_item(%{
   "item_name" => "Rabbit Drawing",
   "description" => "I drew a picture of a rabbit! It is free.",
   "type" => "offering",
-  "status" => "pending" # Daedalus probably hasn't approved this yet because it's "inefficient"
+  # Daedalus probably hasn't approved this yet because it's "inefficient"
+  "status" => "pending"
 })
 
 IO.puts("✅ Database seeding complete.")

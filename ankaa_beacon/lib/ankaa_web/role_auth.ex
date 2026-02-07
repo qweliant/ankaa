@@ -67,7 +67,7 @@ defmodule AnkaaWeb.RoleAuth do
       socket =
         socket
         |> put_flash(:error, "You must be a patient to access this page.")
-        |> redirect(to: ~p"/register")
+        |> redirect(to: ~p"/portal")
 
       {:halt, socket}
     end

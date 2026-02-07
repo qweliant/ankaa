@@ -18,7 +18,7 @@ defmodule AnkaaWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/register")
+      conn = get(conn, ~p"/portal")
       response = html_response(conn, 200)
       assert response =~ user.email
       assert response =~ ~p"/users/settings"
@@ -68,8 +68,8 @@ defmodule AnkaaWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/"
-      conn = get(conn, ~p"/register")
-      assert html_response(conn, 200) =~ "Complete Your Registration"
+      conn = get(conn, ~p"/portal")
+      assert html_response(conn, 200) =~ "Create a hub"
     end
 
     test "login following password update", %{conn: conn, user: user} do

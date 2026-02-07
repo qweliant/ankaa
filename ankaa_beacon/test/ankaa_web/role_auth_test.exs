@@ -215,7 +215,7 @@ defmodule AnkaaWeb.RoleAuthTest do
       }
 
       {:halt, socket} = RoleAuth.on_mount(:require_patient, %{}, session, socket)
-      assert socket.redirected == {:redirect, %{to: "/register", status: 302}}
+      assert socket.redirected == {:redirect, %{to: "/portal", status: 302}}
 
       assert Phoenix.Flash.get(socket.assigns.flash, :error) ==
                "You must be a patient to access this page."
