@@ -16,8 +16,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
 
   require Logger
 
-  # --- MOUNT / UPDATE ---
-
   @impl true
   def update(%{patient: patient, current_user: current_user} = assigns, socket) do
     # 1. Load Core Data (if not already loaded)
@@ -108,9 +106,6 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
      |> assign(:dialysis_readings, prepare_readings(assigns[:dialysis_readings]))}
   end
 
-  # --- EVENT HANDLERS ---
-
-  # 1. INVITE / ADD MEMBER LOGIC
   @impl true
   def handle_event("toggle_invite_modal", _, socket) do
     {:noreply, assign(socket, show_invite_modal: !socket.assigns.show_invite_modal)}
@@ -518,7 +513,7 @@ defmodule AnkaaWeb.PatientDashboard.Components.ClinicalCommandComponent do
               <label class="block text-sm font-medium text-slate-700 mb-1">Select Role</label>
               <div class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto p-1">
                 <%= for {role_id, label, desc} <- @invite_roles do %>
-                  <label class="relative flex items-start p-3 rounded-lg border cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 ring-1 ring-transparent has-[:checked]:ring-purple-500">
+                  <label class="relative flex items-start p-3 rounded-lg border cursor-pointer hover:bg-slate-50 transition-colors has-checked:border-purple-500 has-checked:bg-purple-50 ring-1 ring-transparent has-checked:ring-purple-500">
                     <input
                       type="radio"
                       name="role"

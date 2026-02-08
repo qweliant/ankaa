@@ -4,8 +4,10 @@ defmodule Ankaa.Communities do
   """
   import Ecto.Query, warn: false
   alias Ankaa.Repo
-  alias Ankaa.Community.{Post, Resource, BoardItem, Organization, OrganizationMembership}
+  alias Ankaa.Community.{Post, Resource, BoardItem, Organization, OrganizationMembership, OrganizationPatient}
   alias Ankaa.Accounts.{User}
+  alias Ankaa.Notifications.Alert
+  alias Ankaa.Patients.Patient
 
   @doc """
   Adds a user to an organization with a specific contextual role.
@@ -288,4 +290,58 @@ defmodule Ankaa.Communities do
   end
 
   def get_board_item!(id), do: Repo.get!(BoardItem, id)
+
+  @doc """
+  Links a patient to a clinic.
+  """
+  def add_patient_to_organization(patient_id, organization_id, mrn \\ nil) do
+    %OrganizationPatient{}
+    |> OrganizationPatient.changeset(%{
+      patient_id: patient_id,
+      organization_id: organization_id,
+      mrn: mrn
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
+  Fetches the "Clinic Roster".
+  Returns patients with their active critical/high alerts preloaded.
+  """
+  def list_patients_for_organization(org_id) do
+    # Define a query for active alerts to preload efficiently
+    active_alerts_query =
+      from a in Alert,
+      where: a.status == "active" and a.severity in ["high", "critical"],
+      order_by: [desc: a.severity, desc: a.inserted_at]
+
+    from(p in Patient,
+      join: op in OrganizationPatient, on: op.patient_id == p.id,
+      where: op.organization_id == ^org_id,
+      where: op.status == "active",
+
+      # Preload alerts so we can show red badges in the table
+      preload: [alerts: ^active_alerts_query],
+
+      # Select the patient and the clinic-specific MRN
+      select: {p, op.mrn},
+      order_by: [asc: p.name]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns a list of tuples: {Organization, Role_String}
+  Example: [{%Organization{name: "Romdeau General"}, "admin"}, ...]
+  """
+  def list_organizations_and_roles_for_user(%User{} = user) do
+    from(o in Organization,
+      join: m in assoc(o, :memberships),
+      where: m.user_id == ^user.id,
+      where: m.status == "active",
+      order_by: [asc: o.name],
+      select: {o, m.role}
+    )
+    |> Repo.all()
+  end
 end

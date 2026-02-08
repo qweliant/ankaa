@@ -15,24 +15,25 @@ defmodule AnkaaWeb.PortalLive.Index do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
-    communities = Communities.list_organizations_for_user(user)
+    communities_with_roles = Communities.list_organizations_and_roles_for_user(user)
     my_patient_profile = Patients.get_patient_by_user_id(user.id)
 
     {:ok, all_networks} = Patients.list_patients_for_user(user)
-    
+
     care_networks =
       if my_patient_profile do
         Enum.reject(all_networks, fn p -> p.id == my_patient_profile.id end)
       else
         all_networks
       end
+
     org_changeset = Communities.change_organization(%Ankaa.Community.Organization{})
     form_changeset = create_patient_form_changeset(%{})
 
     {:ok,
      assign(socket,
        page_title: "My Portal",
-       communities: communities,
+       communities: communities_with_roles,
        care_networks: care_networks,
        my_patient_profile: my_patient_profile,
        show_create_org_modal: false,
@@ -96,7 +97,8 @@ defmodule AnkaaWeb.PortalLive.Index do
 
     case Communities.create_organization_with_defaults(user, org_params) do
       {:ok, %{org: _org}} ->
-        updated_list = Communities.list_organizations_for_user(user)
+        # Refresh with roles
+        updated_list = Communities.list_organizations_and_roles_for_user(user)
 
         socket =
           socket
@@ -113,6 +115,7 @@ defmodule AnkaaWeb.PortalLive.Index do
   @impl true
   def handle_event("create_patient", %{"patient" => patient_params}, socket) do
     user = socket.assigns.current_user
+
     case Patients.create_patient_hub(user, patient_params) do
       {:ok, %{patient: _patient}} ->
         {:ok, updated_networks} = Patients.list_patients_for_user(user)
@@ -192,9 +195,12 @@ defmodule AnkaaWeb.PortalLive.Index do
     end
   end
 
-  defp format_role(role) when role in [:doctor, :nurse, :tech, :clinic_technician], do: "Clinical View"
+  defp format_role(role) when role in [:doctor, :nurse, :tech, :clinic_technician],
+    do: "Clinical View"
+
   defp format_role(:social_worker), do: "Caseworker View"
   defp format_role(:caresupport), do: "Family View"
-  defp format_role(:patient), do: "Self View" # Should typically fall into "My Health" block, but good fallback
+  # Should typically fall into "My Health" block, but good fallback
+  defp format_role(:patient), do: "Self View"
   defp format_role(_), do: "Careprovider View"
 end

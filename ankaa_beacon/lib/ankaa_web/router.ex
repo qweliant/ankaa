@@ -114,7 +114,8 @@ defmodule AnkaaWeb.Router do
         {AnkaaWeb.UserAuth, :ensure_authenticated},
         {AnkaaWeb.RoleAuth, :require_community_access}
       ] do
-      live("/dashboard", CommunityDashboardLive, :index)
+      live("/community", CommunityDashboardLive, :index)
+      live("/clinic", ClinicDashboardLive, :index)
     end
   end
 end

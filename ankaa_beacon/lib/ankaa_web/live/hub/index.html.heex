@@ -65,9 +65,9 @@
         </div>
 
         <ul role="list" class="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <%= for org <- @communities do %>
+            <%= for {org, role} <- @communities do %>
                 <li class="col-span-1">
-                    <.link navigate={~p"/c/#{org.id}/dashboard"}
+                    <div
                         class="group relative flex h-full flex-col justify-between rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition hover:shadow-md hover:ring-gray-900/10">
                         <div>
                             <div
@@ -78,14 +78,31 @@
                             <p class="mt-1 text-sm text-gray-500 line-clamp-2">
                                 {org.description || "Community Hub"}
                             </p>
+        
+                            <span
+                                class="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10 mt-2 capitalize">
+                                {role}
+                            </span>
                         </div>
-                        <div class="mt-4 text-sm font-semibold text-purple-600">
-                            Enter Hub <span aria-hidden="true">&rarr;</span>
+        
+                        <div class="mt-4 space-y-2">
+                            <.link navigate={~p"/c/#{org.id}/community"}
+                                class="flex items-center text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors">
+                                Enter Community Hub <span aria-hidden="true" class="ml-1">&rarr;</span>
+                            </.link>
+        
+                            <%= if role in ["admin", "moderator" ] do %>
+                                <.link navigate={~p"/c/#{org.id}/clinic"}
+                                    class="flex items-center text-sm font-bold text-slate-600 hover:text-purple-600 transition-colors border-t border-gray-100 pt-2">
+                                    <span class="mr-2">🏥</span> Clinical Workspace <span aria-hidden="true"
+                                        class="ml-1">&rarr;</span>
+                                </.link>
+                                <% end %>
                         </div>
-                    </.link>
+                    </div>
                 </li>
                 <% end %>
-
+        
                     <li class="col-span-1">
                         <button phx-click="toggle_create_org"
                             class="group relative flex h-full min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-transparent p-6 text-center hover:border-purple-400 hover:bg-purple-50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">

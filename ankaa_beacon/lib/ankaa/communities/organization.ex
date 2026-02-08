@@ -16,6 +16,9 @@ defmodule Ankaa.Community.Organization do
 
     has_many(:memberships, Ankaa.Community.OrganizationMembership)
     has_many(:members, through: [:memberships, :user])
+    
+    has_many(:organization_patients, Ankaa.Community.OrganizationPatient)
+    has_many(:patients, through: [:organization_patients, :patient])
     timestamps()
   end
 
