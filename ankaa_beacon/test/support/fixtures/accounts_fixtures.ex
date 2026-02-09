@@ -11,7 +11,8 @@ defmodule Ankaa.AccountsFixtures do
       email: unique_user_email(),
       password: valid_user_password(),
       first_name: "Test",
-      last_name: "User"
+      last_name: "User",
+      terms_agreement: true
     })
   end
 
@@ -30,7 +31,8 @@ defmodule Ankaa.AccountsFixtures do
         email: unique_user_email(),
         password: valid_user_password(),
         first_name: "Test",
-        last_name: "User"
+        last_name: "User",
+        terms_agreement: true
       })
 
     {:ok, user} = Accounts.register_user(clean_attrs)
