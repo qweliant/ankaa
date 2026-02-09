@@ -1,151 +1,195 @@
-<div class="px-4 sm:px-6 lg:px-8 py-10">
-    <div class="max-w-4xl mx-auto">
-        <.header>Learn More</.header>
-        <div class="mt-8 space-y-12">
-            <div id="roles">
-                <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-6 border-b pb-2">
-                    👥 Your Care Network Roles
-                </h2>
-                <p class="text-lg text-gray-600 mb-8">
-                    Ankaa is designed around secure, role-based access. As a Patient, you control who sees your data and
-                    what
-                    permissions they have.
-                </p>
+<div class="bg-slate-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto space-y-16">
 
-                <div class="space-y-6">
-                    <div class="p-6 bg-white shadow rounded-lg border-l-4 border-purple-600">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Patient (The Owner)</h3>
-                        <p class="text-gray-700">
-                            The core user receiving home hemodialysis treatment. The Patient creates the care network,
-                            adds devices,
-                            and
-                            grants access to all other members.
-                        </p>
-                    </div>
-
-                    <div class="p-6 bg-white shadow rounded-lg border-l-4 border-amber-600">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Care Support (Family/Friend)</h3>
-                        <p class="text-gray-700">
-                            Non-medical family, friends, or caregivers. They can view the Patient's vitals and receive
-                            most alert
-                            levels
-                            (Info, High, Critical), making them the first line of defense during a session.
-                        </p>
-                    </div>
-
-                    <div class="p-6 bg-white shadow rounded-lg border-l-4 border-green-600">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Doctor / Nurse (Provider Team)</h3>
-                        <p class="text-gray-700">
-                            Medical professionals overseeing the patient's treatment plan. They receive all alert levels
-                            (Info, High,
-                            Critical) and can participate in the critical alert acknowledgment loop to ensure patient
-                            safety.
-                        </p>
-                    </div>
-                    <div class="p-6 bg-white shadow rounded-lg border-l-4 border-indigo-600">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Clinic Technician</h3>
-                        <p class="text-gray-700">
-                            Staff working in dialysis clinics who help with device setup, troubleshooting, and
-                            maintenance. Clinic Technicians can view device status, assist with firmware/device
-                            onboarding, and be granted time-limited access for technical support during sessions.
-                        </p>
-                    </div>
-
-                    <div class="p-6 bg-white shadow rounded-lg border-l-4 border-teal-600">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Community Coordinator</h3>
-                        <p class="text-gray-700">
-                            Organizers who manage local groups of patients. Community Coordinators can view
-                            aggregated, de-identified metrics for their community, invite members, and share
-                            educational resources. They do not get access to sensitive health details unless
-                            explicitly authorized by a Patient.
-                        </p>
-                    </div>
-
-                    <div class="p-6 bg-white shadow rounded-lg border-l-4 border-rose-600">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Social Worker</h3>
-                        <p class="text-gray-700">
-                            Professionals providing psychosocial support, benefits navigation, and resource
-                            coordination. Social Workers can see care plans, contact details, non-medical notes,
-                            and can be invited to support the Patient's care plan — with access scoped by the
-                            Patient's consent.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div id="status">
-                <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-6 border-b pb-2">
-                    ⚠️ Pre-Alpha Status & Limitations
-                </h2>
-                <p class="text-lg text-gray-600 mb-8">
-                    We are actively developing Ankaa. For this pre-alpha release, we are solely focused on validating
-                    the Care
-                    Network and Alert Pipeline. Please be aware of the following critical limitations:
-                </p>
-
-                <div class="space-y-6">
-                    <div class="p-6 bg-yellow-50 shadow rounded-lg border-l-4 border-yellow-500">
-                        <h3 class="text-xl font-semibold text-yellow-800 mb-2">Simulated Data Only</h3>
-                        <p class="text-yellow-700">
-                            Monitoring features rely entirely on data generated by our mock IoT device server. The
-                            platform does
-                            not
-                            currently connect to real dialysis equipment (NxStage, etc.) or EHR systems. Do not use this
-                            for real
-                            medical
-                            decision-making.
-                        </p>
-                    </div>
-
-                    <div class="p-6 bg-red-50 shadow rounded-lg border-l-4 border-red-500">
-                        <h3 class="text-xl font-semibold text-red-800 mb-2">Automated EMS Calls DISABLED</h3>
-                        <p class="text-red-700">
-                            Critical alerts are designed to trigger an acknowledgment loop, but automated contact with
-                            Emergency
-                            Medical
-                            Services (EMS) is currently disabled. Users are responsible for manually initiating
-                            emergency
-                            procedures.
-                        </p>
-                    </div>
-
-                    <div class="p-6 bg-indigo-50 shadow rounded-lg border-l-4 border-indigo-500">
-                        <h3 class="text-xl font-semibold text-indigo-800 mb-2">Limited Provider Tools</h3>
-                        <p class="text-indigo-700">
-                            Doctor and Nurse roles can receive alerts and view patient data, but features like
-                            updating patient
-                            treatment
-                            plans and comprehensive analytics are planned for later stages.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div id="participate" class="pt-8">
-                <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-6 border-b pb-2">
-                    🤝 Get Started and Provide Feedback
-                </h2>
-                <p class="text-lg text-gray-600 mb-8">
-                    Your participation is crucial for making Ankaa safe and effective. We need your help testing the
-                    most
-                    important
-                    part: building a reliable care network.
-                </p>
-
-                <div class="flex flex-col sm:flex-col gap-4">
-                    <.link href="/users/register"
-                        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 text-center">
-                        Create Your Account Now
-                    </.link>
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSehQzOwedD3hwQ8e64T1lQtE4hEWZTRCDlVg_VkH_V0LquwMg/viewform?usp=header"
-                        class="flex-1 bg-white hover:bg-gray-50 text-purple-600 border-2 border-purple-600 font-semibold py-3 px-6 rounded-lg transition duration-300 text-center">
-                        Submit Feedback
-                    </a>
-                    <a href="https://github.com/YOUR_USERNAME/ankaa/discussions" target="_blank"
-                        class="flex-1 bg-white hover:bg-gray-50 text-purple-600 border-2 border-purple-600 font-semibold py-3 px-6 rounded-lg transition duration-300 text-center flex items-center justify-center gap-2">
-                        Join the Community Discussion
-                    </a>
-                </div>
-            </div>
-
+        <div class="text-center space-y-4">
+            <h1 class="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
+                    Your Care Network
+                </span>
+            </h1>
+            <p class="text-xl text-slate-600 max-w-2xl mx-auto">
+                Safehemo is built around the <strong>Patient Hub</strong>—a secure circle of trust where you decide who
+                sees your data and who gets alerts.
+            </p>
         </div>
+
+        <div>
+            <div class="flex items-center gap-3 mb-8">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <span class="text-2xl">🤝</span>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">Network Roles & Permissions</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div
+                    class="group relative bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 hover:border-purple-300">
+                    <div
+                        class="absolute top-0 right-0 -mt-3 -mr-3 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        HUB OWNER
+                    </div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-2xl">💜
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">The Patient</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        You are the owner of the <strong>Patient Hub</strong>. You create the network, invite members,
+                        and control the settings. You are the only one who can grant or revoke access to your medical
+                        data.
+                    </p>
+                </div>
+
+                <div
+                    class="group relative bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 hover:border-amber-300">
+                    <div
+                        class="absolute top-0 right-0 -mt-3 -mr-3 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        FIRST RESPONDER
+                    </div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center text-2xl">🛡️
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Care Support</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Family, friends, or roommates. They have <strong>Viewer</strong> access to your dashboard and
+                        receive SMS/Email alerts if your vitals go out of range during a session.
+                    </p>
+                </div>
+
+                <div
+                    class="group relative bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 hover:border-emerald-300">
+                    <div
+                        class="absolute top-0 right-0 -mt-3 -mr-3 bg-emerald-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        CLINICAL STAFF
+                    </div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center text-2xl">🩺
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Doctor & Nurse</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Your medical team. They access your data via the <strong>Clinical Workspace</strong> (Roster).
+                        They can review treatment history, manage prescriptions, and handle critical alert escalations.
+                    </p>
+                </div>
+
+                <div
+                    class="group relative bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 hover:border-blue-300">
+                    <div
+                        class="absolute top-0 right-0 -mt-3 -mr-3 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        DEVICE SUPPORT
+                    </div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-2xl">🔧
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Clinic Technician</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Staff at the dialysis center who assist with hardware. They have scoped access to view
+                        <strong>Device Diagnostics</strong> to help troubleshoot alarms remotely.
+                    </p>
+                </div>
+
+                <div
+                    class="group relative bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 hover:border-teal-300">
+                    <div
+                        class="absolute top-0 right-0 -mt-3 -mr-3 bg-teal-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        COMMUNITY LEAD
+                    </div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="h-12 w-12 rounded-full bg-teal-100 flex items-center justify-center text-2xl">📢
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Community Manager</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Organizers who run <strong>Community Hubs</strong>. They post resources, pin announcements, and
+                        foster peer support. They <em>cannot</em> see your medical records unless invited to your
+                        personal Care Network.
+                    </p>
+                </div>
+
+                <div
+                    class="group relative bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 hover:border-rose-300">
+                    <div
+                        class="absolute top-0 right-0 -mt-3 -mr-3 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        ADVOCATE
+                    </div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center text-2xl">🧭
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Social Worker</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Professionals who help with the non-clinical side of care—insurance, mental health, and
+                        resources. They can be invited to your hub with limited permissions.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900 rounded-3xl p-8 sm:p-12 text-slate-300 relative overflow-hidden shadow-2xl">
+            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-purple-500 rounded-full blur-3xl opacity-20">
+            </div>
+
+            <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
+                    <div class="p-2 bg-yellow-400/10 rounded-lg text-yellow-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">System Status: Pre-Alpha</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div>
+                        <h3 class="font-bold text-white mb-2 flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-purple-400"></span> Simulation Only
+                        </h3>
+                        <p class="text-sm leading-relaxed text-slate-400">
+                            Safehemo connects to a <strong>Virtual Dialysis Machine</strong>. It does not yet talk to
+                            physical NxStage or Fresenius hardware. The data you see is medically accurate, but fake.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-2 flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-rose-500"></span> No 911 Dialing
+                        </h3>
+                        <p class="text-sm leading-relaxed text-slate-400">
+                            We detect bad trends, but we <strong>do not call EMS</strong> for you. If the simulator
+                            shows a critical drop in blood pressure, you (the human) must still take action.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white mb-2 flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-blue-400"></span> Beta Features
+                        </h3>
+                        <p class="text-sm leading-relaxed text-slate-400">
+                            The <strong>Clinical Roster</strong> and <strong>Community Hubs</strong> are live but
+                            evolving. Your feedback helps decide what we build next.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center space-y-8 pb-12">
+            <h2 class="text-3xl font-bold text-slate-900">Ready to join the network?</h2>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
+                <.link href={~p"/users/register"}
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-purple-200 transition-all hover:-translate-y-1">
+                    Create Account
+                </.link>
+                <a href="https://github.com/qweliant/ankaa" target="_blank"
+                    class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-4 px-8 rounded-xl transition-all hover:border-purple-300 flex items-center justify-center gap-2">
+                    <.icon name="hero-code-bracket" class="w-5 h-5" />
+                    View Source Code
+                </a>
+            </div>
+        </div>
+
     </div>
 </div>
