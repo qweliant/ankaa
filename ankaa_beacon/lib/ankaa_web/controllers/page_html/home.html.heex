@@ -261,21 +261,20 @@
 
 <footer class="bg-slate-900 text-slate-300 border-t border-slate-800 mt-auto">
   <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-3 lg:gap-12">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4 lg:gap-12">
 
-      <div class="space-y-4">
+      <div class="space-y-4 col-span-1 sm:col-span-2 md:col-span-1">
         <div class="flex items-center gap-2 text-white">
           <img src={~p"/images/favicon.svg"} alt="Logo" class="h-8 w-8" />
           <span class="text-xl font-bold tracking-tight">Safehemo</span>
         </div>
-        <p class="text-sm leading-relaxed text-slate-400 max-w-xs">
+        <p class="text-sm leading-relaxed text-slate-400">
           Building the open-source digital safety net for home hemodialysis patients.
           <span
             class="inline-flex items-center rounded-full bg-purple-400/10 px-2 py-0.5 text-xs font-medium text-purple-400 ring-1 ring-inset ring-purple-400/20 ml-1">
             Pre-Alpha v0.1
           </span>
         </p>
-
         <div class="flex space-x-4 pt-2">
           <a href="https://github.com/qweliant/ankaa" target="_blank"
             class="text-slate-400 hover:text-white transition">
@@ -292,31 +291,46 @@
       <div>
         <h3 class="text-sm font-semibold leading-6 text-white uppercase tracking-wider">Community</h3>
         <ul role="list" class="mt-4 space-y-3">
+          <li><a href="https://github.com/qweliant/ankaa/discussions"
+              class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition flex items-center gap-2">Discussions</a>
+          </li>
+          <li><a href="https://github.com/qweliant/ankaa/issues"
+              class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition flex items-center gap-2">Report a
+              Bug</a></li>
+          <li><a href="https://github.com/qweliant/ankaa/discussions/categories/feature-requests"
+              class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition flex items-center gap-2">Request
+              Feature</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold leading-6 text-white uppercase tracking-wider">Legal</h3>
+        <ul role="list" class="mt-4 space-y-3">
           <li>
-            <a href="https://github.com/qweliant/ankaa/discussions"
-              class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition flex items-center gap-2">
-              <.icon name="hero-chat-bubble-left-right" class="w-4 h-4" /> Discussions Lounge
+            <a href="https://app.termly.io/policy-viewer/policy.html?policyUUID=54a102a0-571e-47df-acc7-69e3004f55ef"
+              target="_blank" class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition">
+              Terms of Service
             </a>
           </li>
           <li>
-            <a href="https://github.com/qweliant/ankaa/issues"
-              class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition flex items-center gap-2">
-              <.icon name="hero-bug-ant" class="w-4 h-4" /> Report a Bug
+            <a href="https://app.termly.io/policy-viewer/policy.html?policyUUID=be512ebe-9aa0-4146-9559-7b6f929fd240"
+              target="_blank" class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition">
+              Privacy Policy
             </a>
           </li>
           <li>
-            <a href="https://github.com/qweliant/ankaa/discussions/categories/feature-requests"
-              class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition flex items-center gap-2">
-              <.icon name="hero-light-bulb" class="w-4 h-4" /> Request Feature
+            <a href="https://app.termly.io/policy-viewer/policy.html?policyUUID=5075835e-2802-4cc0-8dee-89b55b3ad41a"
+              target="_blank" class="text-sm leading-6 text-slate-400 hover:text-purple-400 transition">
+              Cookie Policy
             </a>
           </li>
         </ul>
       </div>
 
       <div>
-        <h3 class="text-sm font-semibold leading-6 text-white uppercase tracking-wider">Support Development</h3>
+        <h3 class="text-sm font-semibold leading-6 text-white uppercase tracking-wider">Support</h3>
         <p class="mt-4 text-sm text-slate-400 mb-4">
-          This project is maintained by volunteers. Your support helps keep the simulation servers running.
+          This project is maintained by volunteers. Your support helps keep the servers running.
         </p>
         <a href="https://ko-fi.com/K3K51NZ5SC" target="_blank" rel="noopener noreferrer"
           class="inline-flex items-center gap-2 bg-[#FF5E5B] hover:bg-[#ff4642] text-white text-sm font-bold py-2.5 px-4 rounded-xl transition-all shadow-lg hover:shadow-[#FF5E5B]/20 hover:-translate-y-0.5">
@@ -324,7 +338,7 @@
             <path
               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
-          Buy us a Coffee
+          Buy me a Coffee
         </a>
       </div>
     </div>

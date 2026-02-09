@@ -117,17 +117,6 @@
         </ul>
     </div>
 
-    <div class="mt-20 border-t border-gray-100 pt-8">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-            <p>Safehemo Beta v0.1.0</p>
-            <div class="flex items-center gap-6">
-                <a href="#" class="hover:text-purple-600 transition-colors">Submit Feedback</a>
-                <a href="#" class="hover:text-purple-600 transition-colors">Join Discussion</a>
-                <a href="#" class="hover:text-rose-600 transition-colors">Report a Bug</a>
-            </div>
-        </div>
-    </div>
-
     <.modal id="create-org-modal" :if={@show_create_org_modal} show on_cancel={JS.push("toggle_create_org")}>
         <div class="sm:flex sm:items-start">
             <div
@@ -197,7 +186,7 @@
 
                         <.simple_form for={@patient_form} phx-submit="create_patient" phx-change="validate_patient">
 
-                            <.input field={@patient_form[:role]} type="hidden" />
+                            <.input field={@patient_form[:role]} />
 
                             <%= if @selected_role in ["doctor", "nurse" , "social_worker" ] do %>
                                 <div class="bg-blue-50 p-4 rounded-md border border-blue-100 mb-6">

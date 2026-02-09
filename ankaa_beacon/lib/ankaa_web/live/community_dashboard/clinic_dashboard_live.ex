@@ -128,7 +128,7 @@ defmodule AnkaaWeb.ClinicDashboardLive do
             <p class="text-xs font-bold text-rose-400 uppercase">Patients with Alerts</p>
             <p class="text-3xl font-black text-rose-600">{alert_count}</p>
           </div>
-          <div class="bg-gradient-to-br from-purple-600 to-indigo-600 p-5 rounded-2xl shadow-md text-white">
+          <div class="bg-linear-to-br from-purple-600 to-indigo-600 p-5 rounded-2xl shadow-md text-white">
             <p class="text-xs font-bold text-purple-200 uppercase">My Shift</p>
             <p class="text-lg font-bold">On Duty</p>
             <p class="text-xs text-purple-200 mt-1">Dr. {@current_user.last_name}</p>

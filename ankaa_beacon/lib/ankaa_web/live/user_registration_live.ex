@@ -31,7 +31,37 @@ defmodule AnkaaWeb.UserRegistrationLive do
 
         <.input field={@form[:email]} type="email" label="Email" required />
         <.input field={@form[:password]} type="password" label="Password" required />
-
+        <div class="flex items-start gap-3 my-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div class="flex h-6 items-center">
+            <.input
+              field={@form[:terms_agreement]}
+              type="checkbox"
+              required
+              class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
+            />
+          </div>
+          <div class="text-sm leading-6">
+            <label for={@form[:terms_agreement].id} class="font-medium text-gray-900">
+              I agree to the <a
+                href="https://app.termly.io/policy-viewer/policy.html?policyUUID=54a102a0-571e-47df-acc7-69e3004f55ef"
+                target="_blank"
+                class="font-bold text-purple-600 hover:text-purple-500 underline"
+              >Terms of Service</a>, <a
+                href="https://app.termly.io/policy-viewer/policy.html?policyUUID=be512ebe-9aa0-4146-9559-7b6f929fd240"
+                target="_blank"
+                class="font-bold text-purple-600 hover:text-purple-500 underline"
+              >Privacy Policy</a>,
+              and <a
+                href="https://app.termly.io/policy-viewer/policy.html?policyUUID=5075835e-2802-4cc0-8dee-89b55b3ad41a"
+                target="_blank"
+                class="font-bold text-purple-600 hover:text-purple-500 underline"
+              >Cookie Policy</a>.
+            </label>
+            <p class="text-gray-500 text-xs mt-2">
+              By creating an account, you acknowledge that this platform processes Protected Health Information (PHI) in accordance with HIPAA regulations.
+            </p>
+          </div>
+        </div>
         <:actions>
           <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
         </:actions>

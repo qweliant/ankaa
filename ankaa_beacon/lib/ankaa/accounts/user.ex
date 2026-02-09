@@ -19,6 +19,11 @@ defmodule Ankaa.Accounts.User do
     field(:npi_number, :string)
     field(:practice_state, :string)
 
+    field(:terms_accepted_at, :utc_datetime)
+    field(:privacy_accepted_at, :utc_datetime)
+
+    field(:terms_agreement, :boolean, virtual: true, default: false)
+
     has_one(:patient, Ankaa.Patients.Patient, foreign_key: :user_id)
     has_many(:care_network, Ankaa.Patients.CareNetwork)
     has_many(:associated_patients, through: [:care_network, :patient])
@@ -56,10 +61,23 @@ defmodule Ankaa.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :first_name, :last_name])
+    |> cast(attrs, [:email, :password, :first_name, :last_name, :terms_agreement])
     |> validate_required([:first_name, :last_name])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_acceptance(:terms_agreement, message: "You must accept the Terms and Privacy Policy")
+    |> put_terms_timestamps()
+  end
+
+  defp put_terms_timestamps(changeset) do
+    if get_field(changeset, :terms_agreement) do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      changeset
+      |> put_change(:terms_accepted_at, now)
+      |> put_change(:privacy_accepted_at, now)
+    else
+      changeset
+    end
   end
 
   def name_changeset(user, attrs) do
