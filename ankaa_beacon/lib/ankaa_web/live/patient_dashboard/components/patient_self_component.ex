@@ -96,6 +96,31 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
   end
 
   @impl true
+  def handle_event("trigger_panic", _params, socket) do
+    patient = socket.assigns.current_user.patient
+
+    {:ok, alert} =
+      Ankaa.Alerts.create_alert(%{
+        patient_id: patient.id,
+        type: "manual_panic",
+        severity: "critical",
+        message: "🚨 PATIENT TRIGGERED MANUAL PANIC BUTTON",
+        status: "active"
+      })
+
+    case Ankaa.Emergency.trigger_ems(patient, alert) do
+      {:ok, dispatch_id} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "EMERGENCY SERVICES CONTACTED. Dispatch ID: #{dispatch_id}")
+         |> push_event("panic_triggered", %{})}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to contact EMS. Call 911 manually!")}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="w-full pb-12">
@@ -119,6 +144,17 @@ defmodule AnkaaWeb.PatientDashboard.Components.PatientSelfComponent do
         <%= case @active_view do %>
           <% :home -> %>
             <div class="max-w-4xl mx-auto space-y-8">
+              <div class="fixed bottom-6 left-6 z-50">
+                <button
+                  phx-click="trigger_panic"
+                  phx-target={@myself}
+                  data-confirm="Are you sure? This will contact Emergency Services immediately."
+                  class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-full shadow-xl border-4 border-red-800 flex items-center gap-2"
+                >
+                  <.icon name="hero-exclamation-triangle-solid" class="w-8 h-8" />
+                  <span>EMERGENCY HELP</span>
+                </button>
+              </div>
               <div class="bg-white rounded-4xl shadow-xl shadow-purple-100 overflow-hidden border border-purple-50 relative p-8 sm:p-10 text-center">
                 <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-purple-50 opacity-50 blur-3xl pointer-events-none">
                 </div>
