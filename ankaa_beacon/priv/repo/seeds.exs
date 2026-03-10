@@ -38,7 +38,7 @@ create_staff = fn attrs, role, org_id, org_role ->
     if user do
       user
     else
-      {:ok, new_user} = Accounts.register_user(attrs)
+      {:ok, new_user} = Accounts.register_user(Map.put(attrs, :terms_agreement, true))
       {:ok, named_user} = Accounts.update_user_profile(new_user, attrs)
       named_user
     end
@@ -154,7 +154,8 @@ IO.puts("   -> Creating patients...")
     email: "rel.mayer@example.com",
     password: "password1234",
     first_name: "Re-l",
-    last_name: "Mayer"
+    last_name: "Mayer",
+    terms_agreement: true
   })
 
 {:ok, _} = Accounts.update_user_name(user_rel, %{first_name: "Re-l", last_name: "Mayer"})
@@ -177,7 +178,8 @@ Communities.add_member(user_rel, clinic_org.id, "member")
     email: "vincent.law@example.com",
     password: "password1234",
     first_name: "Vincent",
-    last_name: "Law"
+    last_name: "Law",
+    terms_agreement: true
   })
 
 {:ok, _} = Accounts.update_user_name(user_vincent, %{first_name: "Vincent", last_name: "Law"})
