@@ -93,6 +93,18 @@ const DisclaimerBannerHook: Partial<Hook> = {
   },
 };
 
+const TimezoneHook: Partial<Hook> = {
+  mounted()
+  {
+    // Get browser timezone (e.g., "America/New_York")
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+    // Push it to the LiveView server
+    this.pushEvent("set_timezone", { timezone: timezone })
+    console.log("Timezone captured:", timezone);
+  }
+}
+
 const csrfToken = (
   document.querySelector("meta[name='csrf-token']") as HTMLElement
 ).getAttribute("content");
@@ -102,6 +114,7 @@ const hooks: { [key: string]: Partial<Hook> } = {
   AlertsHook: AlertsHook,
   SessionTimer: SessionTimer,
   DisclaimerBanner: DisclaimerBannerHook,
+  TimezoneHook: TimezoneHook,
 };
 
 // Custom loading animation setup

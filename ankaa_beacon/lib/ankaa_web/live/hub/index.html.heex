@@ -178,14 +178,14 @@
             <% end %>
 
                 <%= if @modal_step==:details do %>
-                    <div class="mt-6">
+                    <div id="patient-form-container" phx-hook="TimezoneHook" class="mt-6">
                         <button phx-click="back_to_role_selection"
                             class="mb-4 text-sm text-gray-500 hover:text-gray-900 flex items-center">
                             <.icon name="hero-arrow-left" class="w-4 h-4 mr-1" /> Back
                         </button>
 
                         <.simple_form for={@patient_form} phx-submit="create_patient" phx-change="validate_patient">
-
+                            <input type="hidden" name="patient[timezone]" value={@patient_form[:timezone].value} />
                             <.input field={@patient_form[:role]} />
 
                             <%= if @selected_role in ["doctor", "nurse" , "social_worker" ] do %>
@@ -209,8 +209,8 @@
                                 <% end %>
 
                                     <.input field={@patient_form[:name]} label={if @selected_role=="patient" ,
-                                        do: "Your Name" , else: "Patient Name" } placeholder="e.g. John Doe" required />
-
+                                        do: "Your Name" , else: "Patient Name" } placeholder="e.g. Monkey D. Luffy" required />
+                                    <.input field={@patient_form[:date_of_birth]} type="date" label="Date of Birth" required />
                                     <.input field={@patient_form[:relationship]} label="Relationship Label"
                                         placeholder={if @selected_role=="patient" , do: "Self" ,
                                         else: "e.g. Dr. Smith, Mom" } value={@patient_form[:relationship].value}

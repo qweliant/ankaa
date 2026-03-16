@@ -160,8 +160,6 @@ IO.puts("   -> Creating patients...")
 
 {:ok, _} = Accounts.update_user_name(user_rel, %{first_name: "Re-l", last_name: "Mayer"})
 
-patient_attrs_rel = %{name: "Re-l Mayer", date_of_birth: ~D[2000-01-01], timezone: "Etc/UTC"}
-
 {:ok, %{patient: patient_rel}} =
   Patients.create_patient_hub(user_rel, %{
     "name" => "Re-l Mayer",

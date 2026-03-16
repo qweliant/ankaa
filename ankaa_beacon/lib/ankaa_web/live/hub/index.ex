@@ -8,7 +8,9 @@ defmodule AnkaaWeb.PortalLive.Index do
   @create_patient_types %{
     name: :string,
     role: :string,
-    relationship: :string
+    relationship: :string,
+    timezone: :string,
+    date_of_birth: :date
   }
 
   @impl true
@@ -46,7 +48,9 @@ defmodule AnkaaWeb.PortalLive.Index do
        npi_verifying: false,
        # Stores verified doctor info
        npi_data: nil,
-
+       timezones:
+         TzExtra.time_zone_ids()
+         |> Enum.map(&{&1, &1}),
        # Define the available roles for the hub (similar to your registration list)
        hub_roles: [
          {"patient", "Patient (Self)", "I am creating this for myself.", "hero-heart"},
@@ -83,6 +87,17 @@ defmodule AnkaaWeb.PortalLive.Index do
   @impl true
   def handle_event("toggle_create_org", _params, socket) do
     {:noreply, assign(socket, show_create_org_modal: !socket.assigns.show_create_org_modal)}
+  end
+
+  @impl true
+  def handle_event("set_timezone", %{"timezone" => tz}, socket) do
+    params =
+      socket.assigns.patient_form.params
+      |> Map.put("timezone", tz)
+
+    changeset = create_patient_form_changeset(params)
+
+    {:noreply, assign(socket, patient_form: to_form(changeset, as: "patient"))}
   end
 
   @impl true
