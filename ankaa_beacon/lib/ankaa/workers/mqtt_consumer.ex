@@ -53,31 +53,41 @@ defmodule Ankaa.Workers.MQTTConsumer do
 
   @impl true
   def handle_info({:publish, %{topic: topic, payload: payload}}, state) do
+    # Handle incoming MQTT publish messages for device telemetry
     topic_str = to_string(topic)
+    # Extract device UUID from topic (format: ankaa/device_uuid/telemetry or devices/device_uuid/telemetry)
     [_, device_uuid, _] = String.split(topic_str, "/")
 
+    # Check if a device process is already running for this device
     case Registry.lookup(Ankaa.Monitoring.DeviceRegistry, device_uuid) do
       [{pid, _}] ->
+        # Device process exists, forward the reading directly
         Ankaa.Monitoring.DeviceServer.handle_reading(pid, payload)
 
       [] ->
+        # No device process found, check if device exists in database
         case Ankaa.Devices.get_device(device_uuid) do
           %Ankaa.Patients.Device{} = device ->
+            # Device exists, attempt to start a new device server process
             case DynamicSupervisor.start_child(
                    Ankaa.Monitoring.DeviceSupervisor,
                    {Ankaa.Monitoring.DeviceServer, device}
                  ) do
               {:ok, _pid} ->
+                # Successfully started, handle the reading
                 Ankaa.Monitoring.DeviceServer.handle_reading(device_uuid, payload)
 
               {:error, {:already_started, _pid}} ->
+                # Process was already started (race condition), handle the reading
                 Ankaa.Monitoring.DeviceServer.handle_reading(device_uuid, payload)
 
               {:error, reason} ->
+                # Failed to start process, log error
                 Logger.error("Failed to start worker: #{inspect(reason)}")
             end
 
           nil ->
+            # Device not found in database, ignore the message
             Logger.warning("Ignoring message for unregistered device: #{device_uuid}")
         end
     end

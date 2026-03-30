@@ -19,7 +19,6 @@ defmodule Ankaa.Monitoring.BPDeviceReading do
   ]
 
   def from_mqtt(data) do
-    # This function now returns a plain struct, not an Ecto schema.
     %__MODULE__{
       device_id: data["device_id"],
       timestamp: parse_timestamp(data["timestamp"]),
