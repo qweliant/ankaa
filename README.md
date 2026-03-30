@@ -17,9 +17,6 @@
   <p align="center">
     Real-time monitoring and alert system for home hemodialysis
     <br />
-    <a href="https://github.com/qweliant/ankaa"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
     <a href="https://github.com/qweliant/ankaa/issues">Report Bug</a>
     &middot;
     <a href="https://github.com/qweliant/ankaa/issues">Request Feature</a>
